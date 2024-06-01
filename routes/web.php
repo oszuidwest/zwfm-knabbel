@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -12,8 +13,16 @@ Route::get('/auth/redirect', function () {
 });
 
 Route::get('/auth/callback', function () {
-    $user = Socialite::driver('azure')->user();
+    $azureUser = Socialite::driver('azure')->user();
 
-    dd($user);
-    // $user->token
+    $user = User::updateOrCreate([
+        'email' => $azureUser->email,
+    ], [
+        'name' => $azureUser->name,
+        'email' => $azureUser->email
+    ]);
+
+    Auth::login($user);
+
+    return redirect('/');
 });
