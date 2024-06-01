@@ -19,7 +19,8 @@ Route::get('/auth/callback', function () {
         'email' => $azureUser->email,
     ], [
         'name' => $azureUser->name,
-        'email' => $azureUser->email
+        'email' => $azureUser->email,
+        'password' => Str::password(),
     ]);
 
     Auth::login($user);
