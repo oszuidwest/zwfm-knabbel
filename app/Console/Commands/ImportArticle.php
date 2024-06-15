@@ -72,9 +72,32 @@ class ImportArticle extends Command
         });
 
         $post->content = html_entity_decode($converter->convert($content->html()));
-
         $prompt = View::make('prompt', ['post' => $post])->render();
 
-        $this->output->write($prompt);
+        $this->info($prompt);
+
+        $messages = [];
+        // TODO: Add a system message
+        $messages[] = [
+            'role' => 'user',
+            'content' => $prompt,
+        ];
+
+        // TODO: make model configurable
+        // TODO: make endpoint configurable
+        $chatResponse = Http::withToken(config('services.openai.api_key'))
+            ->post(
+                'https://api.openai.com/v1/chat/completions',
+                [
+                    'model' => config('services.openai.model'),
+                    'messages' => $messages,
+                ]
+            )
+            ->throw()
+            ->json();
+
+        $output = $chatResponse['choices'][0]['message']['content'];
+
+        $this->output->write($output);
     }
 }
