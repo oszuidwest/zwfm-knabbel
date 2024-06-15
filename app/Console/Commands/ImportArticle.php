@@ -65,7 +65,7 @@ class ImportArticle extends Command
         $content = new Crawler($content);
 
         // TODO: add a configuration option with query selectors to remove
-        $content->filter('a[data-post-id]')->each(function (Crawler $node) {
+        $content->filter('a[data-post-id], figure')->each(function (Crawler $node) {
             /** @var \DOMElement $el */
             $el = $node->getNode(0);
             $el->remove();
