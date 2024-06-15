@@ -23,7 +23,7 @@ class ArticleResource extends Resource
             ->schema([
                 TextInput::make('url')->disabled(),
                 TextInput::make('wordpress_id')->disabled(),
-                TextInput::make('model')->disabled(),
+                TextInput::make('ai_model')->disabled(),
                 MarkdownEditor::make('prompt')->disabled(),
                 MarkdownEditor::make('ai_summary')->disabled(),
                 MarkdownEditor::make('summary'),
