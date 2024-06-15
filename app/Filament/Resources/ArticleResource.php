@@ -4,6 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ArticleResource\Pages;
 use App\Models\Article;
+use Filament\Forms\Components\MarkdownEditor;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -19,7 +21,12 @@ class ArticleResource extends Resource
     {
         return $form
             ->schema([
-                //
+                TextInput::make('url')->disabled(),
+                TextInput::make('wordpress_id')->disabled(),
+                TextInput::make('model')->disabled(),
+                MarkdownEditor::make('prompt')->disabled(),
+                MarkdownEditor::make('ai_summary')->disabled(),
+                MarkdownEditor::make('summary'),
             ]);
     }
 
@@ -28,12 +35,15 @@ class ArticleResource extends Resource
         return $table
             ->columns([
                 //
+                Tables\Columns\TextColumn::make('url'),
+                Tables\Columns\TextColumn::make('wordpress_id'),
             ])
             ->filters([
                 //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -55,6 +65,7 @@ class ArticleResource extends Resource
             'index' => Pages\ListArticles::route('/'),
             'create' => Pages\CreateArticle::route('/create'),
             'edit' => Pages\EditArticle::route('/{record}/edit'),
+            'view' => Pages\ViewArticle::route('/{record}/view'),
         ];
     }
 }
