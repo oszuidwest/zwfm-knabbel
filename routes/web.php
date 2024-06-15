@@ -28,7 +28,6 @@ Route::get('/auth/callback', function () {
     return redirect('/');
 });
 
-
 Route::get('/test', function () {
     dump(request());
     dump(request()->schemeAndHttpHost());
