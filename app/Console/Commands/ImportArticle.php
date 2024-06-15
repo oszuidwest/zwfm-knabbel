@@ -19,6 +19,7 @@ class ImportArticle extends Command
         // TODO: Make this configurable
         if ($uri->getHost() !== 'www.zuidwestupdate.nl') {
             $this->error('Invalid host');
+
             return 1;
         }
 
@@ -27,8 +28,9 @@ class ImportArticle extends Command
         $bodyClasses = $crawler->filter('body')->first()->attr('class');
         $bodyClasses = preg_split('/\s+/', $bodyClasses);
 
-        if (!in_array('single-post', $bodyClasses)) {
+        if (! in_array('single-post', $bodyClasses)) {
             $this->error('Not a single post');
+
             return 1;
         }
 
@@ -40,15 +42,18 @@ class ImportArticle extends Command
             }
         }
 
-        if (!$postId) {
+        if (! $postId) {
             $this->error('Could not find post ID');
+
             return 1;
         }
 
         $json = Http::get(sprintf('https://www.zuidwestupdate.nl/wp-json/wp/v2/posts/%d', $postId))->throw()->json();
 
-        $post = new class {
+        $post = new class
+        {
             public string $title;
+
             public string $content;
         };
         $converter = new HtmlConverter([
