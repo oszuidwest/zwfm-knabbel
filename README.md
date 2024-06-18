@@ -26,4 +26,4 @@ OPENAI_API_KEY=
 OPENAI_MODEL=
 ```
 
-- Run some commands to populate the database...
+- Run `php artisan migrate --force` to create the DB
