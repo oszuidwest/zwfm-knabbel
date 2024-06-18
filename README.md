@@ -27,3 +27,4 @@ OPENAI_MODEL=
 ```
 
 - Run `php artisan migrate --force` to create the DB
+- Create a GitHub webhook with a secret for automatisch deployment (it's a x-www-form-urlencoded hook)
