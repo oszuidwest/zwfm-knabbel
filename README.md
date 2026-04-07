@@ -1,34 +1,16 @@
 # Knabbel
 
-Web frontend for the [Babbel](https://github.com/oszuidwest/zwfm-babbel) radio news bulletin system. Provides a management interface for news stories, stations, voices, bulletins, and users.
+Web frontend for [Babbel](https://github.com/oszuidwest/zwfm-babbel), the radio news bulletin API. This is what newsroom staff interact with to write stories, configure stations, and check on generated bulletins.
 
-## Overview
+<img width="1496" height="1177" alt="Scherm­afbeelding 2026-04-08 om 00 02 59" src="https://github.com/user-attachments/assets/385195d1-2a8e-42ef-90f1-742d186b19fb" />
 
-Knabbel is a single-page application that connects to the Babbel REST API. Newsroom staff use it to manage the full bulletin workflow: writing stories, assigning voices, and reviewing generated audio.
+## What it does
 
-## Features
+Stories are the main thing. You create them, set a date range and which weekdays they should air, and optionally flag them as breaking. There's a teleprompter-style read mode for newsreaders to use in the studio.
 
-### Content Management
-- **Story management**: create, edit, and schedule news stories with date ranges and weekday-specific scheduling
-- **Breaking news**: flag stories as breaking to prioritize them in bulletin generation
-- **Read mode**: full-screen teleprompter view for newsreaders with scroll progress, word count, and estimated reading time
-- **Audio upload**: attach audio files to stories via file picker or drag-and-drop
+Each station gets its own voice and jingle setup. The mix point (when the newsreader voice starts over the jingle) is configurable per station.
 
-### Station Configuration
-- **Multi-station support**: configure voice and jingle settings per station
-- **Jingle management**: upload and preview station jingles with drag-and-drop, inline audio playback, and configurable mix points
-- **Station-voice linking**: assign voices to stations with per-station settings
-
-### Administration
-- **User management**: admin interface for managing users with role-based access (admin, editor, viewer)
-- **Bulletin overview**: view generated bulletins with metadata, audio playback, and download
-- **Voice management**: create and manage newsreader voices
-
-### Technical Features
-- **OIDC authentication**: single sign-on via Microsoft Entra ID (with OAuth2 callback flow)
-- **Auto-generated API types**: TypeScript types generated from the Babbel OpenAPI specification
-- **Dark/light theme**: automatic theme switching via daisyUI (corporate/business themes)
-- **Responsive design**: mobile-friendly layout with collapsible sidebar navigation
+Three user roles: admin, editor, viewer. Login goes through Microsoft Entra ID (OIDC).
 
 ## Requirements
 
@@ -60,7 +42,7 @@ For production, set `PUBLIC_API_URL` to the full API URL (e.g. `https://babbel-a
 npm run dev       # Start dev server on port 3000
 ```
 
-The app runs in SPA mode. All routing is client-side with no server-side rendering.
+The app is a SPA, so no server-side rendering. Everything runs client-side.
 
 ### Available Commands
 
@@ -97,13 +79,11 @@ The `types:check` command verifies that local types are in sync with the remote 
 
 ## Deployment
 
-The build produces static files suitable for any static hosting:
-
 ```bash
 npm run build
 ```
 
-Output is in the `build/` directory. Since the app uses SPA mode with a fallback to `index.html`, configure your web server to serve `index.html` for all routes.
+This outputs static files to `build/`. You'll need to configure your web server to serve `index.html` for all routes (SPA fallback).
 
 ## Tech Stack
 
