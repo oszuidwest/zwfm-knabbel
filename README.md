@@ -8,27 +8,14 @@ Knabbel is a single-page application that connects to the Babbel REST API. Newsr
 
 ## Features
 
-### Content Management
-- **Story management**: create, edit, and schedule news stories with date ranges and weekday-specific scheduling
-- **Breaking news**: flag stories as breaking to prioritize them in bulletin generation
-- **Read mode**: full-screen teleprompter view for newsreaders with scroll progress, word count, and estimated reading time
-- **Audio upload**: attach audio files to stories via file picker or drag-and-drop
+### Stories
+Create and schedule news stories with date ranges and per-weekday scheduling. Stories can be flagged as breaking news to get priority in bulletin generation. There's a full-screen read mode that works as a teleprompter for newsreaders.
 
-### Station Configuration
-- **Multi-station support**: configure voice and jingle settings per station
-- **Jingle management**: upload and preview station jingles with drag-and-drop, inline audio playback, and configurable mix points
-- **Station-voice linking**: assign voices to stations with per-station settings
+### Stations
+Each station has its own voice and jingle configuration. Jingles have a configurable mix point that controls when the voice starts over the jingle.
 
-### Administration
-- **User management**: admin interface for managing users with role-based access (admin, editor, viewer)
-- **Bulletin overview**: view generated bulletins with metadata, audio playback, and download
-- **Voice management**: create and manage newsreader voices
-
-### Technical Features
-- **OIDC authentication**: single sign-on via Microsoft Entra ID (with OAuth2 callback flow)
-- **Auto-generated API types**: TypeScript types generated from the Babbel OpenAPI specification
-- **Dark/light theme**: automatic theme switching via daisyUI (corporate/business themes)
-- **Responsive design**: mobile-friendly layout with collapsible sidebar navigation
+### Users and Bulletins
+Three roles: admin, editor, and viewer. Admins can manage users and browse generated bulletins. Authentication is handled via Microsoft Entra ID (OIDC).
 
 ## Requirements
 
