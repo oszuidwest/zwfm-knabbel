@@ -6,14 +6,13 @@
   import { Plus, Pencil, Trash2 } from '$lib/components/icons'
   import { PageHeader, EmptyState, Pagination } from '$lib/components/ui'
   import type { PaginationInfo } from '$lib/utils/pagination'
-  import type { ComponentType, SvelteComponent, Snippet } from 'svelte'
+  import type { Component, Snippet } from 'svelte'
 
   interface Props {
     title: string
     subtitle: string
     items: T[]
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    icon: ComponentType<SvelteComponent<any>>
+    icon: Component
     newHref?: string
     newLabel?: string
     editHref?: (item: T) => string

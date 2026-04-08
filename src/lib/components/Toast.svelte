@@ -1,11 +1,11 @@
 <script lang="ts">
   import { toast } from '$lib/stores/toast'
-  import { CheckCircle, AlertCircle, AlertTriangle, Info, X } from './icons'
+  import { CircleCheckBig, CircleAlert, TriangleAlert, Info, X } from './icons'
 
   const iconMap = {
-    success: CheckCircle,
-    error: AlertCircle,
-    warning: AlertTriangle,
+    success: CircleCheckBig,
+    error: CircleAlert,
+    warning: TriangleAlert,
     info: Info,
   }
 
