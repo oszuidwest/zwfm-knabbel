@@ -12,6 +12,8 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      PUBLIC_API_URL: ''
 
     steps:
       - uses: actions/checkout@v6
