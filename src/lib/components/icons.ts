@@ -1,12 +1,12 @@
 export {
-  AlertCircle,
-  AlertTriangle,
+  CircleAlert,
+  TriangleAlert,
   Zap,
   ArchiveX,
   AudioWaveform,
   CassetteTape,
   Check,
-  CheckCircle,
+  CircleCheckBig,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -32,4 +32,4 @@ export {
   User,
   Users,
   X,
-} from 'lucide-svelte'
+} from '@lucide/svelte'

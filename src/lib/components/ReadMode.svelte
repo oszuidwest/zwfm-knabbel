@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { X, AlertTriangle } from './icons'
+  import { X, TriangleAlert } from './icons'
   import { formatDuration } from '$lib/utils/format'
 
   interface Props {
@@ -158,7 +158,7 @@
   {:else}
     <!-- Empty state -->
     <div class="flex flex-1 flex-col items-center justify-center gap-4 text-white/40">
-      <AlertTriangle
+      <TriangleAlert
         aria-hidden="true"
         class="size-12 text-primary opacity-60"
       />
