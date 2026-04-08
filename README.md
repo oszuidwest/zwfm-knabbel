@@ -30,8 +30,8 @@ cp .env.example .env
 
 Environment variables are set in `.env`:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
+| Variable         | Description                             | Default                                  |
+| ---------------- | --------------------------------------- | ---------------------------------------- |
 | `PUBLIC_API_URL` | Babbel API base URL (without `/api/v1`) | Empty (uses relative URLs for local dev) |
 
 For production, set `PUBLIC_API_URL` to the full API URL (e.g. `https://babbel-api.zuidwest.cloud`).
@@ -87,16 +87,16 @@ This outputs static files to `build/`. You'll need to configure your web server 
 
 ## Tech Stack
 
-| Technology | Purpose |
-|------------|---------|
-| [SvelteKit](https://svelte.dev/docs/kit) | Application framework (SPA mode with `adapter-static`) |
-| [Svelte 5](https://svelte.dev/) | UI framework with runes (`$state`, `$derived`, `$effect`) |
-| [TypeScript](https://www.typescriptlang.org/) | Strict type checking |
-| [Tailwind CSS 4](https://tailwindcss.com/) | Utility-first CSS |
-| [daisyUI 5](https://daisyui.com/) | Component library (corporate + business themes) |
-| [Zod](https://zod.dev/) | Form validation schemas |
-| [Lucide](https://lucide.dev/) | Icon library |
-| [openapi-typescript](https://openapi-ts.dev/) | API type generation from OpenAPI spec |
+| Technology                                    | Purpose                                                   |
+| --------------------------------------------- | --------------------------------------------------------- |
+| [SvelteKit](https://svelte.dev/docs/kit)      | Application framework (SPA mode with `adapter-static`)    |
+| [Svelte 5](https://svelte.dev/)               | UI framework with runes (`$state`, `$derived`, `$effect`) |
+| [TypeScript](https://www.typescriptlang.org/) | Strict type checking                                      |
+| [Tailwind CSS 4](https://tailwindcss.com/)    | Utility-first CSS                                         |
+| [daisyUI 5](https://daisyui.com/)             | Component library (corporate + business themes)           |
+| [Zod](https://zod.dev/)                       | Form validation schemas                                   |
+| [Lucide](https://lucide.dev/)                 | Icon library                                              |
+| [openapi-typescript](https://openapi-ts.dev/) | API type generation from OpenAPI spec                     |
 
 ## License
 
