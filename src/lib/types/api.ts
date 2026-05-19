@@ -3039,7 +3039,7 @@ export interface components {
         [key: string]: unknown
       }
     }
-    /** @description All fields are optional — only provided fields will be updated. Null is treated as omit. At least one non-null field must be provided. */
+    /** @description All fields are optional - only provided fields will be updated. Null is treated as omit. At least one non-null field must be provided. */
     UserUpdate: {
       /** @description Unique username (alphanumeric only) */
       username?: string
