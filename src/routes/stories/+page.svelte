@@ -94,22 +94,22 @@
 
   <!-- Date tabs + Audio filter -->
   <div class="flex flex-wrap items-center gap-2">
-    <div class="tabs-boxed tabs">
+    <div class="tabs tabs-box tabs-sm md:tabs-md">
       <button
-        class="tab-sm md:tab-md tab {dateFilter === '' ? 'tab-active' : ''}"
+        class="tab {dateFilter === '' ? 'tab-active' : ''}"
         onclick={() => updateFilters({ date: '', status: '' })}
       >
         Alle
       </button>
       <button
-        class="tab-sm md:tab-md tab {dateFilter === 'today' ? 'tab-active' : ''}"
+        class="tab {dateFilter === 'today' ? 'tab-active' : ''}"
         onclick={() => updateFilters({ date: 'today' })}
       >
         Vandaag
         <span class="ml-1 hidden text-xs opacity-60 sm:inline">({formatDateLabel('today')})</span>
       </button>
       <button
-        class="tab-sm md:tab-md tab {dateFilter === 'tomorrow' ? 'tab-active' : ''}"
+        class="tab {dateFilter === 'tomorrow' ? 'tab-active' : ''}"
         onclick={() => updateFilters({ date: 'tomorrow' })}
       >
         Morgen
@@ -119,7 +119,7 @@
     </div>
 
     <select
-      class="select-bordered select select-sm"
+      class="select select-sm"
       value={audioFilter}
       onchange={e => updateFilters({ audio: e.currentTarget.value })}
       aria-label="Filter op audio"
@@ -147,7 +147,7 @@
     <!-- Desktop filters -->
     <div class="hidden items-center gap-2 md:flex">
       <select
-        class="select-bordered select select-sm"
+        class="select select-sm"
         value={statusFilter}
         onchange={e => updateFilters({ status: e.currentTarget.value })}
         aria-label="Filter op status"
@@ -166,7 +166,7 @@
         <input
           type="search"
           placeholder="Zoeken..."
-          class="input-bordered input input-sm pl-9"
+          class="input input-sm pl-9"
           value={searchQuery}
           onchange={e => updateFilters({ q: e.currentTarget.value })}
           aria-label="Zoeken in berichten"
@@ -361,16 +361,11 @@
   hasActiveFilters={hiddenFilterCount > 0}
   onClear={clearHiddenFilters}
 >
-  <div class="form-control">
-    <label
-      class="label"
-      for="modal-status"
-    >
-      <span class="label-text">Status</span>
-    </label>
+  <fieldset class="fieldset">
+    <legend class="fieldset-legend">Status</legend>
     <select
       id="modal-status"
-      class="select-bordered select w-full"
+      class="select w-full"
       value={statusFilter}
       onchange={e => updateFilters({ status: e.currentTarget.value })}
     >
@@ -379,24 +374,19 @@
         <option value={option.value}>{option.label}</option>
       {/each}
     </select>
-  </div>
+  </fieldset>
 
-  <div class="form-control">
-    <label
-      class="label"
-      for="modal-search"
-    >
-      <span class="label-text">Zoeken</span>
-    </label>
+  <fieldset class="fieldset">
+    <legend class="fieldset-legend">Zoeken</legend>
     <input
       id="modal-search"
       type="search"
       placeholder="Zoek in titel of tekst..."
-      class="input-bordered input w-full"
+      class="input w-full"
       value={searchQuery}
       onchange={e => updateFilters({ q: e.currentTarget.value })}
     />
-  </div>
+  </fieldset>
 </FilterModal>
 
 <!-- Leesmodus overlay -->

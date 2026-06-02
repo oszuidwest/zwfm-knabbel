@@ -122,7 +122,7 @@
             <div class="join w-full">
               <select
                 id="status"
-                class="select-bordered select join-item flex-1"
+                class="select join-item flex-1"
                 class:select-error={errors.status}
                 bind:value={form.status}
               >

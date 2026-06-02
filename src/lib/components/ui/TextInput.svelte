@@ -34,7 +34,7 @@
     {id}
     {type}
     bind:value
-    class="input-bordered input w-full"
+    class="input w-full"
     class:input-error={error}
     {placeholder}
     {disabled}

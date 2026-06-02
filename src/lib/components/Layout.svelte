@@ -98,6 +98,7 @@
     <label
       for="drawer-toggle"
       class="drawer-overlay"
+      aria-label="Menu sluiten"
     ></label>
     <aside class="flex min-h-full w-80 flex-col bg-base-100">
       <!-- Logo -->

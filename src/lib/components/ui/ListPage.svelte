@@ -2,7 +2,6 @@
   lang="ts"
   generics="T extends { id?: number; name?: string }"
 >
-  import { goto } from '$app/navigation'
   import { Plus, Pencil, Trash2 } from '$lib/components/icons'
   import { PageHeader, EmptyState, Pagination } from '$lib/components/ui'
   import type { PaginationInfo } from '$lib/utils/pagination'
@@ -51,12 +50,6 @@
     deleteLabel = (item: T) => item.name ?? 'dit item',
   }: Props = $props()
 
-  function navigateToEdit(item: T): void {
-    if (editHref) {
-      goto(editHref(item))
-    }
-  }
-
   function handleDeleteClick(item: T, e: Event): void {
     e.stopPropagation()
     onDelete?.(item, e)
@@ -99,32 +92,41 @@
       {#each items as item (item.id)}
         {@const Icon = icon}
         {@const isClickable = !!editHref}
-        <div
-          role={isClickable ? 'button' : undefined}
-          tabindex={isClickable ? 0 : undefined}
-          class="card bg-base-100 transition-shadow hover:shadow-md {isClickable
-            ? 'cursor-pointer active:bg-base-200'
-            : ''}"
-          onclick={isClickable ? () => navigateToEdit(item) : undefined}
-          onkeydown={isClickable
-            ? (e: KeyboardEvent) => e.key === 'Enter' && navigateToEdit(item)
-            : undefined}
-        >
+        <div class="card bg-base-100 transition-shadow hover:shadow-md">
           <div class="card-body p-4">
             <div class="flex items-center justify-between gap-3">
-              <div class="flex items-center gap-3">
-                <div
-                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+              {#if isClickable}
+                <a
+                  href={editHref(item)}
+                  class="flex min-w-0 flex-1 items-center gap-3 rounded-field active:bg-base-200"
                 >
-                  <Icon
-                    aria-hidden="true"
-                    class="h-5 w-5"
-                  />
+                  <div
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+                  >
+                    <Icon
+                      aria-hidden="true"
+                      class="h-5 w-5"
+                    />
+                  </div>
+                  <div class="min-w-0">
+                    {@render cardContent(item)}
+                  </div>
+                </a>
+              {:else}
+                <div class="flex min-w-0 flex-1 items-center gap-3">
+                  <div
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+                  >
+                    <Icon
+                      aria-hidden="true"
+                      class="h-5 w-5"
+                    />
+                  </div>
+                  <div class="min-w-0">
+                    {@render cardContent(item)}
+                  </div>
                 </div>
-                <div class="min-w-0">
-                  {@render cardContent(item)}
-                </div>
-              </div>
+              {/if}
               {#if cardActions}
                 <div class="flex gap-1">
                   {@render cardActions(item)}

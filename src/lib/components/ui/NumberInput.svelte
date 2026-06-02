@@ -36,7 +36,7 @@
     {id}
     type="number"
     bind:value
-    class="input-bordered input w-full"
+    class="input w-full"
     class:input-error={error}
     {min}
     {max}

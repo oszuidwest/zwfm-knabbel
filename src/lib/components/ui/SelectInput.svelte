@@ -59,7 +59,7 @@
   <select
     {id}
     bind:value
-    class="select-bordered select w-full"
+    class="select w-full"
     class:select-error={error}
     {disabled}
   >

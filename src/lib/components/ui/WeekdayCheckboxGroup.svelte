@@ -10,8 +10,8 @@
   let { value = $bindable(), label = 'Dagen' }: Props = $props()
 </script>
 
-<fieldset class="form-control">
-  <legend class="label-text mb-2">{label}</legend>
+<fieldset class="fieldset">
+  <legend class="fieldset-legend">{label}</legend>
   <div class="flex flex-wrap gap-2">
     {#each Object.entries(weekdayLabels) as [key, dayLabel] (key)}
       <label class="label cursor-pointer gap-2">
@@ -20,7 +20,7 @@
           bind:checked={value[key as keyof Weekdays]}
           class="checkbox checkbox-sm checkbox-primary"
         />
-        <span class="label-text">{dayLabel}</span>
+        <span>{dayLabel}</span>
       </label>
     {/each}
   </div>

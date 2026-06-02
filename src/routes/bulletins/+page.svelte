@@ -35,7 +35,7 @@
   <!-- Controls -->
   <div class="flex flex-wrap gap-2">
     <select
-      class="select-bordered select flex-1 select-sm sm:flex-none"
+      class="select flex-1 select-sm sm:flex-none"
       value={selectedStation}
       onchange={e => updateStationFilter(e.currentTarget.value)}
       aria-label="Filter op zender"

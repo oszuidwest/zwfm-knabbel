@@ -33,7 +33,7 @@
   <textarea
     {id}
     bind:value
-    class="textarea-bordered textarea w-full resize-y leading-relaxed"
+    class="textarea w-full resize-y leading-relaxed"
     class:textarea-error={error}
     {rows}
     {placeholder}

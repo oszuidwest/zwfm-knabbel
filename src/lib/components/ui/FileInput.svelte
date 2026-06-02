@@ -55,7 +55,7 @@
     type="file"
     {accept}
     onchange={handleChange}
-    class="file-input-bordered file-input w-full file-input-primary"
+    class="file-input w-full file-input-primary"
     class:file-input-error={error}
     {disabled}
   />

@@ -12,27 +12,17 @@
   let { id, label, error, hint, children }: Props = $props()
 </script>
 
-<div class="form-control">
+<fieldset class="fieldset">
   <label
-    class="label"
+    class="fieldset-legend"
     for={id}
   >
-    <span class="label-text">{label}</span>
+    {label}
   </label>
   {@render children()}
   {#if error}
-    <label
-      class="label"
-      for={id}
-    >
-      <span class="label-text-alt text-error">{error}</span>
-    </label>
+    <p class="label text-error">{error}</p>
   {:else if hint}
-    <label
-      class="label"
-      for={id}
-    >
-      <span class="label-text-alt">{hint}</span>
-    </label>
+    <p class="label">{hint}</p>
   {/if}
-</div>
+</fieldset>
