@@ -2,11 +2,13 @@
   import { goto } from '$app/navigation'
   import { storySchema, type StoryFormData } from '$lib/schemas/story'
   import { storiesApi } from '$lib/api/stories'
+  import { bulletinsApi } from '$lib/api/bulletins'
   import { getMediaUrl } from '$lib/api/client'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
   import { toSelectOptions, toStringOrEmpty } from '$lib/utils/form'
   import { statusOptions } from '$lib/utils/labels'
+  import { formatDateTime, formatDuration } from '$lib/utils/format'
   import {
     BreakingToggle,
     TextInput,
@@ -18,9 +20,9 @@
     PageHeader,
     WeekdayCheckboxGroup,
   } from '$lib/components/ui'
-  import { CassetteTape } from '$lib/components/icons'
+  import { CassetteTape, Eye, Podcast } from '$lib/components/icons'
   import ReadMode from '$lib/components/ReadMode.svelte'
-  import { maskToWeekdays, allWeekdaysTrue } from '$lib/types'
+  import { maskToWeekdays, allWeekdaysTrue, type Bulletin } from '$lib/types'
 
   let { data } = $props()
   let audioFile = $state<File | null>(null)
@@ -39,7 +41,12 @@
   let errors = $state<Record<string, string>>({})
   let submitting = $state(false)
 
+  let bulletins = $state<Bulletin[]>([])
+  let bulletinsTotal = $state(0)
+  let loadingMore = $state(false)
+
   const voiceOptions = $derived(toSelectOptions(data.voices))
+  const hasMoreBulletins = $derived(bulletins.length < bulletinsTotal)
 
   // Reset form when data changes (navigation between stories or after save)
   $effect(() => {
@@ -55,7 +62,26 @@
     }
     errors = {}
     audioFile = null
+    bulletins = data.bulletins
+    bulletinsTotal = data.bulletinsTotal
   })
+
+  async function loadMoreBulletins(): Promise<void> {
+    if (loadingMore || !data.story.id) return
+    loadingMore = true
+    try {
+      const res = await bulletinsApi.getByStory(data.story.id, {
+        limit: data.bulletinsPageSize,
+        offset: bulletins.length,
+      })
+      bulletins = [...bulletins, ...res.data]
+      bulletinsTotal = res.total
+    } catch {
+      toast.error('Kon meer bulletins niet laden')
+    } finally {
+      loadingMore = false
+    }
+  }
 
   async function handleSubmit(e: Event): Promise<void> {
     e.preventDefault()
@@ -196,6 +222,64 @@
           {submitting}
         />
       </form>
+    </div>
+  </div>
+
+  <div class="card bg-base-100">
+    <div class="card-body">
+      <h2 class="card-title">
+        <Podcast
+          aria-hidden="true"
+          class="h-5 w-5"
+        />
+        Uitgezonden in bulletins
+        {#if bulletinsTotal > 0}
+          <span class="text-sm font-normal text-base-content/60">({bulletinsTotal})</span>
+        {/if}
+      </h2>
+
+      {#if bulletins.length === 0}
+        <p class="text-sm text-base-content/60">
+          Dit bericht is nog niet uitgezonden in een bulletin.
+        </p>
+      {:else}
+        <ul class="divide-y divide-base-200">
+          {#each bulletins as bulletin (bulletin.id)}
+            <li class="flex items-center justify-between gap-3 py-3">
+              <div class="min-w-0">
+                <div class="truncate font-medium">{bulletin.station_name}</div>
+                <div class="flex flex-wrap items-center gap-2 text-sm text-base-content/60">
+                  <span>{formatDateTime(bulletin.created_at)}</span>
+                  <span>•</span>
+                  <span>{formatDuration(bulletin.duration_seconds)}</span>
+                  <span>•</span>
+                  <span>{bulletin.story_count ?? 0} berichten</span>
+                </div>
+              </div>
+              <a
+                href="/bulletins/{bulletin.id}"
+                class="btn btn-square btn-ghost btn-sm"
+                aria-label="Open bulletin"
+              >
+                <Eye class="h-4 w-4" />
+              </a>
+            </li>
+          {/each}
+        </ul>
+
+        {#if hasMoreBulletins}
+          <div class="mt-4 flex justify-center">
+            <button
+              type="button"
+              class="btn btn-outline btn-sm"
+              onclick={loadMoreBulletins}
+              disabled={loadingMore}
+            >
+              {loadingMore ? 'Laden…' : 'Meer laden'}
+            </button>
+          </div>
+        {/if}
+      {/if}
     </div>
   </div>
 </div>
