@@ -12,31 +12,7 @@ export interface paths {
       cookie?: never
     }
     /** Health check endpoint */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Service is healthy */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              /** @example ok */
-              status?: string
-              /** @example babbel-api */
-              service?: string
-            }
-          }
-        }
-      }
-    }
+    get: operations['getHealth']
     put?: never
     post?: never
     delete?: never
@@ -79,7 +55,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/auth/config': {
+  '/api/v1/auth/config': {
     parameters: {
       query?: never
       header?: never
@@ -90,40 +66,7 @@ export interface paths {
      * Get authentication configuration
      * @description Returns available authentication methods for the API
      */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Authentication configuration */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              /**
-               * @description Available authentication methods
-               * @example [
-               *       "local",
-               *       "oidc"
-               *     ]
-               */
-              methods: ('local' | 'oidc')[]
-              /**
-               * @description URL to start OAuth flow (only present when OAuth is enabled)
-               * @example /api/v1/auth/oauth
-               */
-              oauth_url?: string
-            }
-          }
-        }
-      }
-    }
+    get: operations['getAuthConfig']
     put?: never
     post?: never
     delete?: never
@@ -132,7 +75,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/sessions': {
+  '/api/v1/sessions': {
     parameters: {
       query?: never
       header?: never
@@ -142,48 +85,14 @@ export interface paths {
     get?: never
     put?: never
     /** Login with username and password (local authentication) */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': {
-            /** @example admin */
-            username: string
-            /** @example password */
-            password: string
-          }
-        }
-      }
-      responses: {
-        /** @description Session created successfully */
-        201: {
-          headers: {
-            'Set-Cookie'?: string
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              /** @example Login successful */
-              message?: string
-            }
-          }
-        }
-        400: components['responses']['BadRequest']
-        401: components['responses']['Unauthorized']
-      }
-    }
+    post: operations['postSessions']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/auth/oauth': {
+  '/api/v1/auth/oauth': {
     parameters: {
       query?: never
       header?: never
@@ -195,33 +104,7 @@ export interface paths {
      * @description Redirects to the configured OAuth provider (Azure AD, Google, etc.).
      *     For headless frontends, specify `frontend_url` parameter to control where users are redirected after login.
      */
-    get: {
-      parameters: {
-        query?: {
-          /**
-           * @description Frontend URL to redirect to after successful authentication.
-           *     If not provided, uses BABBEL_FRONTEND_URL environment variable.
-           * @example https://your-frontend.com/dashboard
-           */
-          frontend_url?: string
-        }
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Redirect to OAuth provider */
-        302: {
-          headers: {
-            Location?: string
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        400: components['responses']['BadRequest']
-      }
-    }
+    get: operations['getAuthOauth']
     put?: never
     post?: never
     delete?: never
@@ -230,7 +113,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/auth/oauth/callback': {
+  '/api/v1/auth/oauth/callback': {
     parameters: {
       query?: never
       header?: never
@@ -242,33 +125,7 @@ export interface paths {
      * @description Handles the OAuth callback from the provider and redirects to the frontend.
      *     This endpoint is called by the OAuth provider after user authentication.
      */
-    get: {
-      parameters: {
-        query: {
-          /** @description Authorization code from OAuth provider */
-          code: string
-          /** @description CSRF protection state */
-          state: string
-          /** @description Error from OAuth provider (if authentication failed) */
-          error?: string
-        }
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Redirect to frontend application */
-        302: {
-          headers: {
-            Location?: string
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        500: components['responses']['InternalServerError']
-      }
-    }
+    get: operations['getAuthOauthCallback']
     put?: never
     post?: never
     delete?: never
@@ -277,7 +134,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/sessions/current': {
+  '/api/v1/sessions/current': {
     parameters: {
       query?: never
       header?: never
@@ -288,55 +145,17 @@ export interface paths {
      * Get current user information
      * @description Returns the complete user object for the authenticated user, including full_name, email, and login statistics.
      */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Current user information */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['User']
-          }
-        }
-        401: components['responses']['Unauthorized']
-      }
-    }
+    get: operations['getSessionsCurrent']
     put?: never
     post?: never
     /** Logout and destroy session */
-    delete: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Session terminated successfully */
-        204: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        500: components['responses']['InternalServerError']
-      }
-    }
+    delete: operations['deleteSessionsCurrent']
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/stations': {
+  '/api/v1/stations': {
     parameters: {
       query?: never
       header?: never
@@ -354,7 +173,7 @@ export interface paths {
      *     ## Filter Fields
      *     Available filter fields:
      *     - `id` - Station ID
-     *     - `name` - Station name (supports like operator for pattern matching)
+     *     - `name` - Station name (supports like operator for substring matching)
      *     - `max_stories_per_block` - Maximum stories per bulletin block
      *     - `pause_seconds` - Pause duration between stories
      *     - `created_at` - Creation timestamp
@@ -371,116 +190,23 @@ export interface paths {
      *
      *     ## Examples
      *     - Search by name: `?search=Radio`
-     *     - Filter by name pattern: `?filter[name][like]=%FM%`
+     *     - Filter by name (contains): `?filter[name][like]=FM`
      *     - Sort by creation date: `?sort=-created_at`
      *     - Filter by max stories: `?filter[max_stories_per_block][gte]=5`
      *     - Field selection: `?fields=id,name,max_stories_per_block`
      *     - Complex query: `?search=Radio&filter[max_stories_per_block][gte]=5&sort=name&fields=id,name`
      */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Maximum number of items to return */
-          limit?: components['parameters']['limit']
-          /** @description Number of items to skip */
-          offset?: components['parameters']['offset']
-          /**
-           * @description Sort order. Use field:direction format or prefix notation:
-           *     - `name:asc` or `+name` - ascending
-           *     - `name:desc` or `-name` - descending
-           *     - `created_at:desc,name:asc` - multiple fields
-           */
-          sort?: components['parameters']['sort']
-          /**
-           * @description Comma-separated list of fields to include in response.
-           *     Use dot notation for nested fields.
-           */
-          fields?: components['parameters']['fields']
-          /**
-           * @description Search term for full-text search across relevant fields.
-           *     Searches in names, titles, text content depending on resource.
-           * @example news update
-           */
-          search?: components['parameters']['search']
-          /**
-           * @description Advanced filtering using field-based operators.
-           *
-           *     Basic usage: `filter[field]=value`
-           *
-           *     Advanced operators: `filter[field][op]=value`
-           *
-           *     Supported operators:
-           *     - `eq` - equals (default)
-           *     - `ne` - not equals
-           *     - `gt`, `gte`, `lt`, `lte` - comparisons
-           *     - `like` - pattern matching
-           *     - `in` - comma-separated values
-           *     - `null` - is/isn't null
-           *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-           *
-           *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-           */
-          filter?: components['parameters']['filter']
-        }
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description List of stations with pagination metadata */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['StationsListResponse']
-          }
-        }
-        500: components['responses']['InternalServerError']
-      }
-    }
+    get: operations['getStations']
     put?: never
     /** Create a new station */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['StationInput']
-        }
-      }
-      responses: {
-        /** @description Station created */
-        201: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              /** Format: int64 */
-              id?: number
-              message?: string
-            }
-          }
-        }
-        400: components['responses']['BadRequest']
-        409: components['responses']['Conflict']
-        422: components['responses']['UnprocessableEntity']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    post: operations['postStations']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/stations/{id}': {
+  '/api/v1/stations/{id}': {
     parameters: {
       query?: never
       header?: never
@@ -488,95 +214,18 @@ export interface paths {
       cookie?: never
     }
     /** Get station by ID */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Station details */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['Station']
-          }
-        }
-        404: components['responses']['NotFound']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    get: operations['getStationsId']
     /** Update station */
-    put: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['StationInput']
-        }
-      }
-      responses: {
-        /** @description Station updated successfully */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['Station']
-          }
-        }
-        400: components['responses']['BadRequest']
-        404: components['responses']['NotFound']
-        409: components['responses']['Conflict']
-        422: components['responses']['UnprocessableEntity']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    put: operations['putStationsId']
     post?: never
     /** Delete station */
-    delete: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Station deleted */
-        204: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        404: components['responses']['NotFound']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    delete: operations['deleteStationsId']
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/voices': {
+  '/api/v1/voices': {
     parameters: {
       query?: never
       header?: never
@@ -594,7 +243,7 @@ export interface paths {
      *     ## Filter Fields
      *     Available filter fields:
      *     - `id` - Voice ID
-     *     - `name` - Voice name (supports like operator for pattern matching)
+     *     - `name` - Voice name (supports like operator for substring matching)
      *     - `created_at` - Creation timestamp
      *
      *     ## Sort Fields
@@ -606,119 +255,23 @@ export interface paths {
      *
      *     ## Examples
      *     - Search by name: `?search=John`
-     *     - Filter by name pattern: `?filter[name][like]=%Announcer%`
+     *     - Filter by name (contains): `?filter[name][like]=Announcer`
      *     - Sort by name descending: `?sort=-name`
      *     - Multiple filters: `?filter[id][in]=1,2,3&sort=name`
      *     - Field selection: `?fields=id,name,created_at`
      *     - Complex query: `?search=Voice&filter[id][in]=1,2,3&sort=-name&fields=id,name&limit=10`
      */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Maximum number of items to return */
-          limit?: components['parameters']['limit']
-          /** @description Number of items to skip */
-          offset?: components['parameters']['offset']
-          /**
-           * @description Sort order. Use field:direction format or prefix notation:
-           *     - `name:asc` or `+name` - ascending
-           *     - `name:desc` or `-name` - descending
-           *     - `created_at:desc,name:asc` - multiple fields
-           */
-          sort?: components['parameters']['sort']
-          /**
-           * @description Comma-separated list of fields to include in response.
-           *     Use dot notation for nested fields.
-           */
-          fields?: components['parameters']['fields']
-          /**
-           * @description Search term for full-text search across relevant fields.
-           *     Searches in names, titles, text content depending on resource.
-           * @example news update
-           */
-          search?: components['parameters']['search']
-          /**
-           * @description Advanced filtering using field-based operators.
-           *
-           *     Basic usage: `filter[field]=value`
-           *
-           *     Advanced operators: `filter[field][op]=value`
-           *
-           *     Supported operators:
-           *     - `eq` - equals (default)
-           *     - `ne` - not equals
-           *     - `gt`, `gte`, `lt`, `lte` - comparisons
-           *     - `like` - pattern matching
-           *     - `in` - comma-separated values
-           *     - `null` - is/isn't null
-           *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-           *
-           *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-           */
-          filter?: components['parameters']['filter']
-        }
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description List of voices with pagination metadata */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['VoicesListResponse']
-          }
-        }
-        500: components['responses']['InternalServerError']
-      }
-    }
+    get: operations['getVoices']
     put?: never
     /** Create a new voice */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': {
-            name: string
-            /** @description ElevenLabs voice identifier for TTS generation */
-            elevenlabs_voice_id?: string | null
-          }
-        }
-      }
-      responses: {
-        /** @description Voice created */
-        201: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              /** Format: int64 */
-              id?: number
-              message?: string
-            }
-          }
-        }
-        400: components['responses']['BadRequest']
-        409: components['responses']['Conflict']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    post: operations['postVoices']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/voices/{id}': {
+  '/api/v1/voices/{id}': {
     parameters: {
       query?: never
       header?: never
@@ -726,99 +279,18 @@ export interface paths {
       cookie?: never
     }
     /** Get voice by ID */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Voice details */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['Voice']
-          }
-        }
-        404: components['responses']['NotFound']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    get: operations['getVoicesId']
     /** Update voice */
-    put: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': {
-            name?: string
-            /** @description ElevenLabs voice identifier for TTS generation (set to null or empty string to clear) */
-            elevenlabs_voice_id?: string | null
-          }
-        }
-      }
-      responses: {
-        /** @description Voice updated successfully */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['Voice']
-          }
-        }
-        400: components['responses']['BadRequest']
-        404: components['responses']['NotFound']
-        409: components['responses']['Conflict']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    put: operations['putVoicesId']
     post?: never
     /** Delete voice */
-    delete: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Voice deleted */
-        204: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        404: components['responses']['NotFound']
-        409: components['responses']['Conflict']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    delete: operations['deleteVoicesId']
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/stories': {
+  '/api/v1/stories': {
     parameters: {
       query?: never
       header?: never
@@ -869,138 +341,20 @@ export interface paths {
      *     - Weekend stories with voice: `?filter[weekdays][band]=65&filter[voice_id][ne]=null`
      *     - Search with sorting: `?search=breaking&sort=-created_at`
      */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Maximum number of items to return */
-          limit?: components['parameters']['limit']
-          /** @description Number of items to skip */
-          offset?: components['parameters']['offset']
-          /**
-           * @description Sort order. Use field:direction format or prefix notation:
-           *     - `name:asc` or `+name` - ascending
-           *     - `name:desc` or `-name` - descending
-           *     - `created_at:desc,name:asc` - multiple fields
-           */
-          sort?: components['parameters']['sort']
-          /**
-           * @description Comma-separated list of fields to include in response.
-           *     Use dot notation for nested fields.
-           */
-          fields?: components['parameters']['fields']
-          /**
-           * @description Search term for full-text search across relevant fields.
-           *     Searches in names, titles, text content depending on resource.
-           * @example news update
-           */
-          search?: components['parameters']['search']
-          /**
-           * @description Filter soft-deleted records:
-           *     - (omitted) - only non-deleted records (default)
-           *     - `only` - only soft-deleted records
-           *     - `with` - all records including deleted
-           */
-          trashed?: components['parameters']['trashed']
-          /**
-           * @description Advanced filtering using field-based operators.
-           *
-           *     Basic usage: `filter[field]=value`
-           *
-           *     Advanced operators: `filter[field][op]=value`
-           *
-           *     Supported operators:
-           *     - `eq` - equals (default)
-           *     - `ne` - not equals
-           *     - `gt`, `gte`, `lt`, `lte` - comparisons
-           *     - `like` - pattern matching
-           *     - `in` - comma-separated values
-           *     - `null` - is/isn't null
-           *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-           *
-           *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-           */
-          filter?: components['parameters']['filter']
-        }
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description List of stories */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              data?: components['schemas']['Story'][]
-              total?: number
-              limit?: number
-              offset?: number
-            }
-          }
-        }
-      }
-    }
+    get: operations['getStories']
     put?: never
     /**
      * Create a new story
      * @description Create a new story with JSON body. Audio file must be uploaded separately via POST /stories/{id}/audio.
      */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          /**
-           * @example {
-           *       "title": "Breaking News Update",
-           *       "text": "This is important news content for our listeners.",
-           *       "voice_id": 1,
-           *       "status": "active",
-           *       "start_date": "2024-01-20",
-           *       "end_date": "2024-01-27",
-           *       "weekdays": 62,
-           *       "is_breaking": true,
-           *       "metadata": {
-           *         "priority": "high",
-           *         "category": "breaking"
-           *       }
-           *     }
-           */
-          'application/json': components['schemas']['StoryCreate']
-        }
-      }
-      responses: {
-        /** @description Story created */
-        201: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              /** Format: int64 */
-              id?: number
-              message?: string
-            }
-          }
-        }
-        400: components['responses']['BadRequest']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    post: operations['postStories']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/stories/{id}/audio': {
+  '/api/v1/stories/{id}/audio': {
     parameters: {
       query?: never
       header?: never
@@ -1008,88 +362,21 @@ export interface paths {
       cookie?: never
     }
     /** Download story audio file */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Audio file */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'audio/wav': string
-          }
-        }
-        /** @description Story not found or no audio file */
-        404: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-      }
-    }
+    get: operations['getStoriesIdAudio']
     put?: never
     /**
      * Upload story audio file
-     * @description Upload audio file for a story. Accepts WAV or MP3 format.
+     * @description Upload audio file for a story. Accepts WAV, MP3, M4A, AAC, OGG, FLAC, and Opus files.
      *     Audio duration is automatically calculated and stored.
      */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'multipart/form-data': {
-            /**
-             * Format: binary
-             * @description Audio file (WAV, MP3, or other supported formats)
-             */
-            audio: string
-          }
-        }
-      }
-      responses: {
-        /** @description Audio uploaded successfully */
-        201: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              /** @example Audio uploaded successfully */
-              message?: string
-            }
-          }
-        }
-        400: components['responses']['BadRequest']
-        404: components['responses']['NotFound']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    post: operations['postStoriesIdAudio']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/stories/{id}/tts': {
+  '/api/v1/stories/{id}/tts': {
     parameters: {
       query?: never
       header?: never
@@ -1112,80 +399,14 @@ export interface paths {
      *
      *     **Audio pipeline:** ElevenLabs returns MP3 → converted to 48kHz mono WAV → stored as story audio.
      */
-    post: {
-      parameters: {
-        query?: {
-          /** @description Set to "true" to overwrite existing audio. Without this, the request fails if the story already has audio. */
-          force?: 'true'
-        }
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description TTS audio generated successfully */
-        201: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              /** @example TTS audio generated successfully */
-              message?: string
-            }
-          }
-        }
-        /**
-         * @description Validation error. Possible causes:
-         *     - Story has no text
-         *     - Story has no voice assigned
-         *     - Voice has no ElevenLabs voice ID configured
-         *     - Story already has audio (use ?force=true to overwrite)
-         *     - ElevenLabs voice ID not found
-         *     - ElevenLabs API key is invalid
-         *     - ElevenLabs rate limit exceeded
-         */
-        400: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/problem+json': components['schemas']['ProblemDetails']
-          }
-        }
-        404: components['responses']['NotFound']
-        500: components['responses']['InternalServerError']
-        /** @description TTS is not configured on the server */
-        501: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            /**
-             * @example {
-             *       "type": "https://babbel.api/problems/tts.not_configured",
-             *       "title": "Not Implemented",
-             *       "status": 501,
-             *       "detail": "Text-to-speech is not configured",
-             *       "hint": "Set BABBEL_ELEVENLABS_API_KEY to enable TTS"
-             *     }
-             */
-            'application/problem+json': components['schemas']['ProblemDetails']
-          }
-        }
-      }
-    }
+    post: operations['postStoriesIdTts']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/stories/{id}': {
+  '/api/v1/stories/{id}': {
     parameters: {
       query?: never
       header?: never
@@ -1193,80 +414,13 @@ export interface paths {
       cookie?: never
     }
     /** Get story by ID */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Story details */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['Story']
-          }
-        }
-        404: components['responses']['NotFound']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    get: operations['getStoriesId']
     /**
      * Update story (full update)
      * @description Update story with JSON body. All fields are optional - only provided fields will be updated.
      *     Audio file must be uploaded separately via POST /stories/{id}/audio.
      */
-    put: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          /**
-           * @example {
-           *       "title": "Updated Breaking News",
-           *       "text": "This is the updated news content.",
-           *       "voice_id": 2,
-           *       "status": "active",
-           *       "weekdays": 65,
-           *       "metadata": {
-           *         "priority": "medium",
-           *         "updated": true
-           *       }
-           *     }
-           */
-          'application/json': components['schemas']['StoryUpdate']
-        }
-      }
-      responses: {
-        /** @description Story updated */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['Story']
-          }
-        }
-        400: components['responses']['BadRequest']
-        404: components['responses']['NotFound']
-        422: components['responses']['UnprocessableEntity']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    put: operations['putStoriesId']
     post?: never
     /**
      * Delete story (soft delete)
@@ -1274,28 +428,7 @@ export interface paths {
      *     The story will no longer appear in listings unless trashed=with is specified.
      *     Story data and audio files are preserved for potential restoration.
      */
-    delete: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Story soft deleted successfully */
-        204: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        404: components['responses']['NotFound']
-      }
-    }
+    delete: operations['deleteStoriesId']
     options?: never
     head?: never
     /**
@@ -1305,53 +438,10 @@ export interface paths {
      *     - Change story status (draft, active, expired)
      *     - Restore a soft-deleted story by setting deleted_at to empty string
      */
-    patch: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': {
-            /**
-             * @description Story status
-             * @enum {string}
-             */
-            status?: 'draft' | 'active' | 'expired'
-            /** @description Set to empty string ("") to restore a soft-deleted story, or any other value to soft-delete */
-            deleted_at?: string
-          }
-        }
-      }
-      responses: {
-        /** @description Story state updated successfully (status change or restore). Returns the updated story. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['Story']
-          }
-        }
-        /** @description Story soft-deleted successfully (when deleted_at is set to a non-empty value) */
-        204: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        400: components['responses']['BadRequest']
-        404: components['responses']['NotFound']
-      }
-    }
+    patch: operations['patchStoriesId']
     trace?: never
   }
-  '/stories/{id}/bulletins': {
+  '/api/v1/stories/{id}/bulletins': {
     parameters: {
       query?: never
       header?: never
@@ -1361,119 +451,43 @@ export interface paths {
     /**
      * Get bulletin history for a story
      * @description Returns all bulletins that have included this specific story with modern query parameter support.
-     *     Ordered by most recent inclusion first by default.
+     *     Ordered by bulletin creation time descending by default.
      *
      *     ## Search Fields
      *     Full-text search across:
-     *     - `b.filename` - Bulletin filename
-     *     - `s.name` - Station name
+     *     - `filename` - Bulletin filename
      *
      *     ## Filter Fields
      *     Available filter fields:
      *     - `id` - Bulletin ID
-     *     - `bulletin_id` - Bulletin ID (same as id)
      *     - `station_id` - Station ID
      *     - `filename` - Bulletin filename
-     *     - `audio_file` - Audio filename
      *     - `duration_seconds` - Duration in seconds
      *     - `file_size` - File size in bytes
      *     - `story_count` - Number of stories in bulletin
      *     - `file_purged_at` - When audio file was cleaned up (null = file exists)
      *     - `created_at` - Bulletin creation timestamp
-     *     - `station_name` - Station name (from join)
-     *     - `story_order` - Order of story in bulletin
-     *     - `included_at` - When story was included in bulletin
      *
      *     ## Sort Fields
      *     Available sort fields:
      *     - `id` - Bulletin ID
      *     - `station_id` - Station ID
      *     - `filename` - Bulletin filename
-     *     - `audio_file` - Audio filename
      *     - `duration_seconds` - Duration
      *     - `file_size` - File size
      *     - `story_count` - Number of stories
      *     - `file_purged_at` - File cleanup timestamp
      *     - `created_at` - Bulletin creation timestamp
-     *     - `station_name` - Station name
-     *     - `story_order` - Story order in bulletin
-     *     - `included_at` - Inclusion timestamp (default: descending)
      *
      *     ## Examples
      *     - Search by bulletin filename: `?search=bulletin_2024`
      *     - Filter by station: `?filter[station_id]=1`
-     *     - Filter by date range: `?filter[included_at][gte]=2024-01-01`
-     *     - Sort by story order: `?sort=story_order`
-     *     - Field selection: `?fields=id,filename,story_order,included_at`
-     *     - Complex query: `?search=bulletin&filter[story_order][lte]=2&sort=-included_at&fields=id,filename,story_order`
+     *     - Filter by date range: `?filter[created_at][gte]=2024-01-01&filter[created_at][lte]=2024-12-31`
+     *     - Sort by creation date: `?sort=-created_at`
+     *     - Field selection: `?fields=id,filename,created_at`
+     *     - Complex query: `?search=bulletin&filter[story_count][gte]=2&sort=-created_at&fields=id,filename,story_count`
      */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Maximum number of items to return */
-          limit?: components['parameters']['limit']
-          /** @description Number of items to skip */
-          offset?: components['parameters']['offset']
-          /**
-           * @description Sort order. Use field:direction format or prefix notation:
-           *     - `name:asc` or `+name` - ascending
-           *     - `name:desc` or `-name` - descending
-           *     - `created_at:desc,name:asc` - multiple fields
-           */
-          sort?: components['parameters']['sort']
-          /**
-           * @description Comma-separated list of fields to include in response.
-           *     Use dot notation for nested fields.
-           */
-          fields?: components['parameters']['fields']
-          /**
-           * @description Search term for full-text search across relevant fields.
-           *     Searches in names, titles, text content depending on resource.
-           * @example news update
-           */
-          search?: components['parameters']['search']
-          /**
-           * @description Advanced filtering using field-based operators.
-           *
-           *     Basic usage: `filter[field]=value`
-           *
-           *     Advanced operators: `filter[field][op]=value`
-           *
-           *     Supported operators:
-           *     - `eq` - equals (default)
-           *     - `ne` - not equals
-           *     - `gt`, `gte`, `lt`, `lte` - comparisons
-           *     - `like` - pattern matching
-           *     - `in` - comma-separated values
-           *     - `null` - is/isn't null
-           *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-           *
-           *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-           */
-          filter?: components['parameters']['filter']
-        }
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Story bulletin history with pagination metadata */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['StoryBulletinsListResponse']
-          }
-        }
-        404: components['responses']['NotFound']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    get: operations['getStoriesIdBulletins']
     put?: never
     post?: never
     delete?: never
@@ -1482,7 +496,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/users': {
+  '/api/v1/users': {
     parameters: {
       query?: never
       header?: never
@@ -1490,118 +504,17 @@ export interface paths {
       cookie?: never
     }
     /** List all users */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Maximum number of items to return */
-          limit?: components['parameters']['limit']
-          /** @description Number of items to skip */
-          offset?: components['parameters']['offset']
-          /**
-           * @description Sort order. Use field:direction format or prefix notation:
-           *     - `name:asc` or `+name` - ascending
-           *     - `name:desc` or `-name` - descending
-           *     - `created_at:desc,name:asc` - multiple fields
-           */
-          sort?: components['parameters']['sort']
-          /**
-           * @description Comma-separated list of fields to include in response.
-           *     Use dot notation for nested fields.
-           */
-          fields?: components['parameters']['fields']
-          /**
-           * @description Search term for full-text search across relevant fields.
-           *     Searches in names, titles, text content depending on resource.
-           * @example news update
-           */
-          search?: components['parameters']['search']
-          /**
-           * @description Filter soft-deleted records:
-           *     - (omitted) - only non-deleted records (default)
-           *     - `only` - only soft-deleted records
-           *     - `with` - all records including deleted
-           */
-          trashed?: components['parameters']['trashed']
-          /**
-           * @description Advanced filtering using field-based operators.
-           *
-           *     Basic usage: `filter[field]=value`
-           *
-           *     Advanced operators: `filter[field][op]=value`
-           *
-           *     Supported operators:
-           *     - `eq` - equals (default)
-           *     - `ne` - not equals
-           *     - `gt`, `gte`, `lt`, `lte` - comparisons
-           *     - `like` - pattern matching
-           *     - `in` - comma-separated values
-           *     - `null` - is/isn't null
-           *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-           *
-           *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-           */
-          filter?: components['parameters']['filter']
-        }
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description List of users */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              data?: components['schemas']['User'][]
-              total?: number
-              limit?: number
-              offset?: number
-            }
-          }
-        }
-      }
-    }
+    get: operations['getUsers']
     put?: never
     /** Create a new user */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['UserInput']
-        }
-      }
-      responses: {
-        /** @description User created */
-        201: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              /** Format: int64 */
-              id?: number
-              message?: string
-            }
-          }
-        }
-        400: components['responses']['BadRequest']
-      }
-    }
+    post: operations['postUsers']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/users/{id}': {
+  '/api/v1/users/{id}': {
     parameters: {
       query?: never
       header?: never
@@ -1609,93 +522,20 @@ export interface paths {
       cookie?: never
     }
     /** Get user by ID */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description User details */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['User']
-          }
-        }
-        404: components['responses']['NotFound']
-      }
-    }
+    get: operations['getUsersId']
     /**
      * Update user
      * @description Update user information. All fields are optional - only provided fields will be updated.
      *     Can also suspend/restore users by setting the suspended field to true/false.
      */
-    put: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['UserUpdate']
-        }
-      }
-      responses: {
-        /** @description User updated successfully */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['User']
-          }
-        }
-        404: components['responses']['NotFound']
-      }
-    }
+    put: operations['putUsersId']
     post?: never
     /**
-     * Permanently delete user
-     * @description Permanently deletes a user account and all associated data.
-     *     This action cannot be undone. All active sessions for the user will be terminated.
+     * Delete user
+     * @description Soft-deletes a user account. All active sessions for the user will be terminated.
      *     Cannot delete the last admin user.
      */
-    delete: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description User permanently deleted */
-        204: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        400: components['responses']['BadRequest']
-        404: components['responses']['NotFound']
-      }
-    }
+    delete: operations['deleteUsersId']
     options?: never
     head?: never
     /**
@@ -1704,44 +544,10 @@ export interface paths {
      *     This is an alternative to using PUT /users/{id} with the suspended field.
      *     Use this endpoint when you only want to change suspension status without providing other user fields.
      */
-    patch: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': {
-            /**
-             * @description Action to perform on user account
-             * @enum {string}
-             */
-            action: 'suspend' | 'restore'
-          }
-        }
-      }
-      responses: {
-        /** @description User state updated successfully. Returns the updated user. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['User']
-          }
-        }
-        400: components['responses']['BadRequest']
-        404: components['responses']['NotFound']
-      }
-    }
+    patch: operations['patchUsersId']
     trace?: never
   }
-  '/bulletins': {
+  '/api/v1/bulletins': {
     parameters: {
       query?: never
       header?: never
@@ -1754,35 +560,29 @@ export interface paths {
      *
      *     ## Search Fields
      *     Full-text search across:
-     *     - `b.filename` - Bulletin filename
-     *     - `s.name` - Station name
+     *     - `filename` - Bulletin filename
      *
      *     ## Filter Fields
      *     Available filter fields:
      *     - `id` - Bulletin ID
      *     - `station_id` - Station ID
      *     - `filename` - Bulletin filename
-     *     - `audio_file` - Audio filename
      *     - `duration_seconds` - Duration in seconds
      *     - `file_size` - File size in bytes
      *     - `story_count` - Number of stories in bulletin
      *     - `file_purged_at` - When audio file was cleaned up (null = file exists)
-     *     - `metadata` - JSON metadata
      *     - `created_at` - Creation timestamp
-     *     - `station_name` - Station name (from join)
      *
      *     ## Sort Fields
      *     Available sort fields:
      *     - `id` - Bulletin ID
      *     - `station_id` - Station ID
      *     - `filename` - Bulletin filename
-     *     - `audio_file` - Audio filename
      *     - `duration_seconds` - Duration
      *     - `file_size` - File size
      *     - `story_count` - Number of stories
      *     - `file_purged_at` - File cleanup timestamp
      *     - `created_at` - Creation timestamp (default: descending)
-     *     - `station_name` - Station name
      *
      *     ## Notes
      *     To get story information for a bulletin, use GET /bulletins/{id}/stories after fetching the bulletin list.
@@ -1790,77 +590,13 @@ export interface paths {
      *     ## Examples
      *     - Search by filename: `?search=bulletin_2024`
      *     - Filter by station: `?filter[station_id]=1`
-     *     - Filter by date range: `?filter[created_at][gte]=2024-01-01`
+     *     - Filter by date range: `?filter[created_at][gte]=2024-01-01&filter[created_at][lte]=2024-12-31`
      *     - Sort by duration: `?sort=-duration_seconds`
      *     - Filter by story count: `?filter[story_count][gte]=3`
      *     - Field selection: `?fields=id,filename,duration_seconds,story_count,created_at`
      *     - Complex query: `?search=2024&filter[station_id]=1&filter[story_count][gte]=3&sort=-created_at`
      */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Maximum number of items to return */
-          limit?: components['parameters']['limit']
-          /** @description Number of items to skip */
-          offset?: components['parameters']['offset']
-          /**
-           * @description Sort order. Use field:direction format or prefix notation:
-           *     - `name:asc` or `+name` - ascending
-           *     - `name:desc` or `-name` - descending
-           *     - `created_at:desc,name:asc` - multiple fields
-           */
-          sort?: components['parameters']['sort']
-          /**
-           * @description Comma-separated list of fields to include in response.
-           *     Use dot notation for nested fields.
-           */
-          fields?: components['parameters']['fields']
-          /**
-           * @description Search term for full-text search across relevant fields.
-           *     Searches in names, titles, text content depending on resource.
-           * @example news update
-           */
-          search?: components['parameters']['search']
-          /**
-           * @description Advanced filtering using field-based operators.
-           *
-           *     Basic usage: `filter[field]=value`
-           *
-           *     Advanced operators: `filter[field][op]=value`
-           *
-           *     Supported operators:
-           *     - `eq` - equals (default)
-           *     - `ne` - not equals
-           *     - `gt`, `gte`, `lt`, `lte` - comparisons
-           *     - `like` - pattern matching
-           *     - `in` - comma-separated values
-           *     - `null` - is/isn't null
-           *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-           *
-           *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-           */
-          filter?: components['parameters']['filter']
-        }
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description List of bulletins with pagination metadata */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['BulletinsListResponse']
-          }
-        }
-        401: components['responses']['Unauthorized']
-        403: components['responses']['Forbidden']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    get: operations['getBulletins']
     put?: never
     post?: never
     delete?: never
@@ -1869,7 +605,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/bulletins/{id}': {
+  '/api/v1/bulletins/{id}': {
     parameters: {
       query?: never
       header?: never
@@ -1884,46 +620,7 @@ export interface paths {
      *     - `station_name` - Name of the associated station
      *     - `audio_url` - URL to download the bulletin audio file
      */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Bulletin details */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            /**
-             * @example {
-             *       "id": 150,
-             *       "station_id": 1,
-             *       "station_name": "Radio Station 1",
-             *       "filename": "bulletin_1_20240120_140500.wav",
-             *       "audio_url": "/bulletins/150/audio",
-             *       "duration_seconds": 185.4,
-             *       "file_size": 2965440,
-             *       "story_count": 4,
-             *       "created_at": "2024-01-20T14:05:00Z"
-             *     }
-             */
-            'application/json': components['schemas']['BulletinResponse']
-          }
-        }
-        401: components['responses']['Unauthorized']
-        403: components['responses']['Forbidden']
-        404: components['responses']['NotFound']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    get: operations['getBulletinsId']
     put?: never
     post?: never
     delete?: never
@@ -1932,7 +629,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/stations/{id}/bulletins': {
+  '/api/v1/stations/{id}/bulletins': {
     parameters: {
       query?: never
       header?: never
@@ -1946,37 +643,35 @@ export interface paths {
      *
      *     ## Search Fields
      *     Full-text search across:
-     *     - `b.filename` - Bulletin filename
-     *     - `s.name` - Station name
+     *     - `filename` - Bulletin filename
      *
      *     ## Filter Fields
      *     Available filter fields:
      *     - `id` - Bulletin ID
      *     - `station_id` - Station ID (automatically filtered by path parameter)
      *     - `filename` - Bulletin filename
-     *     - `audio_file` - Audio filename
      *     - `duration_seconds` - Duration in seconds
      *     - `file_size` - File size in bytes
      *     - `story_count` - Number of stories in bulletin
      *     - `file_purged_at` - When audio file was cleaned up (null = file exists)
      *     - `created_at` - Creation timestamp
-     *     - `station_name` - Station name (from join)
      *
      *     ## Sort Fields
      *     Available sort fields:
      *     - `id` - Bulletin ID
      *     - `filename` - Bulletin filename
-     *     - `audio_file` - Audio filename
      *     - `duration_seconds` - Duration
      *     - `file_size` - File size
      *     - `story_count` - Number of stories
      *     - `file_purged_at` - File cleanup timestamp
      *     - `created_at` - Creation timestamp (default: descending)
-     *     - `station_name` - Station name
      *
      *     ## Special Parameters
-     *     - `latest=true` - Returns only the latest bulletin with cache headers (Last-Modified, ETag)
-     *     - `limit=1` - Also triggers the special single-bulletin response with cache headers, equivalent to `latest=true`
+     *     - `latest=true` - Returns the latest bulletin object directly with `X-Cache` and `Age` headers
+     *     - `limit=1` - Also triggers the same single-bulletin response as `latest=true`
+     *
+     *     When the latest shortcut is active, the only other accepted query parameter is `limit=1`.
+     *     `filter`, `sort`, `fields`, `search`, `trashed`, `offset`, and `limit!=1` are rejected with 422.
      *
      *     ## Notes
      *     To get story information for bulletins, use GET /bulletins/{id}/stories for each bulletin.
@@ -1984,80 +679,12 @@ export interface paths {
      *     ## Examples
      *     - Latest bulletin: `?latest=true`
      *     - Search by filename: `?search=bulletin_2024`
-     *     - Filter by date range: `?filter[created_at][gte]=2024-01-01`
+     *     - Filter by date range: `?filter[created_at][gte]=2024-01-01&filter[created_at][lte]=2024-12-31`
      *     - Sort by duration: `?sort=-duration_seconds`
      *     - Field selection: `?fields=id,filename,duration_seconds,created_at`
      *     - Complex query: `?search=2024&filter[story_count][gte]=3&sort=-created_at&fields=id,filename,story_count`
      */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Maximum number of items to return */
-          limit?: components['parameters']['limit']
-          /** @description Number of items to skip */
-          offset?: components['parameters']['offset']
-          /**
-           * @description Sort order. Use field:direction format or prefix notation:
-           *     - `name:asc` or `+name` - ascending
-           *     - `name:desc` or `-name` - descending
-           *     - `created_at:desc,name:asc` - multiple fields
-           */
-          sort?: components['parameters']['sort']
-          /**
-           * @description Comma-separated list of fields to include in response.
-           *     Use dot notation for nested fields.
-           */
-          fields?: components['parameters']['fields']
-          /**
-           * @description Search term for full-text search across relevant fields.
-           *     Searches in names, titles, text content depending on resource.
-           * @example news update
-           */
-          search?: components['parameters']['search']
-          /**
-           * @description Advanced filtering using field-based operators.
-           *
-           *     Basic usage: `filter[field]=value`
-           *
-           *     Advanced operators: `filter[field][op]=value`
-           *
-           *     Supported operators:
-           *     - `eq` - equals (default)
-           *     - `ne` - not equals
-           *     - `gt`, `gte`, `lt`, `lte` - comparisons
-           *     - `like` - pattern matching
-           *     - `in` - comma-separated values
-           *     - `null` - is/isn't null
-           *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-           *
-           *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-           */
-          filter?: components['parameters']['filter']
-          /** @description Return only the latest bulletin for this station (equivalent to limit=1) */
-          latest?: boolean
-        }
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description List of station bulletins with pagination metadata */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['BulletinsListResponse']
-          }
-        }
-        404: components['responses']['NotFound']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    get: operations['getStationsIdBulletins']
     put?: never
     /**
      * Generate news bulletin for a station
@@ -2075,104 +702,14 @@ export interface paths {
      *     ## Notes
      *     To get story information, use the separate GET /bulletins/{id}/stories endpoint after bulletin generation.
      */
-    post: {
-      parameters: {
-        query?: never
-        header?: {
-          /** @description Response format - use 'audio/wav' to download file directly */
-          Accept?: 'application/json' | 'audio/wav'
-          /**
-           * @description Cache control directives:
-           *     - `no-cache` - Force new generation ignoring existing bulletins
-           *     - `max-age=N` - Reuse bulletin if created within N seconds
-           */
-          'Cache-Control'?: string
-        }
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: {
-        content: {
-          'application/json': {
-            /**
-             * Format: date
-             * @description Date for bulletin in YYYY-MM-DD format (defaults to today)
-             */
-            date?: string
-          }
-        }
-      }
-      responses: {
-        /** @description Bulletin generated successfully or WAV file if download=true */
-        200: {
-          headers: {
-            /**
-             * @description Cache status indicator:
-             *     - `HIT` - Bulletin served from cache (existing bulletin reused)
-             *     - `MISS` - Bulletin freshly generated
-             */
-            'X-Cache'?: 'HIT' | 'MISS'
-            /** @description Age of the bulletin in seconds (0 for freshly generated bulletins) */
-            Age?: number
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              /**
-               * Format: int64
-               * @description Bulletin ID (if saved to database)
-               */
-              id?: number
-              /** @description Station ID */
-              station_id?: number
-              /** @description Station name */
-              station_name?: string
-              /** @description URL to download the audio file */
-              audio_url?: string
-              /** @description Bulletin filename */
-              filename?: string
-              /**
-               * Format: date-time
-               * @description When the bulletin was created
-               */
-              created_at?: string
-              /**
-               * Format: float
-               * @description Duration in seconds
-               */
-              duration_seconds?: number
-              /**
-               * Format: int64
-               * @description File size in bytes
-               */
-              file_size?: number
-              /** @description Number of stories in the bulletin */
-              story_count?: number
-            }
-            'audio/wav': string
-          }
-        }
-        400: components['responses']['BadRequest']
-        /** @description Station not found or no stories available */
-        404: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        422: components['responses']['UnprocessableEntity']
-      }
-    }
+    post: operations['postStationsIdBulletins']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/bulletins/{id}/audio': {
+  '/api/v1/bulletins/{id}/audio': {
     parameters: {
       query?: never
       header?: never
@@ -2180,36 +717,7 @@ export interface paths {
       cookie?: never
     }
     /** Download bulletin audio file */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Audio file */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'audio/wav': string
-          }
-        }
-        /** @description Bulletin not found or no audio file */
-        404: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-      }
-    }
+    get: operations['getBulletinsIdAudio']
     put?: never
     post?: never
     delete?: never
@@ -2218,7 +726,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/bulletins/{id}/stories': {
+  '/api/v1/bulletins/{id}/stories': {
     parameters: {
       query?: never
       header?: never
@@ -2227,111 +735,14 @@ export interface paths {
     }
     /**
      * List stories included in a bulletin
-     * @description Returns a paginated list of stories that were included in a specific bulletin with modern query parameter support.
-     *     Ordered by story appearance order (story_order) by default.
-     *
-     *     ## Search Fields
-     *     Full-text search across:
-     *     - `st.title` - Story title
-     *     - `s.name` - Station name
-     *     - `b.filename` - Bulletin filename
-     *
-     *     ## Filter Fields
-     *     Available filter fields:
-     *     - `id` - Bulletin-story relationship ID
-     *     - `bulletin_id` - Bulletin ID (automatically filtered by path parameter)
-     *     - `story_id` - Story ID
-     *     - `story_order` - Order of story in bulletin
-     *     - `created_at` - When story was added to bulletin
-     *     - `station_id` - Station ID (from bulletin join)
-     *     - `station_name` - Station name (from join)
-     *     - `story_title` - Story title (from join)
-     *     - `bulletin_filename` - Bulletin filename (from join)
-     *
-     *     ## Sort Fields
-     *     Available sort fields:
-     *     - `id` - Relationship ID
-     *     - `story_id` - Story ID
-     *     - `story_order` - Story order in bulletin (default: ascending)
-     *     - `created_at` - Addition timestamp
-     *     - `station_name` - Station name
-     *     - `story_title` - Story title
-     *     - `bulletin_filename` - Bulletin filename
+     * @description Returns a paginated list of bulletin-story relationship records for a specific bulletin.
+     *     The current implementation supports pagination only and returns the basic join fields.
      *
      *     ## Examples
-     *     - Search by story title: `?search=breaking`
-     *     - Filter by story order: `?filter[story_order][lte]=3`
-     *     - Sort by story title: `?sort=story_title`
-     *     - Field selection: `?fields=id,story_id,story_order,story_title`
-     *     - Complex query: `?search=news&filter[story_order][lte]=5&sort=story_order&fields=id,story_title,story_order`
+     *     - First page: `?limit=20&offset=0`
+     *     - Second page: `?limit=20&offset=20`
      */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Maximum number of items to return */
-          limit?: components['parameters']['limit']
-          /** @description Number of items to skip */
-          offset?: components['parameters']['offset']
-          /**
-           * @description Sort order. Use field:direction format or prefix notation:
-           *     - `name:asc` or `+name` - ascending
-           *     - `name:desc` or `-name` - descending
-           *     - `created_at:desc,name:asc` - multiple fields
-           */
-          sort?: components['parameters']['sort']
-          /**
-           * @description Comma-separated list of fields to include in response.
-           *     Use dot notation for nested fields.
-           */
-          fields?: components['parameters']['fields']
-          /**
-           * @description Search term for full-text search across relevant fields.
-           *     Searches in names, titles, text content depending on resource.
-           * @example news update
-           */
-          search?: components['parameters']['search']
-          /**
-           * @description Advanced filtering using field-based operators.
-           *
-           *     Basic usage: `filter[field]=value`
-           *
-           *     Advanced operators: `filter[field][op]=value`
-           *
-           *     Supported operators:
-           *     - `eq` - equals (default)
-           *     - `ne` - not equals
-           *     - `gt`, `gte`, `lt`, `lte` - comparisons
-           *     - `like` - pattern matching
-           *     - `in` - comma-separated values
-           *     - `null` - is/isn't null
-           *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-           *
-           *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-           */
-          filter?: components['parameters']['filter']
-        }
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description List of stories in the bulletin with pagination metadata */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['BulletinStoriesListResponse']
-          }
-        }
-        404: components['responses']['NotFound']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    get: operations['getBulletinsIdStories']
     put?: never
     post?: never
     delete?: never
@@ -2340,7 +751,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/station-voices': {
+  '/api/v1/station-voices': {
     parameters: {
       query?: never
       header?: never
@@ -2351,11 +762,6 @@ export interface paths {
      * List station-voice relationships
      * @description Returns a paginated list of station-voice relationships with modern query parameter support.
      *     Includes station and voice information via database joins.
-     *
-     *     ## Search Fields
-     *     Full-text search across:
-     *     - `s.name` - Station name
-     *     - `v.name` - Voice name
      *
      *     ## Filter Fields
      *     Available filter fields:
@@ -2374,138 +780,35 @@ export interface paths {
      *
      *     ## Sort Fields
      *     Available sort fields:
-     *     - `id` - Relationship ID (default: descending)
+     *     - `id` - Relationship ID (default: ascending)
      *     - `station_id` - Station ID
      *     - `voice_id` - Voice ID
-     *     - `audio_file` - Audio filename
+     *     - `audio_url` - Audio presence (maps to audio_file column)
      *     - `mix_point` - Mix point value
      *     - `created_at` - Creation timestamp
      *     - `updated_at` - Last update timestamp
-     *     - `station_name` - Station name
-     *     - `voice_name` - Voice name
      *
      *     ## Examples
-     *     - Search by station name: `?search=Radio`
      *     - Filter by station: `?filter[station_id]=1`
      *     - Filter by voice: `?filter[voice_id]=2`
-     *     - Sort by station name: `?sort=station_name`
+     *     - Sort by creation date: `?sort=-created_at`
      *     - Field selection: `?fields=id,station_name,voice_name,mix_point`
-     *     - Complex query: `?search=Radio&filter[station_id]=1&sort=-created_at&fields=id,station_name,voice_name`
+     *     - Complex query: `?filter[station_id]=1&sort=-created_at&fields=id,station_name,voice_name`
      */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Maximum number of items to return */
-          limit?: components['parameters']['limit']
-          /** @description Number of items to skip */
-          offset?: components['parameters']['offset']
-          /**
-           * @description Sort order. Use field:direction format or prefix notation:
-           *     - `name:asc` or `+name` - ascending
-           *     - `name:desc` or `-name` - descending
-           *     - `created_at:desc,name:asc` - multiple fields
-           */
-          sort?: components['parameters']['sort']
-          /**
-           * @description Comma-separated list of fields to include in response.
-           *     Use dot notation for nested fields.
-           */
-          fields?: components['parameters']['fields']
-          /**
-           * @description Search term for full-text search across relevant fields.
-           *     Searches in names, titles, text content depending on resource.
-           * @example news update
-           */
-          search?: components['parameters']['search']
-          /**
-           * @description Advanced filtering using field-based operators.
-           *
-           *     Basic usage: `filter[field]=value`
-           *
-           *     Advanced operators: `filter[field][op]=value`
-           *
-           *     Supported operators:
-           *     - `eq` - equals (default)
-           *     - `ne` - not equals
-           *     - `gt`, `gte`, `lt`, `lte` - comparisons
-           *     - `like` - pattern matching
-           *     - `in` - comma-separated values
-           *     - `null` - is/isn't null
-           *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-           *
-           *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-           */
-          filter?: components['parameters']['filter']
-        }
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description List of station-voice relationships with pagination metadata */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['StationVoicesListResponse']
-          }
-        }
-        500: components['responses']['InternalServerError']
-      }
-    }
+    get: operations['getStationVoices']
     put?: never
     /**
      * Create a new station-voice relationship
      * @description Create station-voice relationship with JSON body. Jingle audio file must be uploaded separately via POST /station-voices/{id}/audio.
      */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          /**
-           * @example {
-           *       "station_id": 1,
-           *       "voice_id": 2,
-           *       "mix_point": 2.5
-           *     }
-           */
-          'application/json': components['schemas']['StationVoiceCreate']
-        }
-      }
-      responses: {
-        /** @description Station-voice relationship created */
-        201: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              /** Format: int64 */
-              id?: number
-              message?: string
-            }
-          }
-        }
-        400: components['responses']['BadRequest']
-        409: components['responses']['Conflict']
-        422: components['responses']['UnprocessableEntity']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    post: operations['postStationVoices']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/station-voices/{id}/audio': {
+  '/api/v1/station-voices/{id}/audio': {
     parameters: {
       query?: never
       header?: never
@@ -2513,87 +816,20 @@ export interface paths {
       cookie?: never
     }
     /** Download station-voice jingle file */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Jingle audio file */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'audio/wav': string
-          }
-        }
-        /** @description Station-voice not found or no jingle file */
-        404: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-      }
-    }
+    get: operations['getStationVoicesIdAudio']
     put?: never
     /**
      * Upload station-voice jingle file
-     * @description Upload jingle audio file for a station-voice relationship. Accepts WAV or MP3 format.
+     * @description Upload jingle audio file for a station-voice relationship. Accepts WAV, MP3, M4A, AAC, OGG, FLAC, and Opus files.
      */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'multipart/form-data': {
-            /**
-             * Format: binary
-             * @description Jingle audio file
-             */
-            jingle: string
-          }
-        }
-      }
-      responses: {
-        /** @description Jingle uploaded successfully */
-        201: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': {
-              /** @example Jingle uploaded successfully */
-              message?: string
-            }
-          }
-        }
-        400: components['responses']['BadRequest']
-        404: components['responses']['NotFound']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    post: operations['postStationVoicesIdAudio']
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/station-voices/{id}': {
+  '/api/v1/station-voices/{id}': {
     parameters: {
       query?: never
       header?: never
@@ -2601,99 +837,17 @@ export interface paths {
       cookie?: never
     }
     /** Get station-voice relationship by ID */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Station-voice relationship details */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['StationVoice']
-          }
-        }
-        404: components['responses']['NotFound']
-      }
-    }
+    get: operations['getStationVoicesId']
     /**
      * Update station-voice relationship
      * @description Update station-voice relationship properties with JSON body. All fields are optional - only provided fields will be updated.
      *     When updating station_id or voice_id, the system checks for duplicate combinations.
      *     Jingle audio file must be uploaded separately via POST /station-voices/{id}/audio.
      */
-    put: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          /**
-           * @example {
-           *       "station_id": 1,
-           *       "voice_id": 3,
-           *       "mix_point": 3
-           *     }
-           */
-          'application/json': components['schemas']['StationVoiceUpdate']
-        }
-      }
-      responses: {
-        /** @description Station-voice relationship updated */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['StationVoice']
-          }
-        }
-        400: components['responses']['BadRequest']
-        404: components['responses']['NotFound']
-        409: components['responses']['Conflict']
-        422: components['responses']['UnprocessableEntity']
-        500: components['responses']['InternalServerError']
-      }
-    }
+    put: operations['putStationVoicesId']
     post?: never
     /** Delete station-voice relationship */
-    delete: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Resource ID */
-          id: components['parameters']['id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Station-voice relationship deleted */
-        204: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        404: components['responses']['NotFound']
-      }
-    }
+    delete: operations['deleteStationVoicesId']
     options?: never
     head?: never
     patch?: never
@@ -3019,7 +1173,7 @@ export interface components {
       /** @description Unique username (alphanumeric only) */
       username: string
       full_name: string
-      /** @description User password */
+      /** @description User password. Must satisfy the configured local password policy. */
       password: string
       /**
        * Format: email
@@ -3044,7 +1198,7 @@ export interface components {
       /** @description Unique username (alphanumeric only) */
       username?: string
       full_name?: string
-      /** @description New password */
+      /** @description New password. Must satisfy the configured local password policy. */
       password?: string
       /** Format: email */
       email?: string | null
@@ -3143,8 +1297,8 @@ export interface components {
        */
       detail?: string
       /**
-       * Format: uri
-       * @description URI that identifies the specific occurrence of the problem
+       * Format: uri-reference
+       * @description URI reference that identifies the specific occurrence of the problem
        * @example /api/v1/stories/123
        */
       instance?: string
@@ -3240,12 +1394,8 @@ export interface components {
       offset?: number
     }
     /**
-     * @description Paginated response for bulletin stories list endpoint.
-     *
-     *     **Note:** The current implementation returns only the basic relationship fields.
-     *     Nested objects (station, story, bulletin) shown in examples are NOT currently
-     *     included in the actual API response. Use the individual resource endpoints
-     *     to fetch full details for stations, stories, or bulletins.
+     * @description Paginated response for the bulletin stories list endpoint.
+     *     The API returns the basic bulletin-story relationship fields.
      */
     BulletinStoriesListResponse: {
       data?: {
@@ -3262,27 +1412,6 @@ export interface components {
          * @description When story was added to bulletin
          */
         created_at?: string
-        /** @description NOT CURRENTLY IMPLEMENTED - Use GET /stations/{id} instead */
-        station?: {
-          /** @description Station ID */
-          id?: number
-          /** @description Station name */
-          name?: string
-        }
-        /** @description NOT CURRENTLY IMPLEMENTED - Use GET /stories/{id} instead */
-        story?: {
-          /** @description Story ID */
-          id?: number
-          /** @description Story title */
-          title?: string
-        }
-        /** @description NOT CURRENTLY IMPLEMENTED - Use GET /bulletins/{id} instead */
-        bulletin?: {
-          /** @description Bulletin ID */
-          id?: number
-          /** @description Bulletin filename */
-          filename?: string
-        }
       }[]
       /** @description Total number of story-bulletin relationships matching the query */
       total?: number
@@ -3291,27 +1420,9 @@ export interface components {
       /** @description Number of items skipped for pagination */
       offset?: number
     }
-    /**
-     * @description Paginated response for story bulletins history endpoint.
-     *
-     *     **Note:** The `story_order` and `included_at` fields shown below are planned
-     *     but NOT currently returned by the API. The current implementation returns
-     *     only the standard BulletinResponse fields.
-     */
+    /** @description Paginated response for story bulletins history endpoint. */
     StoryBulletinsListResponse: {
-      data?: (components['schemas']['BulletinResponse'] & {
-        /**
-         * @description Order of story in this bulletin.
-         *     **NOT CURRENTLY IMPLEMENTED** - Planned for future release.
-         */
-        story_order?: number
-        /**
-         * Format: date-time
-         * @description When story was included in this bulletin.
-         *     **NOT CURRENTLY IMPLEMENTED** - Planned for future release.
-         */
-        included_at?: string
-      })[]
+      data?: components['schemas']['BulletinResponse'][]
       /** @description Total number of bulletins that included this story */
       total?: number
       /** @description Maximum number of items per page */
@@ -3371,6 +1482,15 @@ export interface components {
       }
       content: {
         'application/problem+json': components['schemas']['ConflictError']
+      }
+    }
+    /** @description Request body too large */
+    PayloadTooLarge: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/problem+json': components['schemas']['ProblemDetails']
       }
     }
     /** @description Validation error */
@@ -3434,9 +1554,11 @@ export interface components {
      *     Supported operators:
      *     - `eq` - equals (default)
      *     - `ne` - not equals
+     *     - `not` - alias for `ne` (not equals)
      *     - `gt`, `gte`, `lt`, `lte` - comparisons
-     *     - `like` - pattern matching
+     *     - `like` - case-sensitive substring match (contains)
      *     - `in` - comma-separated values
+     *     - `between` - two comma-separated inclusive bounds
      *     - `null` - is/isn't null
      *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
      *
@@ -3450,6 +1572,8 @@ export interface components {
             eq?: string
             /** @description Not equals */
             ne?: string
+            /** @description Alias for ne (not equals) */
+            not?: string
             /** @description Greater than */
             gt?: string
             /** @description Greater than or equal */
@@ -3458,10 +1582,12 @@ export interface components {
             lt?: string
             /** @description Less than or equal */
             lte?: string
-            /** @description Pattern match (SQL LIKE) */
+            /** @description Case-sensitive substring match (contains); value matched literally */
             like?: string
             /** @description Comma-separated list of values */
             in?: string
+            /** @description Two comma-separated inclusive bounds */
+            between?: string
             /** @description Is null (true) or not null (false) */
             null?: boolean
             /** @description Bitwise AND (for bitmask fields like weekdays) */
@@ -3475,6 +1601,31 @@ export interface components {
 }
 export type $defs = Record<string, never>
 export interface operations {
+  getHealth: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Service is healthy */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** @example ok */
+            status?: string
+            /** @example babbel-api */
+            service?: string
+          }
+        }
+      }
+    }
+  }
   getPublicBulletin: {
     parameters: {
       query: {
@@ -3533,7 +1684,7 @@ export interface operations {
           'application/problem+json': components['schemas']['ProblemDetails']
         }
       }
-      /** @description Station not found, endpoint disabled, or no stories available */
+      /** @description Station not found or endpoint disabled */
       404: {
         headers: {
           [name: string]: unknown
@@ -3560,6 +1711,1860 @@ export interface operations {
           'application/problem+json': components['schemas']['ProblemDetails']
         }
       }
+    }
+  }
+  getAuthConfig: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Authentication configuration */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /**
+             * @description Available authentication methods
+             * @example [
+             *       "local",
+             *       "oidc"
+             *     ]
+             */
+            methods: ('local' | 'oidc')[]
+            /**
+             * @description URL to start OAuth flow (only present when OAuth is enabled)
+             * @example /api/v1/auth/oauth
+             */
+            oauth_url?: string
+          }
+        }
+      }
+    }
+  }
+  postSessions: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @example admin */
+          username: string
+          /** @example password */
+          password: string
+        }
+      }
+    }
+    responses: {
+      /** @description Session created successfully */
+      201: {
+        headers: {
+          'Set-Cookie'?: string
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** @example Login successful */
+            message?: string
+          }
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+    }
+  }
+  getAuthOauth: {
+    parameters: {
+      query?: {
+        /**
+         * @description Frontend URL to redirect to after successful authentication.
+         *     If not provided, uses BABBEL_FRONTEND_URL environment variable.
+         * @example https://your-frontend.com/dashboard
+         */
+        frontend_url?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Temporary redirect to OAuth provider */
+      307: {
+        headers: {
+          Location?: string
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['BadRequest']
+    }
+  }
+  getAuthOauthCallback: {
+    parameters: {
+      query: {
+        /** @description Authorization code from OAuth provider */
+        code: string
+        /** @description CSRF protection state */
+        state: string
+        /** @description Error from OAuth provider (if authentication failed) */
+        error?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Redirect to frontend application */
+      303: {
+        headers: {
+          Location?: string
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getSessionsCurrent: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Current user information */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['User']
+        }
+      }
+      401: components['responses']['Unauthorized']
+    }
+  }
+  deleteSessionsCurrent: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Session terminated successfully */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getStations: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items to return */
+        limit?: components['parameters']['limit']
+        /** @description Number of items to skip */
+        offset?: components['parameters']['offset']
+        /**
+         * @description Sort order. Use field:direction format or prefix notation:
+         *     - `name:asc` or `+name` - ascending
+         *     - `name:desc` or `-name` - descending
+         *     - `created_at:desc,name:asc` - multiple fields
+         */
+        sort?: components['parameters']['sort']
+        /**
+         * @description Comma-separated list of fields to include in response.
+         *     Use dot notation for nested fields.
+         */
+        fields?: components['parameters']['fields']
+        /**
+         * @description Search term for full-text search across relevant fields.
+         *     Searches in names, titles, text content depending on resource.
+         * @example news update
+         */
+        search?: components['parameters']['search']
+        /**
+         * @description Advanced filtering using field-based operators.
+         *
+         *     Basic usage: `filter[field]=value`
+         *
+         *     Advanced operators: `filter[field][op]=value`
+         *
+         *     Supported operators:
+         *     - `eq` - equals (default)
+         *     - `ne` - not equals
+         *     - `not` - alias for `ne` (not equals)
+         *     - `gt`, `gte`, `lt`, `lte` - comparisons
+         *     - `like` - case-sensitive substring match (contains)
+         *     - `in` - comma-separated values
+         *     - `between` - two comma-separated inclusive bounds
+         *     - `null` - is/isn't null
+         *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
+         *
+         *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
+         */
+        filter?: components['parameters']['filter']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of stations with pagination metadata */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StationsListResponse']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  postStations: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StationInput']
+      }
+    }
+    responses: {
+      /** @description Station created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** Format: int64 */
+            id?: number
+            message?: string
+          }
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      409: components['responses']['Conflict']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getStationsId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Station details */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Station']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  putStationsId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StationInput']
+      }
+    }
+    responses: {
+      /** @description Station updated successfully */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Station']
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['Conflict']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  deleteStationsId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Station deleted */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getVoices: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items to return */
+        limit?: components['parameters']['limit']
+        /** @description Number of items to skip */
+        offset?: components['parameters']['offset']
+        /**
+         * @description Sort order. Use field:direction format or prefix notation:
+         *     - `name:asc` or `+name` - ascending
+         *     - `name:desc` or `-name` - descending
+         *     - `created_at:desc,name:asc` - multiple fields
+         */
+        sort?: components['parameters']['sort']
+        /**
+         * @description Comma-separated list of fields to include in response.
+         *     Use dot notation for nested fields.
+         */
+        fields?: components['parameters']['fields']
+        /**
+         * @description Search term for full-text search across relevant fields.
+         *     Searches in names, titles, text content depending on resource.
+         * @example news update
+         */
+        search?: components['parameters']['search']
+        /**
+         * @description Advanced filtering using field-based operators.
+         *
+         *     Basic usage: `filter[field]=value`
+         *
+         *     Advanced operators: `filter[field][op]=value`
+         *
+         *     Supported operators:
+         *     - `eq` - equals (default)
+         *     - `ne` - not equals
+         *     - `not` - alias for `ne` (not equals)
+         *     - `gt`, `gte`, `lt`, `lte` - comparisons
+         *     - `like` - case-sensitive substring match (contains)
+         *     - `in` - comma-separated values
+         *     - `between` - two comma-separated inclusive bounds
+         *     - `null` - is/isn't null
+         *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
+         *
+         *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
+         */
+        filter?: components['parameters']['filter']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of voices with pagination metadata */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['VoicesListResponse']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  postVoices: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          name: string
+          /** @description ElevenLabs voice identifier for TTS generation */
+          elevenlabs_voice_id?: string | null
+        }
+      }
+    }
+    responses: {
+      /** @description Voice created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** Format: int64 */
+            id?: number
+            message?: string
+          }
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      409: components['responses']['Conflict']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getVoicesId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Voice details */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Voice']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  putVoicesId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          name?: string
+          /** @description ElevenLabs voice identifier for TTS generation (set to null or empty string to clear) */
+          elevenlabs_voice_id?: string | null
+        }
+      }
+    }
+    responses: {
+      /** @description Voice updated successfully */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Voice']
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['Conflict']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  deleteVoicesId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Voice deleted */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['Conflict']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getStories: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items to return */
+        limit?: components['parameters']['limit']
+        /** @description Number of items to skip */
+        offset?: components['parameters']['offset']
+        /**
+         * @description Sort order. Use field:direction format or prefix notation:
+         *     - `name:asc` or `+name` - ascending
+         *     - `name:desc` or `-name` - descending
+         *     - `created_at:desc,name:asc` - multiple fields
+         */
+        sort?: components['parameters']['sort']
+        /**
+         * @description Comma-separated list of fields to include in response.
+         *     Use dot notation for nested fields.
+         */
+        fields?: components['parameters']['fields']
+        /**
+         * @description Search term for full-text search across relevant fields.
+         *     Searches in names, titles, text content depending on resource.
+         * @example news update
+         */
+        search?: components['parameters']['search']
+        /**
+         * @description Filter soft-deleted records:
+         *     - (omitted) - only non-deleted records (default)
+         *     - `only` - only soft-deleted records
+         *     - `with` - all records including deleted
+         */
+        trashed?: components['parameters']['trashed']
+        /**
+         * @description Advanced filtering using field-based operators.
+         *
+         *     Basic usage: `filter[field]=value`
+         *
+         *     Advanced operators: `filter[field][op]=value`
+         *
+         *     Supported operators:
+         *     - `eq` - equals (default)
+         *     - `ne` - not equals
+         *     - `not` - alias for `ne` (not equals)
+         *     - `gt`, `gte`, `lt`, `lte` - comparisons
+         *     - `like` - case-sensitive substring match (contains)
+         *     - `in` - comma-separated values
+         *     - `between` - two comma-separated inclusive bounds
+         *     - `null` - is/isn't null
+         *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
+         *
+         *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
+         */
+        filter?: components['parameters']['filter']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of stories */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data?: components['schemas']['Story'][]
+            total?: number
+            limit?: number
+            offset?: number
+          }
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+    }
+  }
+  postStories: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "title": "Breaking News Update",
+         *       "text": "This is important news content for our listeners.",
+         *       "voice_id": 1,
+         *       "status": "active",
+         *       "start_date": "2024-01-20",
+         *       "end_date": "2024-01-27",
+         *       "weekdays": 62,
+         *       "is_breaking": true,
+         *       "metadata": {
+         *         "priority": "high",
+         *         "category": "breaking"
+         *       }
+         *     }
+         */
+        'application/json': components['schemas']['StoryCreate']
+      }
+    }
+    responses: {
+      /** @description Story created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** Format: int64 */
+            id?: number
+            message?: string
+          }
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getStoriesIdAudio: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Audio file */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'audio/wav': string
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+    }
+  }
+  postStoriesIdAudio: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': {
+          /**
+           * Format: binary
+           * @description Audio file (WAV, MP3, or other supported formats)
+           */
+          audio: string
+        }
+      }
+    }
+    responses: {
+      /** @description Audio uploaded successfully */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** @example Audio uploaded successfully */
+            message?: string
+          }
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  postStoriesIdTts: {
+    parameters: {
+      query?: {
+        /** @description Set to "true" to overwrite existing audio. Without this, the request fails if the story already has audio. */
+        force?: 'true'
+      }
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description TTS audio generated successfully */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** @example TTS audio generated successfully */
+            message?: string
+          }
+        }
+      }
+      /**
+       * @description Validation error. Possible causes:
+       *     - Story has no text
+       *     - Story has no voice assigned
+       *     - Voice has no ElevenLabs voice ID configured
+       *     - Story already has audio (use ?force=true to overwrite)
+       *     - ElevenLabs voice ID not found
+       *     - ElevenLabs API key is invalid
+       *     - ElevenLabs rate limit exceeded
+       */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      500: components['responses']['InternalServerError']
+      /** @description TTS is not configured on the server */
+      501: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "type": "https://babbel.api/problems/tts.not_configured",
+           *       "title": "Not Implemented",
+           *       "status": 501,
+           *       "detail": "Text-to-speech is not configured",
+           *       "hint": "Set BABBEL_ELEVENLABS_API_KEY to enable TTS"
+           *     }
+           */
+          'application/problem+json': components['schemas']['ProblemDetails']
+        }
+      }
+    }
+  }
+  getStoriesId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Story details */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Story']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  putStoriesId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "title": "Updated Breaking News",
+         *       "text": "This is the updated news content.",
+         *       "voice_id": 2,
+         *       "status": "active",
+         *       "weekdays": 65,
+         *       "metadata": {
+         *         "priority": "medium",
+         *         "updated": true
+         *       }
+         *     }
+         */
+        'application/json': components['schemas']['StoryUpdate']
+      }
+    }
+    responses: {
+      /** @description Story updated */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Story']
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  deleteStoriesId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Story soft deleted successfully */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+    }
+  }
+  patchStoriesId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          /**
+           * @description Story status
+           * @enum {string}
+           */
+          status?: 'draft' | 'active' | 'expired'
+          /** @description Set to empty string ("") to restore a soft-deleted story, or any other value to soft-delete */
+          deleted_at?: string
+        }
+      }
+    }
+    responses: {
+      /** @description Story state updated successfully (status change or restore). Returns the updated story. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Story']
+        }
+      }
+      /** @description Story soft-deleted successfully (when deleted_at is set to a non-empty value) */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+    }
+  }
+  getStoriesIdBulletins: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items to return */
+        limit?: components['parameters']['limit']
+        /** @description Number of items to skip */
+        offset?: components['parameters']['offset']
+        /**
+         * @description Sort order. Use field:direction format or prefix notation:
+         *     - `name:asc` or `+name` - ascending
+         *     - `name:desc` or `-name` - descending
+         *     - `created_at:desc,name:asc` - multiple fields
+         */
+        sort?: components['parameters']['sort']
+        /**
+         * @description Comma-separated list of fields to include in response.
+         *     Use dot notation for nested fields.
+         */
+        fields?: components['parameters']['fields']
+        /**
+         * @description Search term for full-text search across relevant fields.
+         *     Searches in names, titles, text content depending on resource.
+         * @example news update
+         */
+        search?: components['parameters']['search']
+        /**
+         * @description Advanced filtering using field-based operators.
+         *
+         *     Basic usage: `filter[field]=value`
+         *
+         *     Advanced operators: `filter[field][op]=value`
+         *
+         *     Supported operators:
+         *     - `eq` - equals (default)
+         *     - `ne` - not equals
+         *     - `not` - alias for `ne` (not equals)
+         *     - `gt`, `gte`, `lt`, `lte` - comparisons
+         *     - `like` - case-sensitive substring match (contains)
+         *     - `in` - comma-separated values
+         *     - `between` - two comma-separated inclusive bounds
+         *     - `null` - is/isn't null
+         *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
+         *
+         *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
+         */
+        filter?: components['parameters']['filter']
+      }
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Story bulletin history with pagination metadata */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StoryBulletinsListResponse']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getUsers: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items to return */
+        limit?: components['parameters']['limit']
+        /** @description Number of items to skip */
+        offset?: components['parameters']['offset']
+        /**
+         * @description Sort order. Use field:direction format or prefix notation:
+         *     - `name:asc` or `+name` - ascending
+         *     - `name:desc` or `-name` - descending
+         *     - `created_at:desc,name:asc` - multiple fields
+         */
+        sort?: components['parameters']['sort']
+        /**
+         * @description Comma-separated list of fields to include in response.
+         *     Use dot notation for nested fields.
+         */
+        fields?: components['parameters']['fields']
+        /**
+         * @description Search term for full-text search across relevant fields.
+         *     Searches in names, titles, text content depending on resource.
+         * @example news update
+         */
+        search?: components['parameters']['search']
+        /**
+         * @description Filter soft-deleted records:
+         *     - (omitted) - only non-deleted records (default)
+         *     - `only` - only soft-deleted records
+         *     - `with` - all records including deleted
+         */
+        trashed?: components['parameters']['trashed']
+        /**
+         * @description Advanced filtering using field-based operators.
+         *
+         *     Basic usage: `filter[field]=value`
+         *
+         *     Advanced operators: `filter[field][op]=value`
+         *
+         *     Supported operators:
+         *     - `eq` - equals (default)
+         *     - `ne` - not equals
+         *     - `not` - alias for `ne` (not equals)
+         *     - `gt`, `gte`, `lt`, `lte` - comparisons
+         *     - `like` - case-sensitive substring match (contains)
+         *     - `in` - comma-separated values
+         *     - `between` - two comma-separated inclusive bounds
+         *     - `null` - is/isn't null
+         *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
+         *
+         *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
+         */
+        filter?: components['parameters']['filter']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of users */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data?: components['schemas']['User'][]
+            total?: number
+            limit?: number
+            offset?: number
+          }
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+    }
+  }
+  postUsers: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserInput']
+      }
+    }
+    responses: {
+      /** @description User created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** Format: int64 */
+            id?: number
+            message?: string
+          }
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      409: components['responses']['Conflict']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getUsersId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description User details */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['User']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+    }
+  }
+  putUsersId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserUpdate']
+      }
+    }
+    responses: {
+      /** @description User updated successfully */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['User']
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['Conflict']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  deleteUsersId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description User deleted */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['Conflict']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  patchUsersId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          /**
+           * @description Action to perform on user account
+           * @enum {string}
+           */
+          action: 'suspend' | 'restore'
+        }
+      }
+    }
+    responses: {
+      /** @description User state updated successfully. Returns the updated user. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['User']
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+    }
+  }
+  getBulletins: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items to return */
+        limit?: components['parameters']['limit']
+        /** @description Number of items to skip */
+        offset?: components['parameters']['offset']
+        /**
+         * @description Sort order. Use field:direction format or prefix notation:
+         *     - `name:asc` or `+name` - ascending
+         *     - `name:desc` or `-name` - descending
+         *     - `created_at:desc,name:asc` - multiple fields
+         */
+        sort?: components['parameters']['sort']
+        /**
+         * @description Comma-separated list of fields to include in response.
+         *     Use dot notation for nested fields.
+         */
+        fields?: components['parameters']['fields']
+        /**
+         * @description Search term for full-text search across relevant fields.
+         *     Searches in names, titles, text content depending on resource.
+         * @example news update
+         */
+        search?: components['parameters']['search']
+        /**
+         * @description Advanced filtering using field-based operators.
+         *
+         *     Basic usage: `filter[field]=value`
+         *
+         *     Advanced operators: `filter[field][op]=value`
+         *
+         *     Supported operators:
+         *     - `eq` - equals (default)
+         *     - `ne` - not equals
+         *     - `not` - alias for `ne` (not equals)
+         *     - `gt`, `gte`, `lt`, `lte` - comparisons
+         *     - `like` - case-sensitive substring match (contains)
+         *     - `in` - comma-separated values
+         *     - `between` - two comma-separated inclusive bounds
+         *     - `null` - is/isn't null
+         *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
+         *
+         *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
+         */
+        filter?: components['parameters']['filter']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of bulletins with pagination metadata */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BulletinsListResponse']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getBulletinsId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Bulletin details */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "id": 150,
+           *       "station_id": 1,
+           *       "station_name": "Radio Station 1",
+           *       "filename": "bulletin_1_20240120_140500.wav",
+           *       "audio_url": "/bulletins/150/audio",
+           *       "duration_seconds": 185.4,
+           *       "file_size": 2965440,
+           *       "story_count": 4,
+           *       "created_at": "2024-01-20T14:05:00Z"
+           *     }
+           */
+          'application/json': components['schemas']['BulletinResponse']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getStationsIdBulletins: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items to return */
+        limit?: components['parameters']['limit']
+        /** @description Number of items to skip */
+        offset?: components['parameters']['offset']
+        /**
+         * @description Sort order. Use field:direction format or prefix notation:
+         *     - `name:asc` or `+name` - ascending
+         *     - `name:desc` or `-name` - descending
+         *     - `created_at:desc,name:asc` - multiple fields
+         */
+        sort?: components['parameters']['sort']
+        /**
+         * @description Comma-separated list of fields to include in response.
+         *     Use dot notation for nested fields.
+         */
+        fields?: components['parameters']['fields']
+        /**
+         * @description Search term for full-text search across relevant fields.
+         *     Searches in names, titles, text content depending on resource.
+         * @example news update
+         */
+        search?: components['parameters']['search']
+        /**
+         * @description Advanced filtering using field-based operators.
+         *
+         *     Basic usage: `filter[field]=value`
+         *
+         *     Advanced operators: `filter[field][op]=value`
+         *
+         *     Supported operators:
+         *     - `eq` - equals (default)
+         *     - `ne` - not equals
+         *     - `not` - alias for `ne` (not equals)
+         *     - `gt`, `gte`, `lt`, `lte` - comparisons
+         *     - `like` - case-sensitive substring match (contains)
+         *     - `in` - comma-separated values
+         *     - `between` - two comma-separated inclusive bounds
+         *     - `null` - is/isn't null
+         *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
+         *
+         *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
+         */
+        filter?: components['parameters']['filter']
+        /** @description Return only the latest bulletin for this station (equivalent to limit=1) */
+        latest?: boolean
+      }
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /**
+       * @description Station bulletins. Returns a paginated list by default, or a single
+       *     BulletinResponse object when `latest=true` or `limit=1` is used.
+       */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json':
+            | components['schemas']['BulletinsListResponse']
+            | components['schemas']['BulletinResponse']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  postStationsIdBulletins: {
+    parameters: {
+      query?: never
+      header?: {
+        /** @description Response format - use 'audio/wav' to download file directly */
+        Accept?: 'application/json' | 'audio/wav'
+        /**
+         * @description Cache control directives:
+         *     - `no-cache` - Force new generation ignoring existing bulletins
+         *     - `max-age=N` - Reuse bulletin if created within N seconds
+         */
+        'Cache-Control'?: string
+      }
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: {
+      content: {
+        'application/json': {
+          /**
+           * Format: date
+           * @description Date for bulletin in YYYY-MM-DD format (defaults to today)
+           */
+          date?: string
+        }
+      }
+    }
+    responses: {
+      /** @description Bulletin generated successfully or WAV file if download=true */
+      200: {
+        headers: {
+          /**
+           * @description Cache status indicator:
+           *     - `HIT` - Bulletin served from cache (existing bulletin reused)
+           *     - `MISS` - Bulletin freshly generated
+           */
+          'X-Cache'?: 'HIT' | 'MISS'
+          /** @description Age of the bulletin in seconds (0 for freshly generated bulletins) */
+          Age?: number
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /**
+             * Format: int64
+             * @description Bulletin ID (if saved to database)
+             */
+            id?: number
+            /** @description Station ID */
+            station_id?: number
+            /** @description Station name */
+            station_name?: string
+            /** @description URL to download the audio file */
+            audio_url?: string
+            /** @description Bulletin filename */
+            filename?: string
+            /**
+             * Format: date-time
+             * @description When the bulletin was created
+             */
+            created_at?: string
+            /**
+             * Format: float
+             * @description Duration in seconds
+             */
+            duration_seconds?: number
+            /**
+             * Format: int64
+             * @description File size in bytes
+             */
+            file_size?: number
+            /** @description Number of stories in the bulletin */
+            story_count?: number
+          }
+          'audio/wav': string
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      413: components['responses']['PayloadTooLarge']
+      422: components['responses']['UnprocessableEntity']
+    }
+  }
+  getBulletinsIdAudio: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Audio file */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'audio/wav': string
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+    }
+  }
+  getBulletinsIdStories: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items to return */
+        limit?: components['parameters']['limit']
+        /** @description Number of items to skip */
+        offset?: components['parameters']['offset']
+      }
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of stories in the bulletin with pagination metadata */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BulletinStoriesListResponse']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getStationVoices: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items to return */
+        limit?: components['parameters']['limit']
+        /** @description Number of items to skip */
+        offset?: components['parameters']['offset']
+        /**
+         * @description Sort order. Use field:direction format or prefix notation:
+         *     - `name:asc` or `+name` - ascending
+         *     - `name:desc` or `-name` - descending
+         *     - `created_at:desc,name:asc` - multiple fields
+         */
+        sort?: components['parameters']['sort']
+        /**
+         * @description Comma-separated list of fields to include in response.
+         *     Use dot notation for nested fields.
+         */
+        fields?: components['parameters']['fields']
+        /**
+         * @description Advanced filtering using field-based operators.
+         *
+         *     Basic usage: `filter[field]=value`
+         *
+         *     Advanced operators: `filter[field][op]=value`
+         *
+         *     Supported operators:
+         *     - `eq` - equals (default)
+         *     - `ne` - not equals
+         *     - `not` - alias for `ne` (not equals)
+         *     - `gt`, `gte`, `lt`, `lte` - comparisons
+         *     - `like` - case-sensitive substring match (contains)
+         *     - `in` - comma-separated values
+         *     - `between` - two comma-separated inclusive bounds
+         *     - `null` - is/isn't null
+         *     - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
+         *
+         *     **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
+         */
+        filter?: components['parameters']['filter']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of station-voice relationships with pagination metadata */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StationVoicesListResponse']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  postStationVoices: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "station_id": 1,
+         *       "voice_id": 2,
+         *       "mix_point": 2.5
+         *     }
+         */
+        'application/json': components['schemas']['StationVoiceCreate']
+      }
+    }
+    responses: {
+      /** @description Station-voice relationship created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** Format: int64 */
+            id?: number
+            message?: string
+          }
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      409: components['responses']['Conflict']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getStationVoicesIdAudio: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Jingle audio file */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'audio/wav': string
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+    }
+  }
+  postStationVoicesIdAudio: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': {
+          /**
+           * Format: binary
+           * @description Jingle audio file
+           */
+          jingle: string
+        }
+      }
+    }
+    responses: {
+      /** @description Jingle uploaded successfully */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** @example Jingle uploaded successfully */
+            message?: string
+          }
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  getStationVoicesId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Station-voice relationship details */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StationVoice']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+    }
+  }
+  putStationVoicesId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "station_id": 1,
+         *       "voice_id": 3,
+         *       "mix_point": 3
+         *     }
+         */
+        'application/json': components['schemas']['StationVoiceUpdate']
+      }
+    }
+    responses: {
+      /** @description Station-voice relationship updated */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StationVoice']
+        }
+      }
+      400: components['responses']['BadRequest']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['Conflict']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+    }
+  }
+  deleteStationVoicesId: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Resource ID */
+        id: components['parameters']['id']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Station-voice relationship deleted */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      500: components['responses']['InternalServerError']
     }
   }
 }
