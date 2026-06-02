@@ -4,7 +4,17 @@
   import { goto } from '$app/navigation'
   import { auth } from '$lib/stores/auth.svelte'
   import { getRoleLabel } from '$lib/utils/labels'
-  import { Radio, Mic, FileText, Podcast, Users, LogOut, Menu, AudioWaveform } from './icons'
+  import {
+    Radio,
+    Mic,
+    FileText,
+    Podcast,
+    Users,
+    LogOut,
+    Menu,
+    AudioWaveform,
+    Sparkles,
+  } from './icons'
 
   let { children }: { children: Snippet } = $props()
 
@@ -21,7 +31,10 @@
     { path: '/bulletins', label: 'Bulletins', icon: Podcast },
   ]
 
-  const adminNavItems: NavItem[] = [{ path: '/users', label: 'Gebruikers', icon: Users }]
+  const adminNavItems: NavItem[] = [
+    { path: '/users', label: 'Gebruikers', icon: Users },
+    { path: '#', label: 'AI-instellingen', icon: Sparkles },
+  ]
 
   function isActive(path: string): boolean {
     return $page.url.pathname === path || $page.url.pathname.startsWith(`${path}/`)

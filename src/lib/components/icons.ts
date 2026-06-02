@@ -27,6 +27,7 @@ export {
   RefreshCw,
   Search,
   SlidersHorizontal,
+  Sparkles,
   Trash2,
   Upload,
   User,
