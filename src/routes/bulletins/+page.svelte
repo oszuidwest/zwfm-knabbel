@@ -58,12 +58,9 @@
     <!-- Mobile: Cards view -->
     <div class="space-y-2 md:hidden">
       {#each data.bulletins as bulletin (bulletin.id)}
-        <div
-          role="button"
-          tabindex="0"
-          class="card cursor-pointer bg-base-100 transition-shadow hover:shadow-md active:bg-base-200"
-          onclick={() => goto(`/bulletins/${bulletin.id}`)}
-          onkeydown={e => e.key === 'Enter' && goto(`/bulletins/${bulletin.id}`)}
+        <a
+          href="/bulletins/{bulletin.id}"
+          class="card bg-base-100 transition-shadow hover:shadow-md active:bg-base-200"
         >
           <div class="card-body p-4">
             <div class="flex items-center justify-between gap-3">
@@ -99,7 +96,7 @@
               </span>
             </div>
           </div>
-        </div>
+        </a>
       {/each}
     </div>
 

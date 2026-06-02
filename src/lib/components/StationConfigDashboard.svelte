@@ -260,30 +260,24 @@
                 </div>
               {:else if !config.hasAudio}
                 <!-- Dropzone -->
-                <div
-                  class="cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition-colors {dragOver ===
+                <input
+                  id="jingle-input-{config.station.id}"
+                  type="file"
+                  accept="audio/wav,audio/*"
+                  onchange={e => handleFileInput(e, index)}
+                  disabled={config.saving}
+                  class="peer sr-only"
+                />
+                <label
+                  for="jingle-input-{config.station.id}"
+                  class="block cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition-colors peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary {dragOver ===
                   index
                     ? 'border-primary bg-primary/10'
                     : 'border-base-content/20 hover:border-primary hover:bg-primary/5'}"
-                  role="button"
-                  tabindex="0"
                   ondragover={e => handleDragOver(e, index)}
                   ondragleave={handleDragLeave}
                   ondrop={e => handleDrop(e, index)}
-                  onkeydown={e =>
-                    e.key === 'Enter' &&
-                    document.getElementById(`jingle-input-${config.station.id}`)?.click()}
-                  onclick={() =>
-                    document.getElementById(`jingle-input-${config.station.id}`)?.click()}
                 >
-                  <input
-                    id="jingle-input-{config.station.id}"
-                    type="file"
-                    accept="audio/wav,audio/*"
-                    onchange={e => handleFileInput(e, index)}
-                    disabled={config.saving}
-                    class="hidden"
-                  />
                   <Upload
                     class="mx-auto mb-2 h-8 w-8 text-base-content/30"
                     aria-hidden="true"
@@ -291,7 +285,7 @@
                   <p class="text-sm text-base-content/50">
                     Sleep een audiobestand of klik om te selecteren
                   </p>
-                </div>
+                </label>
               {/if}
             </div>
           {/if}
