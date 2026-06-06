@@ -14,11 +14,7 @@
 
   const publicRoutes = ['/login', '/auth/oauth/callback']
 
-  function getPagePathname(): string {
-    return page.url.pathname
-  }
-
-  let currentPathname = $state(getPagePathname())
+  const currentPathname = $derived(page.url.pathname)
   const isPublic = $derived(isPublicRoute(currentPathname))
   const isAuthenticatedLoginRedirect = $derived(!!auth.user && currentPathname === '/login')
 
@@ -42,9 +38,7 @@
   })
 
   afterNavigate(({ to }) => {
-    // Update after navigation commits so the shell follows the rendered route.
-    currentPathname = to?.url.pathname ?? getPagePathname()
-    void guardRoute(currentPathname)
+    void guardRoute(to?.url.pathname ?? page.url.pathname)
   })
 </script>
 

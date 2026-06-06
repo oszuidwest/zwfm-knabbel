@@ -55,10 +55,6 @@
     e.stopPropagation()
     onDelete?.(item, e)
   }
-
-  function resolvedHref(href: string): string {
-    return resolveInternalHref(href)
-  }
 </script>
 
 <div class="space-y-4 pb-20 md:pb-0">
@@ -71,7 +67,7 @@
         {@render headerActions()}
       {:else if newHref}
         <a
-          href={resolvedHref(newHref)}
+          href={resolveInternalHref(newHref)}
           class="btn btn-primary max-md:hidden"
         >
           <Plus
@@ -102,7 +98,7 @@
             <div class="flex items-center justify-between gap-3">
               {#if isClickable}
                 <a
-                  href={resolvedHref(editHref(item))}
+                  href={resolveInternalHref(editHref(item))}
                   class="flex min-w-0 flex-1 items-center gap-3 rounded-field active:bg-base-200"
                 >
                   <div
@@ -191,7 +187,7 @@
 <!-- FAB: New item button (mobile only) -->
 {#if newHref}
   <a
-    href={resolvedHref(newHref)}
+    href={resolveInternalHref(newHref)}
     class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
     aria-label={newLabel}
   >

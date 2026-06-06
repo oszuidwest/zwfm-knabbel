@@ -43,7 +43,6 @@ export class AuthStore {
       this.user = null
       return false
     } finally {
-      // Always reset loading state, even on weird network errors
       this.loading = false
       this.checked = true
     }
