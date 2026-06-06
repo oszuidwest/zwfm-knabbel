@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation'
   import { bulletinsApi } from '$lib/api/bulletins'
   import { toast } from '$lib/stores/toast'
+  import { resolveInternalHref } from '$lib/utils/routes'
   import { RefreshCw, X } from '$lib/components/icons'
   import { PageHeader, SelectInput } from '$lib/components/ui'
   import { toSelectOptions } from '$lib/utils/form'
@@ -25,7 +26,7 @@
     try {
       const bulletin = await bulletinsApi.generate(Number(selectedStation))
       toast.success('Bulletin gegenereerd')
-      goto(`/bulletins/${bulletin.id}`)
+      goto(resolveInternalHref(`/bulletins/${bulletin.id}`))
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Genereren mislukt'
       toast.error(message)
@@ -66,7 +67,7 @@
 
         <div class="flex justify-end gap-2 pt-4">
           <a
-            href="/bulletins"
+            href={resolveInternalHref('/bulletins')}
             class="btn btn-ghost"
           >
             <X class="h-5 w-5" />

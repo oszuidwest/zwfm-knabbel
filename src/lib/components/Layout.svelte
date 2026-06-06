@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import { goto } from '$app/navigation'
-  import { auth } from '$lib/stores/auth.svelte'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
   import { getRoleLabel } from '$lib/utils/labels'
+  import { resolveInternalHref } from '$lib/utils/routes'
   import {
     Radio,
     Mic,
@@ -17,6 +18,7 @@
   } from './icons'
 
   let { children }: { children: Snippet } = $props()
+  const auth = getAuthContext()
 
   interface NavItem {
     path: string
@@ -37,12 +39,12 @@
   ]
 
   function isActive(path: string): boolean {
-    return $page.url.pathname === path || $page.url.pathname.startsWith(`${path}/`)
+    return page.url.pathname === path || page.url.pathname.startsWith(`${path}/`)
   }
 
   async function handleLogout(): Promise<void> {
     await auth.logout()
-    goto('/login')
+    goto(resolveInternalHref('/login'))
   }
 </script>
 
@@ -70,7 +72,7 @@
       </div>
       <div class="flex-1">
         <a
-          href="/"
+          href={resolveInternalHref('/')}
           class="btn gap-2 text-xl font-bold normal-case btn-ghost"
         >
           <div
@@ -104,7 +106,7 @@
       <!-- Logo -->
       <div class="border-b border-base-300 p-6">
         <a
-          href="/"
+          href={resolveInternalHref('/')}
           class="flex items-center gap-4"
         >
           <div
@@ -130,8 +132,8 @@
             {@const Icon = item.icon}
             <li>
               <a
-                href={item.path}
-                class:menu-active={isActive(item.path)}
+                href={resolveInternalHref(item.path)}
+                class={{ 'menu-active': isActive(item.path) }}
               >
                 <Icon
                   aria-hidden="true"
@@ -149,8 +151,8 @@
               {@const Icon = item.icon}
               <li>
                 <a
-                  href={item.path}
-                  class:menu-active={isActive(item.path)}
+                  href={resolveInternalHref(item.path)}
+                  class={{ 'menu-active': isActive(item.path) }}
                 >
                   <Icon
                     aria-hidden="true"

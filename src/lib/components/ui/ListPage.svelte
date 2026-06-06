@@ -5,6 +5,7 @@
   import { Plus, Pencil, Trash2 } from '$lib/components/icons'
   import { PageHeader, EmptyState, Pagination } from '$lib/components/ui'
   import type { PaginationInfo } from '$lib/utils/pagination'
+  import { resolveInternalHref } from '$lib/utils/routes'
   import type { Component, Snippet } from 'svelte'
 
   interface Props {
@@ -54,6 +55,10 @@
     e.stopPropagation()
     onDelete?.(item, e)
   }
+
+  function resolvedHref(href: string): string {
+    return resolveInternalHref(href)
+  }
 </script>
 
 <div class="space-y-4 pb-20 md:pb-0">
@@ -66,7 +71,7 @@
         {@render headerActions()}
       {:else if newHref}
         <a
-          href={newHref}
+          href={resolvedHref(newHref)}
           class="btn btn-primary max-md:hidden"
         >
           <Plus
@@ -97,7 +102,7 @@
             <div class="flex items-center justify-between gap-3">
               {#if isClickable}
                 <a
-                  href={editHref(item)}
+                  href={resolvedHref(editHref(item))}
                   class="flex min-w-0 flex-1 items-center gap-3 rounded-field active:bg-base-200"
                 >
                   <div
@@ -186,7 +191,7 @@
 <!-- FAB: New item button (mobile only) -->
 {#if newHref}
   <a
-    href={newHref}
+    href={resolvedHref(newHref)}
     class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
     aria-label={newLabel}
   >

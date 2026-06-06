@@ -1,29 +1,40 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { userCreateSchema, type UserFormData } from '$lib/schemas/user'
+  import { userSchema, type UserFormData } from '$lib/schemas/user'
   import { usersApi } from '$lib/api/users'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
   import { roleOptions } from '$lib/utils/labels'
   import { resolveInternalHref } from '$lib/utils/routes'
   import { TextInput, SelectInput, FormActions, PageHeader } from '$lib/components/ui'
+  import type { UserInput } from '$lib/types'
+  import type { PageData } from './$types'
 
-  let form = $state<UserFormData>({
-    username: '',
-    full_name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'editor',
-  })
+  interface Props {
+    data: PageData
+  }
 
+  let { data }: Props = $props()
+
+  function initialForm(): UserFormData {
+    return {
+      username: data.user.username ?? '',
+      full_name: data.user.full_name ?? '',
+      email: data.user.email ?? '',
+      password: '',
+      confirmPassword: '',
+      role: data.user.role ?? 'viewer',
+    }
+  }
+
+  let form = $state<UserFormData>(initialForm())
   let errors = $state<Record<string, string>>({})
   let submitting = $state(false)
 
   async function handleSubmit(e: Event): Promise<void> {
     e.preventDefault()
 
-    const result = validateForm(userCreateSchema, form)
+    const result = validateForm(userSchema, form)
     if (!result.success) {
       errors = result.errors
       return
@@ -32,17 +43,19 @@
 
     submitting = true
     try {
-      await usersApi.create({
+      const updateData: Partial<UserInput> = {
         username: form.username,
         full_name: form.full_name,
-        email: form.email || undefined,
-        password: form.password!,
+        email: form.email || null,
         role: form.role,
-      })
-      toast.success('Gebruiker aangemaakt')
+        ...(form.password ? { password: form.password } : {}),
+      }
+
+      await usersApi.update(data.user.id!, updateData)
+      toast.success('Gebruiker bijgewerkt')
       goto(resolveInternalHref('/users'))
     } catch {
-      toast.error('Aanmaken mislukt')
+      toast.error('Bijwerken mislukt')
     } finally {
       submitting = false
     }
@@ -51,8 +64,8 @@
 
 <div class="space-y-6">
   <PageHeader
-    title="Nieuwe gebruiker"
-    subtitle="Voeg een nieuwe gebruiker toe aan het systeem"
+    title="Gebruiker bewerken"
+    subtitle={data.user.full_name || data.user.username || ''}
   />
 
   <div class="card bg-base-100">
@@ -98,18 +111,21 @@
           />
         </div>
 
+        <div class="divider">Wachtwoord wijzigen (optioneel)</div>
+
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
           <TextInput
             id="password"
-            label="Wachtwoord"
+            label="Nieuw wachtwoord"
             type="password"
             bind:value={form.password}
             error={errors.password}
+            placeholder="Laat leeg om niet te wijzigen"
           />
 
           <TextInput
             id="confirmPassword"
-            label="Bevestig wachtwoord"
+            label="Bevestig nieuw wachtwoord"
             type="password"
             bind:value={form.confirmPassword}
             error={errors.confirmPassword}

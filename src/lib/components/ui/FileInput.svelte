@@ -55,8 +55,7 @@
     type="file"
     {accept}
     onchange={handleChange}
-    class="file-input w-full file-input-primary"
-    class:file-input-error={error}
+    class={['file-input w-full file-input-primary', error && 'file-input-error']}
     {disabled}
   />
 </FormField>

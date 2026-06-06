@@ -1,22 +1,38 @@
+import { createContext } from 'svelte'
 import { authApi } from '$lib/api/auth'
 import type { User } from '$lib/types'
 
-class AuthStore {
+interface CheckAuthOptions {
+  force?: boolean
+}
+
+export class AuthStore {
   user = $state<User | null>(null)
   loading = $state(true)
   checked = $state(false)
 
   isAdmin = $derived(this.user?.role === 'admin')
 
-  private checkInProgress = false
+  private checkPromise: Promise<boolean> | null = null
 
-  async checkAuth(): Promise<boolean> {
-    // Prevent concurrent auth checks
-    if (this.checkInProgress) {
-      return !!this.user
+  async checkAuth(options: CheckAuthOptions = {}): Promise<boolean> {
+    if (this.checkPromise && !options.force) {
+      return this.checkPromise
     }
 
-    this.checkInProgress = true
+    const promise = this.runCheckAuth()
+    this.checkPromise = promise
+
+    try {
+      return await promise
+    } finally {
+      if (this.checkPromise === promise) {
+        this.checkPromise = null
+      }
+    }
+  }
+
+  private async runCheckAuth(): Promise<boolean> {
     this.loading = true
 
     try {
@@ -30,7 +46,6 @@ class AuthStore {
       // Always reset loading state, even on weird network errors
       this.loading = false
       this.checked = true
-      this.checkInProgress = false
     }
   }
 
@@ -51,4 +66,8 @@ class AuthStore {
   }
 }
 
-export const auth = new AuthStore()
+export const [getAuthContext, setAuthContext] = createContext<AuthStore>()
+
+export function createAuthStore(): AuthStore {
+  return new AuthStore()
+}

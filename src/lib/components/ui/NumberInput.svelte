@@ -36,8 +36,7 @@
     {id}
     type="number"
     bind:value
-    class="input w-full"
-    class:input-error={error}
+    class={['input w-full', error && 'input-error']}
     {min}
     {max}
     {step}

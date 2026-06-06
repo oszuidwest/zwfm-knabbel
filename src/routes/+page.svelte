@@ -1,9 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { onMount } from 'svelte'
+  import { resolveInternalHref } from '$lib/utils/routes'
 
   onMount(() => {
-    goto('/stories')
+    goto(resolveInternalHref('/stories'))
   })
 </script>
 

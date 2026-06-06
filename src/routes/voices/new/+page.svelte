@@ -4,6 +4,7 @@
   import { voicesApi } from '$lib/api/voices'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
+  import { resolveInternalHref } from '$lib/utils/routes'
   import { TextInput, FormActions, PageHeader } from '$lib/components/ui'
 
   let form = $state<VoiceFormData>({
@@ -27,7 +28,7 @@
     try {
       await voicesApi.create(form)
       toast.success('Stem aangemaakt')
-      goto('/voices')
+      goto(resolveInternalHref('/voices'))
     } catch {
       toast.error('Aanmaken mislukt')
     } finally {

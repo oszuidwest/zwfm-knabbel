@@ -2,6 +2,7 @@
   import { getMediaUrl } from '$lib/api/client'
   import { toast } from '$lib/stores/toast'
   import { formatDateTime, formatDuration, formatFileSize } from '$lib/utils/format'
+  import { resolveInternalHref } from '$lib/utils/routes'
   import { ArchiveX, Download, FileText, Zap } from '$lib/components/icons'
   import { PageHeader } from '$lib/components/ui'
 
@@ -142,7 +143,7 @@
               </span>
               <div class="min-w-0 flex-1">
                 <a
-                  href="/stories/{story.id}/edit"
+                  href={resolveInternalHref(`/stories/${story.id}/edit`)}
                   class="inline-flex items-center gap-1.5 font-medium hover:text-primary hover:underline"
                 >
                   {story.title}
@@ -180,7 +181,7 @@
   <!-- Actions -->
   <div class="flex gap-2">
     <a
-      href="/bulletins"
+      href={resolveInternalHref('/bulletins')}
       class="btn btn-ghost">Terug naar overzicht</a
     >
   </div>
