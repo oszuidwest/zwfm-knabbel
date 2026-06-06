@@ -1,19 +1,21 @@
 <script lang="ts">
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import { goto } from '$app/navigation'
   import { onMount } from 'svelte'
-  import { auth } from '$lib/stores/auth.svelte'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
   import { authApi } from '$lib/api/auth'
   import { toast } from '$lib/stores/toast'
+  import { resolveInternalHref } from '$lib/utils/routes'
 
   let status = $state<'loading' | 'success' | 'error'>('loading')
   let errorMessage = $state('')
+  const auth = getAuthContext()
 
   function redirectToLogin(message: string): () => void {
     status = 'error'
     errorMessage = message
     toast.error(message)
-    const timer = setTimeout(() => goto('/login'), 3000)
+    const timer = setTimeout(() => goto(resolveInternalHref('/login')), 3000)
     return () => clearTimeout(timer)
   }
 
@@ -21,10 +23,10 @@
     let cleanup: (() => void) | undefined
 
     async function handleCallback(): Promise<void> {
-      const code = $page.url.searchParams.get('code')
-      const state = $page.url.searchParams.get('state')
-      const error = $page.url.searchParams.get('error')
-      const errorDescription = $page.url.searchParams.get('error_description')
+      const code = page.url.searchParams.get('code')
+      const state = page.url.searchParams.get('state')
+      const error = page.url.searchParams.get('error')
+      const errorDescription = page.url.searchParams.get('error_description')
 
       if (error) {
         cleanup = redirectToLogin(errorDescription || error || 'Authenticatie mislukt')
@@ -38,12 +40,12 @@
 
       try {
         await authApi.oauthCallback(code, state)
-        const authenticated = await auth.checkAuth()
+        const authenticated = await auth.checkAuth({ force: true })
 
         if (authenticated) {
           status = 'success'
           toast.success('Succesvol ingelogd')
-          goto('/stories')
+          goto(resolveInternalHref('/stories'))
         } else {
           throw new Error('Authenticatie verificatie mislukt')
         }

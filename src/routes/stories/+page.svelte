@@ -1,9 +1,10 @@
 <script lang="ts">
   import { goto, invalidateAll } from '$app/navigation'
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import { storiesApi } from '$lib/api/stories'
   import { deleteWithConfirm } from '$lib/utils/crud'
   import { formatDate } from '$lib/utils/format'
+  import { resolveInternalHref } from '$lib/utils/routes'
   import { statusLabels, statusColors, statusOptions } from '$lib/utils/labels'
   import {
     FileText,
@@ -23,10 +24,10 @@
   let readModeStory = $state<Story | null>(null)
 
   // Filter state from URL parameters
-  const statusFilter = $derived($page.url.searchParams.get('status') ?? '')
-  const dateFilter = $derived($page.url.searchParams.get('date') ?? '')
-  const audioFilter = $derived($page.url.searchParams.get('audio') ?? '')
-  const searchQuery = $derived($page.url.searchParams.get('q') ?? '')
+  const statusFilter = $derived(page.url.searchParams.get('status') ?? '')
+  const dateFilter = $derived(page.url.searchParams.get('date') ?? '')
+  const audioFilter = $derived(page.url.searchParams.get('audio') ?? '')
+  const searchQuery = $derived(page.url.searchParams.get('q') ?? '')
 
   // Count hidden filters for mobile badge
   const hiddenFilterCount = $derived((statusFilter ? 1 : 0) + (searchQuery ? 1 : 0))
@@ -36,7 +37,7 @@
 
   // Update URL and trigger server-side reload
   function updateFilters(updates: Record<string, string>): void {
-    const url = new URL($page.url)
+    const url = new URL(page.url)
     // Reset to page 1 when filters change
     url.searchParams.delete('page')
     for (const [key, value] of Object.entries(updates)) {
@@ -46,7 +47,7 @@
         url.searchParams.delete(key)
       }
     }
-    goto(url.toString(), { invalidateAll: true })
+    goto(resolveInternalHref(`${url.pathname}${url.search}${url.hash}`), { invalidateAll: true })
   }
 
   const handleDelete = (story: Story) =>
@@ -96,20 +97,20 @@
   <div class="flex flex-wrap items-center gap-2">
     <div class="tabs tabs-box tabs-sm md:tabs-md">
       <button
-        class="tab {dateFilter === '' ? 'tab-active' : ''}"
+        class={['tab', dateFilter === '' && 'tab-active']}
         onclick={() => updateFilters({ date: '', status: '' })}
       >
         Alle
       </button>
       <button
-        class="tab {dateFilter === 'today' ? 'tab-active' : ''}"
+        class={['tab', dateFilter === 'today' && 'tab-active']}
         onclick={() => updateFilters({ date: 'today' })}
       >
         Vandaag
         <span class="ml-1 hidden text-xs opacity-60 sm:inline">({formatDateLabel('today')})</span>
       </button>
       <button
-        class="tab {dateFilter === 'tomorrow' ? 'tab-active' : ''}"
+        class={['tab', dateFilter === 'tomorrow' && 'tab-active']}
         onclick={() => updateFilters({ date: 'tomorrow' })}
       >
         Morgen
@@ -189,7 +190,7 @@
     <div class="space-y-2 md:hidden">
       {#each data.stories as story (story.id)}
         <a
-          href="/stories/{story.id}/edit"
+          href={resolveInternalHref(`/stories/${story.id}/edit`)}
           class="card bg-base-100 transition-shadow hover:shadow-md active:bg-base-200"
         >
           <div class="card-body p-4">
@@ -345,7 +346,7 @@
 
 <!-- FAB: New story button (mobile only) -->
 <a
-  href="/stories/new"
+  href={resolveInternalHref('/stories/new')}
   class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
   aria-label="Nieuw bericht"
 >

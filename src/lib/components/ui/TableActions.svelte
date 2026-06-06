@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Pencil, Trash2 } from '$lib/components/icons'
+  import { resolveInternalHref } from '$lib/utils/routes'
 
   interface Props {
     editHref: string
@@ -7,11 +8,13 @@
   }
 
   let { editHref, onDelete }: Props = $props()
+
+  const resolvedEditHref = $derived(resolveInternalHref(editHref))
 </script>
 
 <div class="flex gap-1">
   <a
-    href={editHref}
+    href={resolvedEditHref}
     class="btn btn-ghost btn-sm"
     aria-label="Bewerken"
   >

@@ -59,8 +59,7 @@
   <select
     {id}
     bind:value
-    class="select w-full"
-    class:select-error={error}
+    class={['select w-full', error && 'select-error']}
     {disabled}
   >
     {#if placeholder}

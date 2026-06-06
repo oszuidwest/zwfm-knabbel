@@ -1,18 +1,19 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import { formatDateTime, formatDuration } from '$lib/utils/format'
+  import { resolveInternalHref } from '$lib/utils/routes'
   import { Eye, Plus, Podcast } from '$lib/components/icons'
   import { PageHeader, EmptyState, Pagination } from '$lib/components/ui'
 
   let { data } = $props()
 
   // Get selected station from URL (single source of truth)
-  const selectedStation = $derived($page.url.searchParams.get('station') ?? '')
+  const selectedStation = $derived(page.url.searchParams.get('station') ?? '')
 
   // Update station filter via URL
   function updateStationFilter(stationId: string): void {
-    const url = new URL($page.url)
+    const url = new URL(page.url)
     // Reset to page 1 when filter changes
     url.searchParams.delete('page')
     if (stationId) {
@@ -20,7 +21,7 @@
     } else {
       url.searchParams.delete('station')
     }
-    goto(url.toString(), { invalidateAll: true })
+    goto(resolveInternalHref(`${url.pathname}${url.search}${url.hash}`), { invalidateAll: true })
   }
 </script>
 
@@ -59,7 +60,7 @@
     <div class="space-y-2 md:hidden">
       {#each data.bulletins as bulletin (bulletin.id)}
         <a
-          href="/bulletins/{bulletin.id}"
+          href={resolveInternalHref(`/bulletins/${bulletin.id}`)}
           class="card bg-base-100 transition-shadow hover:shadow-md active:bg-base-200"
         >
           <div class="card-body p-4">
@@ -124,7 +125,7 @@
                 <td>{bulletin.voice_name ?? '-'}</td>
                 <td>
                   <a
-                    href="/bulletins/{bulletin.id}"
+                    href={resolveInternalHref(`/bulletins/${bulletin.id}`)}
                     class="btn btn-ghost btn-sm"
                     aria-label="Details"
                   >
@@ -147,7 +148,7 @@
 
 <!-- FAB: Generate bulletin link (mobile only) -->
 <a
-  href="/bulletins/new"
+  href={resolveInternalHref('/bulletins/new')}
   class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
   aria-label="Genereer bulletin"
 >

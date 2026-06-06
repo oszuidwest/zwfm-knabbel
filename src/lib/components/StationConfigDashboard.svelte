@@ -25,7 +25,7 @@
 
   let dragOver = $state<number | null>(null)
   let playingIndex = $state<number | null>(null)
-  let audioElements = $state<Record<number, HTMLAudioElement | null>>({})
+  let audioElements: Record<number, HTMLAudioElement | null> = {}
 
   function handleDragOver(e: DragEvent, index: number) {
     e.preventDefault()
@@ -100,10 +100,13 @@
   <div class="space-y-4">
     {#each configs as config, index (config.station.id)}
       <div
-        class="card border shadow-sm {config.enabled
-          ? 'border-primary/20 bg-base-100'
-          : 'border-base-300 bg-base-100 opacity-60'}"
-        class:pointer-events-none={config.saving}
+        class={[
+          'card border shadow-sm',
+          config.enabled
+            ? 'border-primary/20 bg-base-100'
+            : 'border-base-300 bg-base-100 opacity-60',
+          config.saving && 'pointer-events-none',
+        ]}
       >
         <div class="card-body space-y-5 p-5">
           <!-- Header -->

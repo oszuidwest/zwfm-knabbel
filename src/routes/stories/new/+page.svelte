@@ -7,6 +7,7 @@
   import { toLocalDateString } from '$lib/utils/format'
   import { toSelectOptions } from '$lib/utils/form'
   import { statusOptions } from '$lib/utils/labels'
+  import { resolveInternalHref } from '$lib/utils/routes'
   import {
     BreakingToggle,
     TextInput,
@@ -61,13 +62,13 @@
           await storiesApi.uploadAudio(story.id, audioFile)
         } catch {
           toast.warning('Bericht aangemaakt, maar audio upload mislukt')
-          goto('/stories')
+          goto(resolveInternalHref('/stories'))
           return
         }
       }
 
       toast.success('Bericht aangemaakt')
-      goto('/stories')
+      goto(resolveInternalHref('/stories'))
     } catch {
       toast.error('Aanmaken mislukt')
     } finally {
@@ -122,8 +123,7 @@
             <div class="join w-full">
               <select
                 id="status"
-                class="select join-item flex-1"
-                class:select-error={errors.status}
+                class={['select join-item flex-1', errors.status && 'select-error']}
                 bind:value={form.status}
               >
                 {#each statusOptions as option (option.value)}

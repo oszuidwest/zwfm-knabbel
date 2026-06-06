@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import { Plus } from '$lib/components/icons'
+  import { resolveInternalHref } from '$lib/utils/routes'
 
   interface Props {
     title: string
@@ -11,6 +12,8 @@
   }
 
   let { title, subtitle, actionHref, actionLabel, actions }: Props = $props()
+
+  const resolvedActionHref = $derived(actionHref ? resolveInternalHref(actionHref) : undefined)
 </script>
 
 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -24,7 +27,7 @@
     {@render actions()}
   {:else if actionHref}
     <a
-      href={actionHref}
+      href={resolvedActionHref}
       class="btn btn-primary max-md:hidden"
     >
       <Plus

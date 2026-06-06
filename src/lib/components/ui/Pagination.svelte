@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import { ChevronLeft, ChevronRight } from '$lib/components/icons'
   import { getVisiblePages, type PaginationInfo } from '$lib/utils/pagination'
+  import { resolveInternalHref } from '$lib/utils/routes'
 
   interface Props {
     pagination: PaginationInfo
@@ -12,13 +13,13 @@
   const visiblePages = $derived(getVisiblePages(pagination.currentPage, pagination.totalPages))
 
   function pageHref(pageNum: number): string {
-    const url = new URL($page.url)
+    const url = new URL(page.url)
     if (pageNum === 1) {
       url.searchParams.delete('page')
     } else {
       url.searchParams.set('page', String(pageNum))
     }
-    return `${url.pathname}${url.search}${url.hash}`
+    return resolveInternalHref(`${url.pathname}${url.search}${url.hash}`)
   }
 </script>
 
@@ -55,18 +56,20 @@
       {/if}
 
       <div class="hidden sm:contents">
-        {#each visiblePages as item, i (i)}
-          {#if item === 'ellipsis'}
+        {#each visiblePages as item (item.id)}
+          {#if item.page === null}
             <span class="btn btn-disabled join-item btn-sm md:btn-md">...</span>
           {:else}
             <a
-              class="btn join-item btn-sm md:btn-md"
-              class:btn-active={item === pagination.currentPage}
-              href={pageHref(item)}
-              aria-label="Pagina {item}"
-              aria-current={item === pagination.currentPage ? 'page' : undefined}
+              class={[
+                'btn join-item btn-sm md:btn-md',
+                item.page === pagination.currentPage && 'btn-active',
+              ]}
+              href={pageHref(item.page)}
+              aria-label="Pagina {item.page}"
+              aria-current={item.page === pagination.currentPage ? 'page' : undefined}
             >
-              {item}
+              {item.page}
             </a>
           {/if}
         {/each}

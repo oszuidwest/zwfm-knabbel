@@ -1,5 +1,6 @@
 <script lang="ts">
   import { X, Check } from '$lib/components/icons'
+  import { resolveInternalHref } from '$lib/utils/routes'
 
   interface Props {
     cancelHref: string
@@ -14,11 +15,13 @@
     submitLabel = 'Opslaan',
     cancelLabel = 'Annuleren',
   }: Props = $props()
+
+  const resolvedCancelHref = $derived(resolveInternalHref(cancelHref))
 </script>
 
 <div class="flex justify-end gap-2 pt-4">
   <a
-    href={cancelHref}
+    href={resolvedCancelHref}
     class="btn btn-ghost"
   >
     <X class="h-5 w-5" />

@@ -6,13 +6,23 @@
   import { validateForm } from '$lib/utils/validation'
   import { resolveInternalHref } from '$lib/utils/routes'
   import { TextInput, NumberInput, FormActions, PageHeader } from '$lib/components/ui'
+  import type { PageData } from './$types'
 
-  let form = $state<StationFormData>({
-    name: '',
-    max_stories_per_block: 5,
-    pause_seconds: 2,
-  })
+  interface Props {
+    data: PageData
+  }
 
+  let { data }: Props = $props()
+
+  function initialForm(): StationFormData {
+    return {
+      name: data.station.name ?? '',
+      max_stories_per_block: data.station.max_stories_per_block ?? 5,
+      pause_seconds: data.station.pause_seconds ?? 2,
+    }
+  }
+
+  let form = $state<StationFormData>(initialForm())
   let errors = $state<Record<string, string>>({})
   let submitting = $state(false)
 
@@ -28,11 +38,11 @@
 
     submitting = true
     try {
-      await stationsApi.create(form)
-      toast.success('Zender aangemaakt')
+      await stationsApi.update(data.station.id!, form)
+      toast.success('Zender bijgewerkt')
       goto(resolveInternalHref('/stations'))
     } catch {
-      toast.error('Aanmaken mislukt')
+      toast.error('Bijwerken mislukt')
     } finally {
       submitting = false
     }
@@ -41,8 +51,8 @@
 
 <div class="space-y-6">
   <PageHeader
-    title="Nieuwe zender"
-    subtitle="Voeg een nieuwe zender toe aan het systeem"
+    title="Zender bewerken"
+    subtitle={data.station.name ?? ''}
   />
 
   <div class="card bg-base-100">
@@ -56,7 +66,7 @@
           label="Naam"
           bind:value={form.name}
           error={errors.name}
-          placeholder="Bijvoorbeeld: ZuidWest FM"
+          placeholder="Bijv. Radio ZuidWest FM"
         />
 
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
