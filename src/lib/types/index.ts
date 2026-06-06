@@ -14,18 +14,6 @@ export type StationInput = components['schemas']['StationInput']
 export type StationVoice = components['schemas']['StationVoice']
 export type Bulletin = components['schemas']['BulletinResponse']
 
-export interface StationConfig {
-  station: Station
-  enabled: boolean
-  stationVoiceId: number | null
-  mixPoint: number
-  savedMixPoint: number
-  audioUrl: string | null
-  hasAudio: boolean
-  jingleFile: File | null
-  saving: boolean
-}
-
 // UI uses Weekdays booleans, service converts to bitmask for API
 export interface Weekdays {
   monday: boolean

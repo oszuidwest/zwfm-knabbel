@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getMediaUrl } from '$lib/api/client'
   import { Radio, Upload, Music, Play, Pause } from '$lib/components/icons'
-  import type { StationConfig } from '$lib/types'
+  import type { StationConfig } from './station-config'
 
   interface Props {
     configs: StationConfig[]

@@ -7,9 +7,10 @@
   import { validateForm } from '$lib/utils/validation'
   import { resolveInternalHref } from '$lib/utils/routes'
   import { TextInput, PageHeader } from '$lib/components/ui'
-  import StationConfigDashboard from '$lib/components/StationConfigDashboard.svelte'
+  import StationConfigDashboard from './StationConfigDashboard.svelte'
   import { X, Check } from '$lib/components/icons'
-  import type { StationConfig, StationVoice } from '$lib/types'
+  import type { StationVoice } from '$lib/types'
+  import type { StationConfig } from './station-config'
   import type { PageData } from './$types'
 
   interface Props {
