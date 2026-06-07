@@ -12,6 +12,8 @@ export interface VoiceInput {
 export type Station = components['schemas']['Station']
 export type StationInput = components['schemas']['StationInput']
 export type StationVoice = components['schemas']['StationVoice']
+export type TTSSettings = components['schemas']['TTSSettings']
+export type TTSSettingsUpdate = components['schemas']['TTSSettingsUpdate']
 export type Bulletin = components['schemas']['BulletinResponse']
 
 // UI uses Weekdays booleans, service converts to bitmask for API
