@@ -389,10 +389,18 @@ export interface paths {
      * Generate story audio via text-to-speech
      * @description Generates audio for a story using the ElevenLabs text-to-speech API.
      *     Requires the story to have text content and a voice with an ElevenLabs voice ID configured.
-     *     The generated audio replaces any existing audio file for the story.
+     *     The generated audio is stored as the story audio. If the story already has audio,
+     *     the request fails unless `force=true` is provided, in which case the existing
+     *     story audio is replaced.
+     *
+     *     TTS request options are read from the global settings row exposed at
+     *     `GET/PATCH /api/v1/settings/tts`. The API key and timeout remain environment
+     *     configuration; model, voice settings, text normalization, seed, and the
+     *     Eleven v3 style prefix are database-backed settings.
      *
      *     **Prerequisites:**
      *     - TTS must be enabled (BABBEL_ELEVENLABS_API_KEY configured)
+     *     - The `tts_settings` singleton row must exist
      *     - Story must have non-empty `text`
      *     - Story must have a `voice_id` assigned
      *     - The assigned voice must have an `elevenlabs_voice_id` configured
@@ -404,6 +412,39 @@ export interface paths {
     options?: never
     head?: never
     patch?: never
+    trace?: never
+  }
+  '/api/v1/settings/tts': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get global TTS settings
+     * @description Returns the singleton ElevenLabs text-to-speech settings row.
+     *     The response includes whether an API key is configured, but never returns the key value.
+     *     All authenticated roles can read these settings.
+     */
+    get: operations['getSettingsTts']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * Update global TTS settings
+     * @description Partially updates the singleton ElevenLabs text-to-speech settings row.
+     *     Writes are admin-only because these settings affect all subsequent TTS generation.
+     *
+     *     Concurrency: this endpoint uses last-writer-wins semantics. There is no
+     *     optimistic concurrency control (no ETag / If-Match header). If two
+     *     admins PATCH simultaneously, the later request silently overwrites the
+     *     earlier one. Coordinate edits out-of-band when multiple admins manage
+     *     these settings.
+     */
+    patch: operations['patchSettingsTts']
     trace?: never
   }
   '/api/v1/stories/{id}': {
@@ -901,6 +942,53 @@ export interface components {
       created_at?: string
       /** Format: date-time */
       updated_at?: string
+    }
+    /** @description Global singleton ElevenLabs text-to-speech settings. */
+    TTSSettings: {
+      /**
+       * @description ElevenLabs model ID used for subsequent story TTS generation.
+       * @enum {string}
+       */
+      model: 'eleven_v3' | 'eleven_multilingual_v2' | 'eleven_flash_v2_5'
+      /** Format: float */
+      stability: number
+      /** Format: float */
+      similarity_boost: number
+      /** Format: float */
+      style: number
+      /** @description Preserved in settings, but omitted from Eleven v3 request bodies. */
+      use_speaker_boost: boolean
+      /** Format: float */
+      speed: number
+      /** @enum {string} */
+      apply_text_normalization: 'auto' | 'on' | 'off'
+      /** @description Best-effort deterministic seed. Null means random output. */
+      seed: number | null
+      /** @description Audio-tag prefix applied only when model is eleven_v3. */
+      tts_style_prefix: string
+      /** Format: date-time */
+      updated_at: string
+      /** @description Whether BABBEL_ELEVENLABS_API_KEY is configured. */
+      api_key_configured: boolean
+    }
+    /** @description Partial update for global singleton TTS settings. */
+    TTSSettingsUpdate: {
+      /** @enum {string} */
+      model?: 'eleven_v3' | 'eleven_multilingual_v2' | 'eleven_flash_v2_5'
+      /** Format: float */
+      stability?: number
+      /** Format: float */
+      similarity_boost?: number
+      /** Format: float */
+      style?: number
+      use_speaker_boost?: boolean
+      /** Format: float */
+      speed?: number
+      /** @enum {string} */
+      apply_text_normalization?: 'auto' | 'on' | 'off'
+      /** @description Set to null to clear the stored seed. */
+      seed?: number | null
+      tts_style_prefix?: string
     }
     /** @description Represents the relationship between a station and voice with station-specific jingle configuration */
     StationVoice: {
@@ -1486,6 +1574,57 @@ export interface components {
     }
     /** @description Request body too large */
     PayloadTooLarge: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/problem+json': components['schemas']['ProblemDetails']
+      }
+    }
+    /** @description Request was rate limited */
+    TooManyRequests: {
+      headers: {
+        /** @description Number of seconds to wait before retrying, when provided by the upstream service */
+        'Retry-After'?: string
+        [name: string]: unknown
+      }
+      content: {
+        /**
+         * @example {
+         *       "type": "https://babbel.api/problems/tts.rate_limited",
+         *       "title": "Too Many Requests",
+         *       "status": 429,
+         *       "detail": "TTS rate limited",
+         *       "instance": "/api/v1/stories/1/tts",
+         *       "code": "tts.rate_limited",
+         *       "hint": "Retry the request later"
+         *     }
+         */
+        'application/problem+json': components['schemas']['ProblemDetails']
+      }
+    }
+    /** @description Upstream service failed */
+    BadGateway: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        /**
+         * @example {
+         *       "type": "https://babbel.api/problems/tts.upstream_failed",
+         *       "title": "Bad Gateway",
+         *       "status": 502,
+         *       "detail": "TTS upstream ElevenLabs failed",
+         *       "instance": "/api/v1/stories/1/tts",
+         *       "code": "tts.upstream_failed",
+         *       "hint": "Please try again later"
+         *     }
+         */
+        'application/problem+json': components['schemas']['ProblemDetails']
+      }
+    }
+    /** @description Service unavailable */
+    ServiceUnavailable: {
       headers: {
         [name: string]: unknown
       }
@@ -2489,8 +2628,6 @@ export interface operations {
        *     - Voice has no ElevenLabs voice ID configured
        *     - Story already has audio (use ?force=true to overwrite)
        *     - ElevenLabs voice ID not found
-       *     - ElevenLabs API key is invalid
-       *     - ElevenLabs rate limit exceeded
        */
       400: {
         headers: {
@@ -2503,6 +2640,8 @@ export interface operations {
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      422: components['responses']['UnprocessableEntity']
+      429: components['responses']['TooManyRequests']
       500: components['responses']['InternalServerError']
       /** @description TTS is not configured on the server */
       501: {
@@ -2522,6 +2661,67 @@ export interface operations {
           'application/problem+json': components['schemas']['ProblemDetails']
         }
       }
+      502: components['responses']['BadGateway']
+      503: components['responses']['ServiceUnavailable']
+    }
+  }
+  getSettingsTts: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Global TTS settings */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TTSSettings']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      500: components['responses']['InternalServerError']
+      503: components['responses']['ServiceUnavailable']
+    }
+  }
+  patchSettingsTts: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "stability": 0.7,
+         *       "seed": null
+         *     }
+         */
+        'application/json': components['schemas']['TTSSettingsUpdate']
+      }
+    }
+    responses: {
+      /** @description Global TTS settings updated */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TTSSettings']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+      503: components['responses']['ServiceUnavailable']
     }
   }
   getStoriesId: {

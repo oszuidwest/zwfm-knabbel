@@ -35,7 +35,7 @@
 
   const adminNavItems: NavItem[] = [
     { path: '/users', label: 'Gebruikers', icon: Users },
-    { path: '#', label: 'AI-instellingen', icon: Sparkles },
+    { path: '/settings/ai', label: 'AI-instellingen', icon: Sparkles },
   ]
 
   function isActive(path: string): boolean {
