@@ -41,22 +41,18 @@
   ]
 
   // Svelte warns when prop values are captured directly into state initializers.
-  // These lazy readers make the keyed component's one-time form initialization explicit.
-  function initialSettings(): TTSSettings {
-    return settings
-  }
-
+  // This lazy reader makes the keyed component's one-time form initialization explicit.
   function initialForm(): TTSSettingsFormData {
-    return toTTSSettingsFormData(initialSettings())
+    return toTTSSettingsFormData(settings)
   }
 
-  let currentSettings = $state<TTSSettings>(initialSettings())
   let savedForm = $state<TTSSettingsFormData>(initialForm())
   let form = $state<TTSSettingsFormData>(initialForm())
   let errors = $state<Record<string, string>>({})
   let submitting = $state(false)
 
   const isDirty = $derived(JSON.stringify(form) !== JSON.stringify(savedForm))
+  const isV3Model = $derived(form.model === 'eleven_v3')
   const reloadLabel = $derived(isDirty ? 'Wijzigingen verwerpen' : 'Herladen')
 
   function isValidationErrorDetails(value: unknown): value is ValidationErrorDetails {
@@ -102,10 +98,14 @@
       const updated = await settingsApi.updateTts(toTTSSettingsUpdate(result.data))
       const updatedForm = toTTSSettingsFormData(updated)
 
-      currentSettings = updated
       savedForm = updatedForm
       form = { ...updatedForm }
       toast.success('AI-instellingen opgeslagen')
+      try {
+        await invalidateAll()
+      } catch {
+        toast.error('Opnieuw laden mislukt')
+      }
     } catch (err) {
       if (err instanceof ApiError && err.status === 422) {
         const validationErrors = validationErrorsFromDetails(err.details)
@@ -137,20 +137,18 @@
   <div class="rounded-lg border border-base-300 bg-base-100 p-4">
     <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">API-sleutel</div>
     <div class="mt-2">
-      <span
-        class={['badge', currentSettings.api_key_configured ? 'badge-success' : 'badge-warning']}
-      >
-        {currentSettings.api_key_configured ? 'Geconfigureerd' : 'Ontbreekt'}
+      <span class={['badge', settings.api_key_configured ? 'badge-success' : 'badge-warning']}>
+        {settings.api_key_configured ? 'Geconfigureerd' : 'Ontbreekt'}
       </span>
     </div>
   </div>
   <div class="rounded-lg border border-base-300 bg-base-100 p-4">
     <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">Model</div>
-    <div class="mt-2 font-semibold">{currentSettings.model}</div>
+    <div class="mt-2 font-semibold">{settings.model}</div>
   </div>
   <div class="rounded-lg border border-base-300 bg-base-100 p-4">
     <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">Bijgewerkt</div>
-    <div class="mt-2 font-semibold">{formatDateTime(currentSettings.updated_at)}</div>
+    <div class="mt-2 font-semibold">{formatDateTime(settings.updated_at)}</div>
   </div>
 </div>
 
@@ -260,10 +258,12 @@
       label="Eleven v3 stijlprefix"
       bind:value={form.tts_style_prefix}
       error={errors.tts_style_prefix}
-      hint="Alleen toegepast bij model Eleven v3"
+      hint={isV3Model
+        ? 'Alleen toegepast bij model Eleven v3'
+        : 'Niet beschikbaar voor het huidige model'}
       rows={3}
       placeholder="[nieuwslezer] "
-      disabled={submitting}
+      disabled={submitting || !isV3Model}
     />
 
     <div class="flex justify-end gap-2 pt-2">

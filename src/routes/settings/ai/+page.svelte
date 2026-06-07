@@ -3,9 +3,26 @@
   import { RefreshCw, TriangleAlert } from '$lib/components/icons'
   import { PageHeader } from '$lib/components/ui'
   import TTSSettingsForm from './TTSSettingsForm.svelte'
+  import type { TTSSettings } from '$lib/types'
   import type { PageProps } from './$types'
 
   let { data }: PageProps = $props()
+
+  function settingsKey(settings: TTSSettings): string {
+    return JSON.stringify({
+      model: settings.model,
+      stability: settings.stability,
+      similarity_boost: settings.similarity_boost,
+      style: settings.style,
+      use_speaker_boost: settings.use_speaker_boost,
+      speed: settings.speed,
+      apply_text_normalization: settings.apply_text_normalization,
+      seed: settings.seed,
+      tts_style_prefix: settings.tts_style_prefix,
+      updated_at: settings.updated_at,
+      api_key_configured: settings.api_key_configured,
+    })
+  }
 
   async function reloadSettings(): Promise<void> {
     await invalidateAll()
@@ -47,7 +64,7 @@
       </button>
     </div>
   {:else if data.settings}
-    {#key data.settings.updated_at}
+    {#key settingsKey(data.settings)}
       <TTSSettingsForm settings={data.settings} />
     {/key}
   {/if}
