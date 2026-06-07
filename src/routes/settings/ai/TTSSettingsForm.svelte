@@ -95,31 +95,26 @@
 
     submitting = true
     try {
-      const updated = await settingsApi.updateTts(toTTSSettingsUpdate(result.data))
-      const updatedForm = toTTSSettingsFormData(updated)
-
-      savedForm = updatedForm
-      form = { ...updatedForm }
+      await settingsApi.updateTts(toTTSSettingsUpdate(result.data))
       toast.success('AI-instellingen opgeslagen')
-      try {
-        await invalidateAll()
-      } catch {
-        toast.error('Opnieuw laden mislukt')
-      }
     } catch (err) {
       if (err instanceof ApiError && err.status === 422) {
         const validationErrors = validationErrorsFromDetails(err.details)
         if (Object.keys(validationErrors).length > 0) {
           errors = validationErrors
           toast.error('Controleer de velden')
+          submitting = false
           return
         }
       }
 
       toast.error('Opslaan mislukt')
-    } finally {
       submitting = false
+      return
     }
+
+    await invalidateAll()
+    submitting = false
   }
 
   function handleNumberInput(field: NumericSettingField, e: Event): void {
