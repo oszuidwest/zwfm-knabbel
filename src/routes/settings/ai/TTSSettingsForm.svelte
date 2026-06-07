@@ -15,7 +15,7 @@
   import { formatDateTime } from '$lib/utils/format'
   import { validateForm } from '$lib/utils/validation'
   import { SelectInput, TextareaInput, TextInput } from '$lib/components/ui'
-  import type { TTSSettings } from '$lib/types'
+  import type { components, TTSSettings } from '$lib/types'
 
   type NumericSettingField = 'stability' | 'similarity_boost' | 'style' | 'speed'
 
@@ -23,12 +23,7 @@
     settings: TTSSettings
   }
 
-  interface ValidationErrorDetails {
-    errors?: {
-      field?: string
-      message?: string
-    }[]
-  }
+  type ValidationErrorDetails = components['schemas']['ValidationError']
 
   let { settings }: Props = $props()
 
@@ -45,6 +40,8 @@
     { field: 'speed', label: 'Snelheid', min: 0.7, max: 1.2, step: 0.01 },
   ]
 
+  // Svelte warns when prop values are captured directly into state initializers.
+  // These lazy readers make the keyed component's one-time form initialization explicit.
   function initialSettings(): TTSSettings {
     return settings
   }
@@ -55,26 +52,12 @@
 
   let currentSettings = $state<TTSSettings>(initialSettings())
   let savedForm = $state<TTSSettingsFormData>(initialForm())
-  let form = $state<TTSSettingsFormData>({ ...initialForm() })
+  let form = $state<TTSSettingsFormData>(initialForm())
   let errors = $state<Record<string, string>>({})
   let submitting = $state(false)
 
-  const isDirty = $derived(!formsEqual(form, savedForm))
+  const isDirty = $derived(JSON.stringify(form) !== JSON.stringify(savedForm))
   const reloadLabel = $derived(isDirty ? 'Wijzigingen verwerpen' : 'Herladen')
-
-  function formsEqual(a: TTSSettingsFormData, b: TTSSettingsFormData): boolean {
-    return (
-      a.model === b.model &&
-      a.stability === b.stability &&
-      a.similarity_boost === b.similarity_boost &&
-      a.style === b.style &&
-      a.use_speaker_boost === b.use_speaker_boost &&
-      a.speed === b.speed &&
-      a.apply_text_normalization === b.apply_text_normalization &&
-      a.seed === b.seed &&
-      a.tts_style_prefix === b.tts_style_prefix
-    )
-  }
 
   function isValidationErrorDetails(value: unknown): value is ValidationErrorDetails {
     return typeof value === 'object' && value !== null && 'errors' in value
