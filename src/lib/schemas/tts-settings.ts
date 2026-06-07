@@ -16,6 +16,7 @@ export const textNormalizationOptions = [
   { value: textNormalizationValues[2], label: 'Uit' },
 ] satisfies readonly { value: (typeof textNormalizationValues)[number]; label: string }[]
 
+// ElevenLabs seed range: 0..2^32-1.
 const uint32Max = 4294967295
 
 const seedSchema = z

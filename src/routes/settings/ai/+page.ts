@@ -1,6 +1,8 @@
 import type { PageLoad } from './$types'
+import { redirect } from '@sveltejs/kit'
 import { ApiError } from '$lib/api/client'
 import { settingsApi } from '$lib/api/settings'
+import { resolveInternalHref } from '$lib/utils/routes'
 
 interface SettingsLoadError {
   status?: number
@@ -42,6 +44,10 @@ export const load: PageLoad = async ({ fetch }) => {
       loadError: null,
     }
   } catch (err) {
+    if (err instanceof ApiError && err.status === 401) {
+      throw redirect(303, resolveInternalHref('/login'))
+    }
+
     return {
       settings: null,
       loadError: toSettingsLoadError(err),

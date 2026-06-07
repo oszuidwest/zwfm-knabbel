@@ -19,7 +19,7 @@
     label: string
     /** Value is always a string (HTML select behavior). Use toStringOrEmpty/toNumberOrNull for conversion. */
     value: string | null | undefined
-    options: Option[]
+    options: readonly Option[]
     error?: string
     /**
      * Disabled placeholder option shown when no value is selected.
