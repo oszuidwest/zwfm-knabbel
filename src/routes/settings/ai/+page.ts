@@ -24,7 +24,7 @@ function toSettingsLoadError(err: unknown): SettingsLoadError {
     return { message: err.message }
   }
 
-  return { message: 'AI-instellingen laden mislukt' }
+  return { message: 'Spraakmodel laden mislukt' }
 }
 
 export const load: PageLoad = async ({ fetch }) => {

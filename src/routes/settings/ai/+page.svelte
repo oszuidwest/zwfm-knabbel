@@ -1,11 +1,13 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation'
-  import { RefreshCw, TriangleAlert } from '$lib/components/icons'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
+  import { Info, RefreshCw, TriangleAlert } from '$lib/components/icons'
   import { PageHeader } from '$lib/components/ui'
   import TTSSettingsForm from './TTSSettingsForm.svelte'
   import type { PageProps } from './$types'
 
   let { data }: PageProps = $props()
+  const auth = getAuthContext()
 
   async function reloadSettings(): Promise<void> {
     await invalidateAll()
@@ -14,7 +16,7 @@
 
 <div class="space-y-6">
   <PageHeader
-    title="AI-instellingen"
+    title="Spraakmodel"
     subtitle="Globale ElevenLabs instellingen voor tekst-naar-spraak"
   />
 
@@ -25,7 +27,7 @@
         aria-hidden="true"
       />
       <div>
-        <h2 class="font-semibold">AI-instellingen niet beschikbaar</h2>
+        <h2 class="font-semibold">Spraakmodel niet beschikbaar</h2>
         <p class="text-sm">
           {#if data.loadError.status}
             HTTP {data.loadError.status}: {data.loadError.message}
@@ -46,9 +48,25 @@
         Opnieuw laden
       </button>
     </div>
-  {:else if data.settings}
+  {:else if !auth.canEditTtsSettings}
+    <div
+      class="alert alert-info"
+      role="status"
+    >
+      <Info
+        aria-hidden="true"
+        class="h-5 w-5"
+      />
+      <span>Alleen-lezen weergave — alleen admins kunnen het Spraakmodel wijzigen.</span>
+    </div>
+  {/if}
+
+  {#if !data.loadError && data.settings}
     {#key JSON.stringify(data.settings)}
-      <TTSSettingsForm settings={data.settings} />
+      <TTSSettingsForm
+        settings={data.settings}
+        canEdit={auth.canEditTtsSettings}
+      />
     {/key}
   {/if}
 </div>

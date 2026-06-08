@@ -21,11 +21,12 @@
 
   interface Props {
     settings: TTSSettings
+    canEdit: boolean
   }
 
   type ValidationErrorDetails = components['schemas']['ValidationError']
 
-  let { settings }: Props = $props()
+  let { settings, canEdit }: Props = $props()
 
   const numericSettings: {
     field: NumericSettingField
@@ -54,6 +55,7 @@
   const isDirty = $derived(JSON.stringify(form) !== JSON.stringify(savedForm))
   const isV3Model = $derived(form.model === 'eleven_v3')
   const reloadLabel = $derived(isDirty ? 'Wijzigingen verwerpen' : 'Herladen')
+  const formDisabled = $derived(submitting || !canEdit)
 
   function isValidationErrorDetails(value: unknown): value is ValidationErrorDetails {
     return typeof value === 'object' && value !== null && 'errors' in value
@@ -84,7 +86,7 @@
   async function handleSubmit(e: Event): Promise<void> {
     e.preventDefault()
 
-    if (submitting) return
+    if (submitting || !canEdit) return
 
     const result = validateForm(ttsSettingsSchema, form)
     if (!result.success) {
@@ -111,7 +113,7 @@
         return
       }
 
-      toast.success('AI-instellingen opgeslagen')
+      toast.success('Spraakmodel opgeslagen')
       await invalidateAll()
     } finally {
       submitting = false
@@ -168,7 +170,7 @@
         bind:value={form.model}
         options={ttsModelOptions}
         error={errors.model}
-        disabled={submitting}
+        disabled={formDisabled}
       />
 
       <SelectInput
@@ -177,7 +179,7 @@
         bind:value={form.apply_text_normalization}
         options={textNormalizationOptions}
         error={errors.apply_text_normalization}
-        disabled={submitting}
+        disabled={formDisabled}
       />
     </div>
 
@@ -200,7 +202,7 @@
               step={setting.step}
               value={form[setting.field]}
               oninput={e => handleNumberInput(setting.field, e)}
-              disabled={submitting}
+              disabled={formDisabled}
             />
           </div>
           <input
@@ -212,7 +214,7 @@
             step={setting.step}
             value={form[setting.field]}
             oninput={e => handleNumberInput(setting.field, e)}
-            disabled={submitting}
+            disabled={formDisabled}
             aria-label="{setting.label} slider"
           />
           {#if errors[setting.field]}
@@ -229,7 +231,7 @@
         bind:value={form.seed}
         error={errors.seed}
         placeholder="Leeg voor willekeurig"
-        disabled={submitting}
+        disabled={formDisabled}
       />
 
       <fieldset class="fieldset">
@@ -244,7 +246,7 @@
           type="checkbox"
           class="toggle toggle-primary"
           bind:checked={form.use_speaker_boost}
-          disabled={submitting}
+          disabled={formDisabled}
         />
       </fieldset>
     </div>
@@ -259,7 +261,7 @@
         : 'Niet beschikbaar voor het huidige model'}
       rows={3}
       placeholder="[nieuwslezer] "
-      disabled={submitting || !isV3Model}
+      disabled={formDisabled || !isV3Model}
     />
 
     <div class="flex justify-end gap-2 pt-2">
@@ -272,18 +274,20 @@
         <RefreshCw class="h-5 w-5" />
         {reloadLabel}
       </button>
-      <button
-        type="submit"
-        class="btn btn-primary"
-        disabled={submitting || !isDirty}
-      >
-        {#if submitting}
-          <span class="loading loading-sm loading-spinner"></span>
-        {:else}
-          <Check class="h-5 w-5" />
-        {/if}
-        Opslaan
-      </button>
+      {#if canEdit}
+        <button
+          type="submit"
+          class="btn btn-primary"
+          disabled={submitting || !isDirty}
+        >
+          {#if submitting}
+            <span class="loading loading-sm loading-spinner"></span>
+          {:else}
+            <Check class="h-5 w-5" />
+          {/if}
+          Opslaan
+        </button>
+      {/if}
     </div>
   </div>
 </form>

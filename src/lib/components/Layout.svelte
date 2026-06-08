@@ -36,11 +36,11 @@
 
   const aiNavItems: NavItem[] = [
     { path: '/pronunciations', label: 'Uitspraakregels', icon: BookOpen },
+    { path: '/settings/ai', label: 'Spraakmodel', icon: Sparkles },
   ]
 
   const adminNavItems: NavItem[] = [
     { path: '/users', label: 'Gebruikers', icon: Users },
-    { path: '/settings/ai', label: 'AI-instellingen', icon: Sparkles },
   ]
 
   function isActive(path: string): boolean {
@@ -145,7 +145,7 @@
             </li>
           {/each}
 
-          {#if auth.canViewPronunciations}
+          {#if auth.canViewPronunciations || auth.canViewTtsSettings}
             <li class="mt-4 menu-title tracking-widest uppercase">AI</li>
             {#each aiNavItems as item (item.path)}
               {@const Icon = item.icon}
