@@ -14,6 +14,9 @@ export type StationInput = components['schemas']['StationInput']
 export type StationVoice = components['schemas']['StationVoice']
 export type TTSSettings = components['schemas']['TTSSettings']
 export type TTSSettingsUpdate = components['schemas']['TTSSettingsUpdate']
+export type PronunciationRule = components['schemas']['PronunciationRule']
+export type PronunciationRulesList = components['schemas']['PronunciationRulesList']
+export type PronunciationRulesUpdate = components['schemas']['PronunciationRulesUpdate']
 export type Bulletin = components['schemas']['BulletinResponse']
 
 // UI uses Weekdays booleans, service converts to bitmask for API

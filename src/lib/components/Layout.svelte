@@ -8,6 +8,7 @@
   import {
     Radio,
     Mic,
+    BookOpen,
     FileText,
     Podcast,
     Users,
@@ -31,6 +32,10 @@
     { path: '/voices', label: 'Stemmen', icon: Mic },
     { path: '/stories', label: 'Berichten', icon: FileText },
     { path: '/bulletins', label: 'Bulletins', icon: Podcast },
+  ]
+
+  const aiNavItems: NavItem[] = [
+    { path: '/pronunciations', label: 'Uitspraakregels', icon: BookOpen },
   ]
 
   const adminNavItems: NavItem[] = [
@@ -143,6 +148,26 @@
               </a>
             </li>
           {/each}
+
+          <!-- AI section (editors + admins) -->
+          {#if auth.canEditPronunciations}
+            <li class="mt-4 menu-title tracking-widest uppercase">AI</li>
+            {#each aiNavItems as item (item.path)}
+              {@const Icon = item.icon}
+              <li>
+                <a
+                  href={resolveInternalHref(item.path)}
+                  class={{ 'menu-active': isActive(item.path) }}
+                >
+                  <Icon
+                    aria-hidden="true"
+                    class="h-6 w-6"
+                  />
+                  {item.label}
+                </a>
+              </li>
+            {/each}
+          {/if}
 
           <!-- Admin section -->
           {#if auth.isAdmin}
