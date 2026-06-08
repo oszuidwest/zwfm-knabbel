@@ -8,12 +8,28 @@
     subtitle?: string
     actionHref?: string
     actionLabel?: string
+    canAction?: boolean
+    forbidTooltip?: string
     actions?: Snippet
   }
 
-  let { title, subtitle, actionHref, actionLabel, actions }: Props = $props()
+  let {
+    title,
+    subtitle,
+    actionHref,
+    actionLabel,
+    canAction = true,
+    forbidTooltip = 'Geen rechten',
+    actions,
+  }: Props = $props()
 
   const resolvedActionHref = $derived(actionHref ? resolveInternalHref(actionHref) : undefined)
+
+  function handleActionClick(e: MouseEvent): void {
+    if (!canAction) {
+      e.preventDefault()
+    }
+  }
 </script>
 
 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -26,15 +42,24 @@
   {#if actions}
     {@render actions()}
   {:else if actionHref}
-    <a
-      href={resolvedActionHref}
-      class="btn btn-primary max-md:hidden"
+    <div
+      class="tooltip tooltip-left max-md:hidden"
+      data-tip={canAction ? undefined : forbidTooltip}
     >
-      <Plus
-        aria-hidden="true"
-        class="h-5 w-5"
-      />
-      {actionLabel ?? 'Nieuw'}
-    </a>
+      <a
+        href={resolvedActionHref}
+        class={['btn btn-primary', !canAction && 'btn-disabled']}
+        role={canAction ? undefined : 'button'}
+        aria-disabled={!canAction}
+        tabindex={canAction ? undefined : -1}
+        onclick={handleActionClick}
+      >
+        <Plus
+          aria-hidden="true"
+          class="h-5 w-5"
+        />
+        {actionLabel ?? 'Nieuw'}
+      </a>
+    </div>
   {/if}
 </div>

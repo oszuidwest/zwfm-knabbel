@@ -2,42 +2,47 @@
   import './layout.css'
   import { page } from '$app/state'
   import { afterNavigate, goto } from '$app/navigation'
-  import { onMount } from 'svelte'
   import { createAuthStore, setAuthContext } from '$lib/stores/auth.svelte'
   import Layout from '$lib/components/Layout.svelte'
   import Toast from '$lib/components/Toast.svelte'
+  import { toast } from '$lib/stores/toast'
   import { resolveInternalHref } from '$lib/utils/routes'
+  import type { LayoutProps } from './$types'
 
-  let { children } = $props()
+  let { data, children }: LayoutProps = $props()
   const auth = createAuthStore()
   setAuthContext(auth)
+  // svelte-ignore state_referenced_locally
+  auth.hydrate(data.user)
 
   const publicRoutes = ['/login', '/auth/oauth/callback']
 
   const currentPathname = $derived(page.url.pathname)
   const isPublic = $derived(isPublicRoute(currentPathname))
-  const isAuthenticatedLoginRedirect = $derived(!!auth.user && currentPathname === '/login')
 
   function isPublicRoute(pathname: string): boolean {
     return publicRoutes.some(r => pathname.startsWith(r))
   }
+
+  $effect(() => {
+    auth.hydrate(data.user)
+  })
 
   async function guardRoute(pathname: string): Promise<void> {
     if (!auth.checked) return
 
     if (!auth.user && !isPublicRoute(pathname)) {
       await goto(resolveInternalHref('/login'))
-    } else if (auth.user && pathname === '/login') {
-      await goto(resolveInternalHref('/stories'))
     }
   }
 
-  onMount(async () => {
-    await auth.checkAuth()
-    await guardRoute(page.url.pathname)
-  })
-
   afterNavigate(({ to }) => {
+    if (to?.url.searchParams.get('denied') === '1') {
+      toast.error('Geen rechten voor deze pagina')
+      void goto(resolveInternalHref('/stories'), { replaceState: true })
+      return
+    }
+
     void guardRoute(to?.url.pathname ?? page.url.pathname)
   })
 </script>
@@ -46,7 +51,7 @@
   <title>Babbel - Nieuwsbulletinsysteem</title>
 </svelte:head>
 
-{#if auth.loading || isAuthenticatedLoginRedirect}
+{#if auth.loading}
   <div class="flex min-h-screen items-center justify-center bg-base-200">
     <span class="loading loading-lg loading-spinner text-primary"></span>
   </div>

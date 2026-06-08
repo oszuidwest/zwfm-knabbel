@@ -1,15 +1,18 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
   import { formatDateTime, formatDuration } from '$lib/utils/format'
   import { resolveInternalHref } from '$lib/utils/routes'
   import { Eye, Plus, Podcast } from '$lib/components/icons'
   import { PageHeader, EmptyState, Pagination } from '$lib/components/ui'
 
   let { data } = $props()
+  const auth = getAuthContext()
 
   // Get selected station from URL (single source of truth)
   const selectedStation = $derived(page.url.searchParams.get('station') ?? '')
+  const canGenerate = $derived(auth.can('bulletins', 'generate'))
 
   // Update station filter via URL
   function updateStationFilter(stationId: string): void {
@@ -31,6 +34,7 @@
     subtitle="{data.pagination.totalItems} bulletins"
     actionHref="/bulletins/new"
     actionLabel="Genereren"
+    canAction={canGenerate}
   />
 
   <!-- Controls -->
@@ -52,8 +56,10 @@
     <EmptyState
       icon={Podcast}
       title="Geen bulletins"
-      description="Genereer je eerste nieuwsbulletin."
-      action={{ href: '/bulletins/new', label: 'Genereren' }}
+      description={canGenerate
+        ? 'Genereer je eerste nieuwsbulletin.'
+        : 'Nog geen bulletins aanwezig.'}
+      action={canGenerate ? { href: '/bulletins/new', label: 'Genereren' } : undefined}
     />
   {:else}
     <!-- Mobile: Cards view -->
@@ -147,13 +153,15 @@
 </div>
 
 <!-- FAB: Generate bulletin link (mobile only) -->
-<a
-  href={resolveInternalHref('/bulletins/new')}
-  class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
-  aria-label="Genereer bulletin"
->
-  <Plus
-    aria-hidden="true"
-    class="h-6 w-6"
-  />
-</a>
+{#if canGenerate}
+  <a
+    href={resolveInternalHref('/bulletins/new')}
+    class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
+    aria-label="Genereer bulletin"
+  >
+    <Plus
+      aria-hidden="true"
+      class="h-6 w-6"
+    />
+  </a>
+{/if}

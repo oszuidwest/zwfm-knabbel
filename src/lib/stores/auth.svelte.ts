@@ -1,5 +1,6 @@
 import { createContext } from 'svelte'
 import { authApi } from '$lib/api/auth'
+import { can as policyCan, type Action, type Resource, type Role } from '$lib/auth/policy'
 import type { User } from '$lib/types'
 
 interface CheckAuthOptions {
@@ -11,13 +12,20 @@ export class AuthStore {
   loading = $state(true)
   checked = $state(false)
 
-  isAdmin = $derived(this.user?.role === 'admin')
-  canViewPronunciations = $derived(!!this.user)
-  canEditPronunciations = $derived(this.user?.role === 'admin' || this.user?.role === 'editor')
-  canViewTtsSettings = $derived(!!this.user)
-  canEditTtsSettings = $derived(this.user?.role === 'admin')
+  role = $derived<Role | undefined>(this.user?.role)
+  isAdmin = $derived(this.role === 'admin')
 
   private checkPromise: Promise<boolean> | null = null
+
+  hydrate(user: User | null): void {
+    this.user = user
+    this.loading = false
+    this.checked = true
+  }
+
+  can<R extends Resource>(resource: R, action: Action<R>): boolean {
+    return policyCan(this.role, resource, action)
+  }
 
   async checkAuth(options: CheckAuthOptions = {}): Promise<boolean> {
     if (this.checkPromise && !options.force) {

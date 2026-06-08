@@ -1,4 +1,5 @@
 import type { PageLoad } from './$types'
+import { requirePermission } from '$lib/auth/guard'
 import { storiesApi, type StoryFilters } from '$lib/api/stories'
 import { toLocalDateString } from '$lib/utils/format'
 import { getPaginationParams, getPaginationInfo } from '$lib/utils/pagination'
@@ -18,7 +19,10 @@ function getDateAndWeekdayBit(dateFilter: string): { date: string; weekdayBit: n
   return { date: dateStr, weekdayBit }
 }
 
-export const load: PageLoad = async ({ fetch, url }) => {
+export const load: PageLoad = async ({ fetch, url, parent }) => {
+  const { user } = await parent()
+  requirePermission(user, 'stories', 'read')
+
   const statusFilter = url.searchParams.get('status') ?? ''
   const dateFilter = url.searchParams.get('date') ?? ''
   const audioFilter = url.searchParams.get('audio') ?? ''

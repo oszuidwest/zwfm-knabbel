@@ -2,7 +2,7 @@
   lang="ts"
   generics="T extends { id?: number; name?: string }"
 >
-  import { Plus, Pencil, Trash2 } from '$lib/components/icons'
+  import { Plus, Pencil, Trash2, Eye } from '$lib/components/icons'
   import { PageHeader, EmptyState, Pagination } from '$lib/components/ui'
   import type { PaginationInfo } from '$lib/utils/pagination'
   import { resolveInternalHref } from '$lib/utils/routes'
@@ -29,6 +29,10 @@
     onDelete?: (item: T, e?: Event) => void
     /** Label for delete button aria-label. Defaults to item.name or 'dit item' */
     deleteLabel?: (item: T) => string
+    canCreate?: boolean
+    canEdit?: boolean
+    canDelete?: boolean
+    forbidTooltip?: string
   }
 
   let {
@@ -49,11 +53,22 @@
     tableRow,
     onDelete,
     deleteLabel = (item: T) => item.name ?? 'dit item',
+    canCreate = true,
+    canEdit = true,
+    canDelete = true,
+    forbidTooltip = 'Geen rechten',
   }: Props = $props()
 
   function handleDeleteClick(item: T, e: Event): void {
     e.stopPropagation()
+    if (!canDelete) return
     onDelete?.(item, e)
+  }
+
+  function handleCreateClick(e: MouseEvent): void {
+    if (!canCreate) {
+      e.preventDefault()
+    }
   }
 </script>
 
@@ -66,16 +81,25 @@
       {#if headerActions}
         {@render headerActions()}
       {:else if newHref}
-        <a
-          href={resolveInternalHref(newHref)}
-          class="btn btn-primary max-md:hidden"
+        <div
+          class="tooltip tooltip-left max-md:hidden"
+          data-tip={canCreate ? undefined : forbidTooltip}
         >
-          <Plus
-            aria-hidden="true"
-            class="h-5 w-5"
-          />
-          {newLabel}
-        </a>
+          <a
+            href={resolveInternalHref(newHref)}
+            class={['btn btn-primary', !canCreate && 'btn-disabled']}
+            role={canCreate ? undefined : 'button'}
+            aria-disabled={!canCreate}
+            tabindex={canCreate ? undefined : -1}
+            onclick={handleCreateClick}
+          >
+            <Plus
+              aria-hidden="true"
+              class="h-5 w-5"
+            />
+            {newLabel}
+          </a>
+        </div>
       {/if}
     {/snippet}
   </PageHeader>
@@ -85,7 +109,7 @@
       {icon}
       title={emptyTitle}
       description={emptyDescription}
-      action={newHref ? { href: newHref, label: newLabel } : undefined}
+      action={newHref && canCreate ? { href: newHref, label: newLabel } : undefined}
     />
   {:else}
     <!-- Mobile: Cards view -->
@@ -138,18 +162,31 @@
                     class="btn btn-square shrink-0 btn-ghost btn-sm"
                     aria-hidden="true"
                   >
-                    <Pencil class="h-4 w-4" />
+                    {#if canEdit}
+                      <Pencil class="h-4 w-4" />
+                    {:else}
+                      <Eye class="h-4 w-4" />
+                    {/if}
                   </span>
-                  <button
-                    class="btn btn-square shrink-0 text-error btn-ghost btn-sm"
-                    onclick={e => handleDeleteClick(item, e)}
-                    aria-label="Verwijder {deleteLabel(item)}"
+                  <div
+                    class="tooltip tooltip-top"
+                    data-tip={canDelete ? undefined : forbidTooltip}
                   >
-                    <Trash2
-                      aria-hidden="true"
-                      class="h-4 w-4"
-                    />
-                  </button>
+                    <button
+                      class={[
+                        'btn btn-square shrink-0 btn-ghost btn-sm',
+                        canDelete && 'text-error',
+                      ]}
+                      onclick={e => handleDeleteClick(item, e)}
+                      disabled={!canDelete}
+                      aria-label="Verwijder {deleteLabel(item)}"
+                    >
+                      <Trash2
+                        aria-hidden="true"
+                        class="h-4 w-4"
+                      />
+                    </button>
+                  </div>
                 </div>
               {/if}
             </div>
@@ -185,7 +222,7 @@
 </div>
 
 <!-- FAB: New item button (mobile only) -->
-{#if newHref}
+{#if newHref && canCreate}
   <a
     href={resolveInternalHref(newHref)}
     class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"

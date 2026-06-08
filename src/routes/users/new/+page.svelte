@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
+  import { notifyMutationError } from '$lib/api/client'
   import { userCreateSchema, type UserFormData } from '$lib/schemas/user'
   import { usersApi } from '$lib/api/users'
   import { toast } from '$lib/stores/toast'
@@ -41,8 +42,8 @@
       })
       toast.success('Gebruiker aangemaakt')
       goto(resolveInternalHref('/users'))
-    } catch {
-      toast.error('Aanmaken mislukt')
+    } catch (err) {
+      notifyMutationError(err, 'Aanmaken mislukt')
     } finally {
       submitting = false
     }

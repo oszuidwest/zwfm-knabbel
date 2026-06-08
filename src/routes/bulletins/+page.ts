@@ -1,4 +1,5 @@
 import type { PageLoad } from './$types'
+import { requirePermission } from '$lib/auth/guard'
 import { bulletinsApi, type BulletinFilters } from '$lib/api/bulletins'
 import { stationsApi } from '$lib/api/stations'
 import { storiesApi } from '$lib/api/stories'
@@ -9,7 +10,10 @@ export interface BulletinWithVoice extends Bulletin {
   voice_name?: string
 }
 
-export const load: PageLoad = async ({ fetch, url }) => {
+export const load: PageLoad = async ({ fetch, url, parent }) => {
+  const { user } = await parent()
+  requirePermission(user, 'bulletins', 'read')
+
   const stationParam = url.searchParams.get('station')
   const stationId = stationParam ? Number(stationParam) : undefined
 

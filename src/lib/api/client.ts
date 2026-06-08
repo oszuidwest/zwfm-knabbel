@@ -1,4 +1,5 @@
 import { PUBLIC_API_URL } from '$env/static/public'
+import { toast } from '$lib/stores/toast'
 
 const API_BASE = `${PUBLIC_API_URL}/api/v1`
 
@@ -32,6 +33,8 @@ export interface ProblemDetails {
 }
 
 class ApiError extends Error {
+  notified = false
+
   constructor(
     public status: number,
     message: string,
@@ -144,7 +147,12 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
   if (!response.ok) {
     const { message, details } = await parseErrorResponse(response, 'Request failed')
-    throw new ApiError(response.status, message, details)
+    const err = new ApiError(response.status, message, details)
+    if (response.status === 403 && (fetchOptions.method ?? 'GET') !== 'GET') {
+      toast.error('Geen rechten voor deze actie')
+      err.notified = true
+    }
+    throw err
   }
 
   return parseResponseBody<T>(response)
@@ -183,7 +191,12 @@ async function upload<T>(
 
   if (!response.ok) {
     const { message, details } = await parseErrorResponse(response, 'Upload failed')
-    throw new ApiError(response.status, message, details)
+    const err = new ApiError(response.status, message, details)
+    if (response.status === 403) {
+      toast.error('Geen rechten voor deze actie')
+      err.notified = true
+    }
+    throw err
   }
 
   return parseResponseBody<T>(response)
@@ -216,6 +229,11 @@ export const api = {
     request<T>(endpoint, { method: 'DELETE', fetch: customFetch }),
 
   upload,
+}
+
+export function notifyMutationError(err: unknown, fallbackMessage: string): void {
+  if (err instanceof ApiError && err.notified) return
+  toast.error(fallbackMessage)
 }
 
 export { ApiError, isProblemDetails }

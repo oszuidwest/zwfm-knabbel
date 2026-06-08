@@ -74,7 +74,7 @@
         Opnieuw laden
       </button>
     </div>
-  {:else if !auth.canEditPronunciations}
+  {:else if !auth.can('pronunciation_rules', 'write')}
     <div
       class="alert alert-info"
       role="status"
@@ -92,7 +92,7 @@
       <PronunciationRulesForm
         initial={data.initial}
         ttsUnavailable={data.ttsUnavailable}
-        canEdit={auth.canEditPronunciations}
+        canEdit={auth.can('pronunciation_rules', 'write')}
       />
     {/key}
   {/if}

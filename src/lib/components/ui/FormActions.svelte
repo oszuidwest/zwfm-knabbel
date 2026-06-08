@@ -7,6 +7,8 @@
     submitting: boolean
     submitLabel?: string
     cancelLabel?: string
+    canSubmit?: boolean
+    forbidTooltip?: string
   }
 
   let {
@@ -14,6 +16,8 @@
     submitting,
     submitLabel = 'Opslaan',
     cancelLabel = 'Annuleren',
+    canSubmit = true,
+    forbidTooltip = 'Geen rechten',
   }: Props = $props()
 
   const resolvedCancelHref = $derived(resolveInternalHref(cancelHref))
@@ -27,16 +31,21 @@
     <X class="h-5 w-5" />
     {cancelLabel}
   </a>
-  <button
-    type="submit"
-    class="btn btn-primary"
-    disabled={submitting}
+  <div
+    class="tooltip tooltip-left"
+    data-tip={canSubmit ? undefined : forbidTooltip}
   >
-    {#if submitting}
-      <span class="loading loading-sm loading-spinner"></span>
-    {:else}
-      <Check class="h-5 w-5" />
-    {/if}
-    {submitLabel}
-  </button>
+    <button
+      type="submit"
+      class="btn btn-primary"
+      disabled={submitting || !canSubmit}
+    >
+      {#if submitting}
+        <span class="loading loading-sm loading-spinner"></span>
+      {:else}
+        <Check class="h-5 w-5" />
+      {/if}
+      {submitLabel}
+    </button>
+  </div>
 </div>

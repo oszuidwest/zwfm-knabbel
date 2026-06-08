@@ -1,10 +1,14 @@
 import type { PageLoad } from './$types'
+import { requirePermission } from '$lib/auth/guard'
 import { bulletinsApi } from '$lib/api/bulletins'
 import { storiesApi } from '$lib/api/stories'
 import { error } from '@sveltejs/kit'
 import type { Story } from '$lib/types'
 
-export const load: PageLoad = async ({ params, fetch }) => {
+export const load: PageLoad = async ({ params, fetch, parent }) => {
+  const { user } = await parent()
+  requirePermission(user, 'bulletins', 'read')
+
   const bulletinId = Number(params.id)
 
   if (isNaN(bulletinId)) {

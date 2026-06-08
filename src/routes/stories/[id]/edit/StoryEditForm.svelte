@@ -1,9 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
+  import { ApiError, getMediaUrl, notifyMutationError } from '$lib/api/client'
   import { storySchema, type StoryFormData } from '$lib/schemas/story'
   import { storiesApi } from '$lib/api/stories'
   import { bulletinsApi } from '$lib/api/bulletins'
-  import { getMediaUrl } from '$lib/api/client'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
   import { toSelectOptions, toStringOrEmpty } from '$lib/utils/form'
@@ -21,7 +22,7 @@
     PageHeader,
     WeekdayCheckboxGroup,
   } from '$lib/components/ui'
-  import { CassetteTape, Eye, Podcast } from '$lib/components/icons'
+  import { CassetteTape, Eye, Podcast, Info } from '$lib/components/icons'
   import ReadMode from '$lib/components/ReadMode.svelte'
   import { maskToWeekdays, type Bulletin } from '$lib/types'
   import type { PageData } from './$types'
@@ -31,6 +32,7 @@
   }
 
   let { data }: Props = $props()
+  const auth = getAuthContext()
 
   let audioFile = $state<File | null>(null)
   let showReadMode = $state(false)
@@ -66,6 +68,7 @@
 
   const voiceOptions = $derived(toSelectOptions(data.voices))
   const hasMoreBulletins = $derived(bulletins.length < bulletinsTotal)
+  const canWrite = $derived(auth.can('stories', 'write'))
 
   async function loadMoreBulletins(): Promise<void> {
     if (loadingMore || !data.story.id) return
@@ -86,6 +89,7 @@
 
   async function handleSubmit(e: Event): Promise<void> {
     e.preventDefault()
+    if (!canWrite) return
 
     const result = validateForm(storySchema, form)
     if (!result.success) {
@@ -101,8 +105,10 @@
       if (audioFile) {
         try {
           await storiesApi.uploadAudio(data.story.id!, audioFile)
-        } catch {
-          toast.warning('Bericht bijgewerkt, maar audio upload mislukt')
+        } catch (err) {
+          if (!(err instanceof ApiError && err.notified)) {
+            toast.warning('Bericht bijgewerkt, maar audio upload mislukt')
+          }
           goto(resolveInternalHref('/stories'))
           return
         }
@@ -110,8 +116,8 @@
 
       toast.success('Bericht bijgewerkt')
       goto(resolveInternalHref('/stories'))
-    } catch {
-      toast.error('Bijwerken mislukt')
+    } catch (err) {
+      notifyMutationError(err, 'Bijwerken mislukt')
     } finally {
       submitting = false
     }
@@ -119,7 +125,7 @@
 </script>
 
 <div class="space-y-6">
-  <PageHeader title="Bericht bewerken">
+  <PageHeader title={canWrite ? 'Bericht bewerken' : 'Bericht bekijken'}>
     {#snippet actions()}
       <button
         type="button"
@@ -136,6 +142,19 @@
     {/snippet}
   </PageHeader>
 
+  {#if !canWrite}
+    <div
+      class="alert alert-info"
+      role="status"
+    >
+      <Info
+        aria-hidden="true"
+        class="h-5 w-5"
+      />
+      <span>Alleen-lezen weergave — je hebt geen schrijfrechten.</span>
+    </div>
+  {/if}
+
   <div class="card bg-base-100">
     <div class="card-body">
       <form
@@ -148,6 +167,7 @@
           bind:value={form.title}
           error={errors.title}
           placeholder="Titel van het bericht"
+          disabled={!canWrite}
         />
 
         <TextareaInput
@@ -157,6 +177,7 @@
           error={errors.text}
           placeholder="De tekst die wordt voorgelezen"
           rows={8}
+          disabled={!canWrite}
         />
 
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -166,6 +187,7 @@
             bind:value={form.voice_id}
             options={voiceOptions}
             emptyOption="Geen stem geselecteerd"
+            disabled={!canWrite}
           />
 
           <FormField
@@ -178,12 +200,16 @@
                 id="status"
                 class={['select join-item flex-1', errors.status && 'select-error']}
                 bind:value={form.status}
+                disabled={!canWrite}
               >
                 {#each statusOptions as option (option.value)}
                   <option value={option.value}>{option.label}</option>
                 {/each}
               </select>
-              <BreakingToggle bind:checked={form.is_breaking} />
+              <BreakingToggle
+                bind:checked={form.is_breaking}
+                disabled={!canWrite}
+              />
             </div>
           </FormField>
         </div>
@@ -195,6 +221,7 @@
             type="date"
             bind:value={form.start_date}
             error={errors.start_date}
+            disabled={!canWrite}
           />
 
           <TextInput
@@ -203,10 +230,14 @@
             type="date"
             bind:value={form.end_date}
             error={errors.end_date}
+            disabled={!canWrite}
           />
         </div>
 
-        <WeekdayCheckboxGroup bind:value={form.weekdays} />
+        <WeekdayCheckboxGroup
+          bind:value={form.weekdays}
+          disabled={!canWrite}
+        />
 
         <FileInput
           id="audio"
@@ -215,11 +246,13 @@
           existingAudioUrl={data.story.audio_file ? getMediaUrl(data.story.audio_url) : undefined}
           hint={audioFile?.name}
           onchange={file => (audioFile = file)}
+          disabled={!canWrite}
         />
 
         <FormActions
           cancelHref="/stories"
           {submitting}
+          canSubmit={canWrite}
         />
       </form>
     </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
+  import { notifyMutationError } from '$lib/api/client'
   import { voiceSchema, type VoiceFormData } from '$lib/schemas/voice'
   import { voicesApi } from '$lib/api/voices'
   import { toast } from '$lib/stores/toast'
@@ -29,8 +30,8 @@
       await voicesApi.create(form)
       toast.success('Stem aangemaakt')
       goto(resolveInternalHref('/voices'))
-    } catch {
-      toast.error('Aanmaken mislukt')
+    } catch (err) {
+      notifyMutationError(err, 'Aanmaken mislukt')
     } finally {
       submitting = false
     }

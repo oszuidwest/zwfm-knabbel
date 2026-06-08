@@ -6,6 +6,7 @@
   interface Props {
     configs: StationConfig[]
     disabled?: boolean
+    canEdit?: boolean
     onToggle: (index: number, e?: Event) => void
     onMixPointChange: (index: number, value: number) => void
     onMixPointSave: (index: number) => void
@@ -16,6 +17,7 @@
   let {
     configs,
     disabled = false,
+    canEdit = true,
     onToggle,
     onMixPointChange,
     onMixPointSave,
@@ -26,10 +28,12 @@
   let dragOver = $state<number | null>(null)
   let playingIndex = $state<number | null>(null)
   let audioElements: Record<number, HTMLAudioElement | null> = {}
+  const effectiveDisabled = $derived(disabled || !canEdit)
 
   function handleDragOver(e: DragEvent, index: number) {
     e.preventDefault()
     e.stopPropagation()
+    if (effectiveDisabled) return
     dragOver = index
   }
 
@@ -42,6 +46,7 @@
     e.preventDefault()
     e.stopPropagation()
     dragOver = null
+    if (effectiveDisabled) return
 
     const files = e.dataTransfer?.files
     if (files && files.length > 0) {
@@ -53,6 +58,7 @@
   }
 
   function handleFileInput(e: Event, index: number) {
+    if (effectiveDisabled) return
     const input = e.target as HTMLInputElement
     const file = input.files?.[0]
     if (file) {
@@ -143,7 +149,7 @@
                 class="toggle toggle-primary"
                 checked={config.enabled}
                 onchange={e => onToggle(index, e)}
-                disabled={disabled || config.saving}
+                disabled={effectiveDisabled || config.saving}
               />
             </div>
           </div>
@@ -173,7 +179,7 @@
                 oninput={e =>
                   onMixPointChange(index, parseFloat((e.target as HTMLInputElement).value))}
                 onchange={() => onMixPointSave(index)}
-                disabled={disabled || config.saving}
+                disabled={effectiveDisabled || config.saving}
               />
               <p class="text-xs text-base-content/50">Wanneer de stem begint over de jingle</p>
             </div>
@@ -217,7 +223,10 @@
                   </div>
                   <label
                     for="jingle-replace-{config.station.id}"
-                    class="btn cursor-pointer btn-ghost btn-sm"
+                    class={[
+                      'btn btn-ghost btn-sm',
+                      effectiveDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+                    ]}
                   >
                     Vervang
                   </label>
@@ -226,7 +235,7 @@
                     type="file"
                     accept="audio/wav,audio/*"
                     onchange={e => handleFileInput(e, index)}
-                    disabled={config.saving}
+                    disabled={effectiveDisabled || config.saving}
                     class="hidden"
                   />
                 </div>
@@ -248,7 +257,7 @@
                     type="button"
                     class="btn btn-sm btn-warning"
                     onclick={() => onJingleUpload(index)}
-                    disabled={config.saving}
+                    disabled={effectiveDisabled || config.saving}
                   >
                     {#if config.saving}
                       <span class="loading loading-xs loading-spinner"></span>
@@ -268,15 +277,18 @@
                   type="file"
                   accept="audio/wav,audio/*"
                   onchange={e => handleFileInput(e, index)}
-                  disabled={config.saving}
+                  disabled={effectiveDisabled || config.saving}
                   class="peer sr-only"
                 />
                 <label
                   for="jingle-input-{config.station.id}"
-                  class="block cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition-colors peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary {dragOver ===
-                  index
-                    ? 'border-primary bg-primary/10'
-                    : 'border-base-content/20 hover:border-primary hover:bg-primary/5'}"
+                  class={[
+                    'block rounded-xl border-2 border-dashed p-6 text-center transition-colors peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary',
+                    effectiveDisabled ? 'pointer-events-none cursor-not-allowed' : 'cursor-pointer',
+                    dragOver === index
+                      ? 'border-primary bg-primary/10'
+                      : 'border-base-content/20 hover:border-primary hover:bg-primary/5',
+                  ]}
                   ondragover={e => handleDragOver(e, index)}
                   ondragleave={handleDragLeave}
                   ondrop={e => handleDrop(e, index)}

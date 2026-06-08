@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
+  import { notifyMutationError } from '$lib/api/client'
   import { stationSchema, type StationFormData } from '$lib/schemas/station'
   import { stationsApi } from '$lib/api/stations'
   import { toast } from '$lib/stores/toast'
@@ -31,8 +32,8 @@
       await stationsApi.create(form)
       toast.success('Zender aangemaakt')
       goto(resolveInternalHref('/stations'))
-    } catch {
-      toast.error('Aanmaken mislukt')
+    } catch (err) {
+      notifyMutationError(err, 'Aanmaken mislukt')
     } finally {
       submitting = false
     }

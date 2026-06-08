@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tick } from 'svelte'
   import { beforeNavigate, invalidateAll } from '$app/navigation'
-  import { ApiError, isProblemDetails } from '$lib/api/client'
+  import { ApiError, isProblemDetails, notifyMutationError } from '$lib/api/client'
   import { settingsApi } from '$lib/api/settings'
   import {
     isPronunciationRuleField,
@@ -98,9 +98,11 @@
   let search = $state('')
 
   const editable = $derived(canEdit && !ttsUnavailable)
+  const disabledTooltip = $derived(canEdit ? 'TTS niet geconfigureerd' : 'Geen rechten')
 
   const isDirty = $derived(!draftsEqual(rows, snapshot))
   const saveDisabled = $derived(!editable || !isDirty || submitting)
+  const cancelDisabled = $derived(!editable || !isDirty || submitting)
 
   const filteredRows = $derived.by(() => {
     const q = search.trim().toLowerCase()
@@ -292,10 +294,6 @@
       toast.error('Conflict — herlaad de pagina')
       return
     }
-    if (err.status === 403) {
-      toast.error('Geen rechten om uitspraakregels te wijzigen')
-      return
-    }
     if (err.status === 501) {
       ttsUnavailable = createTTSUnavailable(details)
       globalError = ttsUnavailable.detail
@@ -311,7 +309,7 @@
       toast.error('Te veel verzoeken — probeer het later opnieuw')
       return
     }
-    toast.error(details?.detail ?? err.message ?? 'Opslaan mislukt')
+    notifyMutationError(err, details?.detail ?? err.message ?? 'Opslaan mislukt')
   }
 
   function handleCancel(): void {
@@ -435,11 +433,15 @@
             />
             Herlaad
           </button>
-          {#if editable}
+          <div
+            class="tooltip tooltip-left"
+            data-tip={editable ? undefined : disabledTooltip}
+          >
             <button
               type="button"
               class="btn btn-primary btn-sm"
               onclick={handleAddRow}
+              disabled={!editable}
             >
               <Plus
                 aria-hidden="true"
@@ -447,7 +449,7 @@
               />
               Nieuwe regel
             </button>
-          {/if}
+          </div>
         </div>
       </div>
 
@@ -538,11 +540,15 @@
                     />
                   </td>
                   <td class="text-right align-top">
-                    {#if editable}
+                    <div
+                      class="tooltip tooltip-left"
+                      data-tip={editable ? undefined : disabledTooltip}
+                    >
                       <button
                         type="button"
                         class="btn btn-square btn-ghost btn-sm"
                         onclick={() => handleRemoveRow(row._key)}
+                        disabled={!editable}
                         aria-label="Regel {index + 1} verwijderen"
                       >
                         <Trash2
@@ -550,7 +556,7 @@
                           class="h-4 w-4"
                         />
                       </button>
-                    {/if}
+                    </div>
                   </td>
                 </tr>
               {/each}
@@ -627,12 +633,16 @@
                 </label>
               </div>
 
-              {#if editable}
-                <div class="mt-3 flex justify-end">
+              <div class="mt-3 flex justify-end">
+                <div
+                  class="tooltip tooltip-top"
+                  data-tip={editable ? undefined : disabledTooltip}
+                >
                   <button
                     type="button"
                     class="btn btn-ghost btn-sm"
                     onclick={() => handleRemoveRow(row._key)}
+                    disabled={!editable}
                     aria-label="Regel {index + 1} verwijderen"
                   >
                     <Trash2
@@ -642,19 +652,22 @@
                     Verwijder
                   </button>
                 </div>
-              {/if}
+              </div>
             </div>
           {/each}
         </div>
       {/if}
 
-      {#if editable}
-        <div class="flex justify-end gap-2 pt-2">
+      <div class="flex justify-end gap-2 pt-2">
+        <div
+          class="tooltip tooltip-left"
+          data-tip={editable ? undefined : disabledTooltip}
+        >
           <button
             type="button"
             class="btn btn-ghost"
             onclick={handleCancel}
-            disabled={!isDirty || submitting}
+            disabled={cancelDisabled}
           >
             <X
               aria-hidden="true"
@@ -662,6 +675,11 @@
             />
             Annuleren
           </button>
+        </div>
+        <div
+          class="tooltip tooltip-left"
+          data-tip={editable ? undefined : disabledTooltip}
+        >
           <button
             type="button"
             class="btn btn-primary"
@@ -682,7 +700,7 @@
             Opslaan
           </button>
         </div>
-      {/if}
+      </div>
     </div>
   </div>
 </div>

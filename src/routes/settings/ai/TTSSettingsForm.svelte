@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation'
-  import { ApiError } from '$lib/api/client'
+  import { ApiError, notifyMutationError } from '$lib/api/client'
   import { settingsApi } from '$lib/api/settings'
   import {
     textNormalizationOptions,
@@ -109,7 +109,7 @@
           }
         }
 
-        toast.error('Opslaan mislukt')
+        notifyMutationError(err, 'Opslaan mislukt')
         return
       }
 
@@ -274,11 +274,14 @@
         <RefreshCw class="h-5 w-5" />
         {reloadLabel}
       </button>
-      {#if canEdit}
+      <div
+        class="tooltip tooltip-left"
+        data-tip={canEdit ? undefined : 'Geen rechten'}
+      >
         <button
           type="submit"
           class="btn btn-primary"
-          disabled={submitting || !isDirty}
+          disabled={formDisabled || !isDirty}
         >
           {#if submitting}
             <span class="loading loading-sm loading-spinner"></span>
@@ -287,7 +290,7 @@
           {/if}
           Opslaan
         </button>
-      {/if}
+      </div>
     </div>
   </div>
 </form>
