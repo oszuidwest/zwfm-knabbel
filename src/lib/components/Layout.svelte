@@ -39,9 +39,7 @@
     { path: '/settings/ai', label: 'Spraakmodel', icon: Sparkles },
   ]
 
-  const adminNavItems: NavItem[] = [
-    { path: '/users', label: 'Gebruikers', icon: Users },
-  ]
+  const adminNavItems: NavItem[] = [{ path: '/users', label: 'Gebruikers', icon: Users }]
 
   function isActive(path: string): boolean {
     return page.url.pathname === path || page.url.pathname.startsWith(`${path}/`)
