@@ -33,6 +33,12 @@
         toast.error('Kan laatste admin niet verwijderen')
         return
       }
+      if (err instanceof ApiError && err.status === 409) {
+        const detail = isProblemDetails(err.details) ? err.details.detail : undefined
+        const message = detail || (err.message !== 'Request failed' ? err.message : undefined)
+        toast.error(message ?? 'Verwijderen mislukt')
+        return
+      }
       notifyMutationError(err, 'Verwijderen mislukt')
     }
   }

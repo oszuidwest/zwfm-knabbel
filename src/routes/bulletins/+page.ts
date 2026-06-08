@@ -38,7 +38,8 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
           const firstStory = await storiesApi.getById(storiesRes.data[0].story_id, fetch)
           return { ...bulletin, voice_name: firstStory.voice_name ?? undefined }
         }
-      } catch {
+      } catch (err) {
+        console.warn('[bulletins] voice name lookup failed', err)
         // Ignore errors, just don't add voice_name
       }
       return bulletin

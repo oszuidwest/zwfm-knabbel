@@ -3,6 +3,7 @@ import { voicesApi } from '$lib/api/voices'
 import { stationsApi } from '$lib/api/stations'
 import { stationVoicesApi } from '$lib/api/station-voices'
 import { requirePermission } from '$lib/auth/guard'
+import { throwResourceLoadError } from '$lib/utils/load-error'
 import { error } from '@sveltejs/kit'
 
 export const load: PageLoad = async ({ params, fetch, parent }) => {
@@ -27,7 +28,10 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
       stations: stationsRes.data,
       stationVoices: stationVoicesRes.data,
     }
-  } catch {
-    error(404, 'Stem niet gevonden')
+  } catch (err) {
+    throwResourceLoadError(err, {
+      notFound: 'Stem niet gevonden',
+      failed: 'Stem laden mislukt',
+    })
   }
 }

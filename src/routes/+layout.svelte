@@ -27,6 +27,11 @@
     auth.hydrate(data.user)
   })
 
+  $effect(() => {
+    if (!auth.checked || auth.user || isPublic) return
+    void goto(resolveInternalHref('/login'))
+  })
+
   async function guardRoute(pathname: string): Promise<void> {
     if (!auth.checked) return
 

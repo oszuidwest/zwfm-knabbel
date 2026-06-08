@@ -2,6 +2,7 @@ import type { PageLoad } from './$types'
 import { requirePermission } from '$lib/auth/guard'
 import { bulletinsApi } from '$lib/api/bulletins'
 import { storiesApi } from '$lib/api/stories'
+import { throwResourceLoadError } from '$lib/utils/load-error'
 import { error } from '@sveltejs/kit'
 import type { Story } from '$lib/types'
 
@@ -30,7 +31,10 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
     )
 
     return { bulletin, stories }
-  } catch {
-    error(404, 'Bulletin niet gevonden')
+  } catch (err) {
+    throwResourceLoadError(err, {
+      notFound: 'Bulletin niet gevonden',
+      failed: 'Bulletin laden mislukt',
+    })
   }
 }

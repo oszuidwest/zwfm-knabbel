@@ -226,8 +226,11 @@
                     for="jingle-replace-{config.station.id}"
                     class={[
                       'btn btn-ghost btn-sm',
-                      effectiveDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+                      effectiveDisabled
+                        ? 'pointer-events-none cursor-not-allowed opacity-50'
+                        : 'cursor-pointer',
                     ]}
+                    aria-disabled={effectiveDisabled}
                   >
                     Vervang
                   </label>

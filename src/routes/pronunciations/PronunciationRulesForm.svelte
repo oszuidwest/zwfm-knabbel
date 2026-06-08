@@ -67,6 +67,24 @@
       word_boundaries: r.word_boundaries,
     }))
 
+  function initialDraftState(): {
+    snapshot: DraftRow[]
+    rows: DraftRow[]
+    warning: string | undefined
+    createdAt: string | null
+    ttsUnavailable: TTSUnavailable | null
+  } {
+    const initialSnapshot = initial.rules.map(makeDraft)
+
+    return {
+      snapshot: initialSnapshot,
+      rows: structuredClone(initialSnapshot),
+      warning: initial.warning,
+      createdAt: initial.created_at,
+      ttsUnavailable: initialTtsUnavailable,
+    }
+  }
+
   function draftsEqual(a: DraftRow[], b: DraftRow[]): boolean {
     if (a.length !== b.length) return false
 
@@ -81,17 +99,12 @@
     })
   }
 
-  // svelte-ignore state_referenced_locally
-  let snapshot = $state.raw<DraftRow[]>(initial.rules.map(makeDraft))
-
-  // svelte-ignore state_referenced_locally
-  let rows = $state<DraftRow[]>(structuredClone(snapshot))
-  // svelte-ignore state_referenced_locally
-  let warning = $state<string | undefined>(initial.warning)
-  // svelte-ignore state_referenced_locally
-  let createdAt = $state<string | null>(initial.created_at)
-  // svelte-ignore state_referenced_locally
-  let ttsUnavailable = $state<TTSUnavailable | null>(initialTtsUnavailable)
+  const draftState = initialDraftState()
+  let snapshot = $state.raw<DraftRow[]>(draftState.snapshot)
+  let rows = $state<DraftRow[]>(draftState.rows)
+  let warning = $state<string | undefined>(draftState.warning)
+  let createdAt = $state<string | null>(draftState.createdAt)
+  let ttsUnavailable = $state<TTSUnavailable | null>(draftState.ttsUnavailable)
   let rowErrors = $state<RowErrors>({})
   let globalError = $state<string | null>(null)
   let submitting = $state(false)

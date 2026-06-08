@@ -1,4 +1,5 @@
 import { createContext } from 'svelte'
+import { ApiError } from '$lib/api/client'
 import { authApi } from '$lib/api/auth'
 import { can as policyCan, type Action, type Resource, type Role } from '$lib/auth/policy'
 import type { User } from '$lib/types'
@@ -58,7 +59,9 @@ export class AuthStore {
       this.user = user
       return true
     } catch (err) {
-      console.error('[auth] checkAuth failed', err)
+      if (!(err instanceof ApiError) || err.status !== 401) {
+        console.error('[auth] checkAuth failed', err)
+      }
       this.user = null
       return false
     } finally {
@@ -75,8 +78,8 @@ export class AuthStore {
   async logout(): Promise<void> {
     try {
       await authApi.logout()
-    } catch {
-      // Ignore logout errors
+    } catch (err) {
+      console.warn('[auth] logout failed', err)
     }
     this.user = null
     this.loading = false

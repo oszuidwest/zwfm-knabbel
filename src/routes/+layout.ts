@@ -20,6 +20,7 @@ export const load: LayoutLoad = async ({ fetch, url }) => {
   try {
     user = await authApi.getMe(fetch)
   } catch (err) {
+    // Alleen 401 betekent anoniem. Netwerkfouten, timeouts en 5xx blijven echte load-errors.
     if (!(err instanceof ApiError) || err.status !== 401) {
       throw err
     }

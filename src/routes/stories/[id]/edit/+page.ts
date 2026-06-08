@@ -3,6 +3,7 @@ import { storiesApi } from '$lib/api/stories'
 import { voicesApi } from '$lib/api/voices'
 import { bulletinsApi } from '$lib/api/bulletins'
 import { requirePermission } from '$lib/auth/guard'
+import { throwResourceLoadError } from '$lib/utils/load-error'
 import { error } from '@sveltejs/kit'
 
 const BULLETINS_PAGE_SIZE = 20
@@ -31,7 +32,10 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
       bulletinsTotal: bulletinsRes.total,
       bulletinsPageSize: BULLETINS_PAGE_SIZE,
     }
-  } catch {
-    error(404, 'Bericht niet gevonden')
+  } catch (err) {
+    throwResourceLoadError(err, {
+      notFound: 'Bericht niet gevonden',
+      failed: 'Bericht laden mislukt',
+    })
   }
 }

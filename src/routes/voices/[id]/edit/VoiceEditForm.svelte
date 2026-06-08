@@ -196,12 +196,16 @@
 
       let audioUrl: string | null = null
       let hasAudio = false
+      let refreshFailed = false
       try {
         const updated = await stationVoicesApi.getById(stationVoiceId)
         hasAudio = !!updated.audio_file
         audioUrl = hasAudio ? (updated.audio_url ?? null) : null
-      } catch {
-        // Refresh failed, but upload succeeded — show success with stale audio state
+      } catch (err) {
+        console.warn('[voices] jingle refresh failed after upload', err)
+        refreshFailed = true
+        hasAudio = config.hasAudio
+        audioUrl = config.audioUrl
       }
 
       updateConfig(index, {
@@ -210,7 +214,11 @@
         jingleFile: null,
         saving: false,
       })
-      toast.success('Jingle geupload')
+      if (refreshFailed) {
+        toast.warning('Jingle geupload, maar audiostatus kon niet worden ververst')
+      } else {
+        toast.success('Jingle geupload')
+      }
     } catch (err) {
       updateConfig(index, { saving: false })
       notifyMutationError(err, 'Jingle upload mislukt')
