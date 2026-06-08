@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation'
   import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { Info, RefreshCw, TriangleAlert } from '$lib/components/icons'
+  import { RefreshCw, TriangleAlert } from '$lib/components/icons'
   import { PageHeader } from '$lib/components/ui'
   import TTSSettingsForm from './TTSSettingsForm.svelte'
   import type { PageProps } from './$types'
@@ -47,17 +47,6 @@
         <RefreshCw class="h-4 w-4" />
         Opnieuw laden
       </button>
-    </div>
-  {:else if !auth.can('settings_tts', 'write')}
-    <div
-      class="alert alert-info"
-      role="status"
-    >
-      <Info
-        aria-hidden="true"
-        class="h-5 w-5"
-      />
-      <span>Alleen-lezen weergave — alleen admins kunnen het Spraakmodel wijzigen.</span>
     </div>
   {/if}
 

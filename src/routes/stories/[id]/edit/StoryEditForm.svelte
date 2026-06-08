@@ -22,7 +22,7 @@
     PageHeader,
     WeekdayCheckboxGroup,
   } from '$lib/components/ui'
-  import { CassetteTape, Eye, Podcast, Info } from '$lib/components/icons'
+  import { CassetteTape, Eye, Podcast } from '$lib/components/icons'
   import ReadMode from '$lib/components/ReadMode.svelte'
   import { maskToWeekdays, type Bulletin } from '$lib/types'
   import type { PageData } from './$types'
@@ -142,19 +142,6 @@
       </button>
     {/snippet}
   </PageHeader>
-
-  {#if !canWrite}
-    <div
-      class="alert alert-info"
-      role="status"
-    >
-      <Info
-        aria-hidden="true"
-        class="h-5 w-5"
-      />
-      <span>Alleen-lezen weergave — je hebt geen schrijfrechten.</span>
-    </div>
-  {/if}
 
   <div class="card bg-base-100">
     <div class="card-body">

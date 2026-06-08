@@ -2,7 +2,7 @@
   import { invalidateAll } from '$app/navigation'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
-  import { Info, RefreshCw, TriangleAlert } from '$lib/components/icons'
+  import { RefreshCw, TriangleAlert } from '$lib/components/icons'
   import { PageHeader } from '$lib/components/ui'
   import PronunciationRulesForm from './PronunciationRulesForm.svelte'
   import type { PageProps } from './$types'
@@ -73,17 +73,6 @@
         />
         Opnieuw laden
       </button>
-    </div>
-  {:else if !auth.can('pronunciation_rules', 'write')}
-    <div
-      class="alert alert-info"
-      role="status"
-    >
-      <Info
-        aria-hidden="true"
-        class="h-5 w-5"
-      />
-      <span>Alleen-lezen weergave — je hebt geen schrijfrechten.</span>
     </div>
   {/if}
 

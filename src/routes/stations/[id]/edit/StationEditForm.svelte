@@ -8,7 +8,6 @@
   import { validateForm } from '$lib/utils/validation'
   import { resolveInternalHref } from '$lib/utils/routes'
   import { TextInput, NumberInput, FormActions, PageHeader } from '$lib/components/ui'
-  import { Info } from '$lib/components/icons'
   import type { PageData } from './$types'
 
   interface Props {
@@ -60,19 +59,6 @@
     title={canWrite ? 'Zender bewerken' : 'Zender bekijken'}
     subtitle={data.station.name ?? ''}
   />
-
-  {#if !canWrite}
-    <div
-      class="alert alert-info"
-      role="status"
-    >
-      <Info
-        aria-hidden="true"
-        class="h-5 w-5"
-      />
-      <span>Alleen-lezen weergave — je hebt geen schrijfrechten.</span>
-    </div>
-  {/if}
 
   <div class="card bg-base-100">
     <div class="card-body">

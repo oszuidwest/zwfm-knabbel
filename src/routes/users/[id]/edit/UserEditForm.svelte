@@ -10,7 +10,6 @@
   import { roleOptions } from '$lib/utils/labels'
   import { resolveInternalHref } from '$lib/utils/routes'
   import { TextInput, SelectInput, FormActions, PageHeader } from '$lib/components/ui'
-  import { Info } from '$lib/components/icons'
   import type { UserInput } from '$lib/types'
   import type { PageData } from './$types'
 
@@ -89,19 +88,6 @@
     title={canWrite ? 'Gebruiker bewerken' : 'Gebruiker bekijken'}
     subtitle={data.user.full_name || data.user.username || ''}
   />
-
-  {#if !canWrite}
-    <div
-      class="alert alert-info"
-      role="status"
-    >
-      <Info
-        aria-hidden="true"
-        class="h-5 w-5"
-      />
-      <span>Alleen-lezen weergave — je hebt geen schrijfrechten.</span>
-    </div>
-  {/if}
 
   <div class="card bg-base-100">
     <div class="card-body">

@@ -10,7 +10,7 @@
   import { resolveInternalHref } from '$lib/utils/routes'
   import { MaybeTooltip, TextInput, PageHeader } from '$lib/components/ui'
   import StationConfigDashboard from './StationConfigDashboard.svelte'
-  import { X, Check, Info } from '$lib/components/icons'
+  import { X, Check } from '$lib/components/icons'
   import type { StationVoice } from '$lib/types'
   import type { StationConfig } from './station-config'
   import type { PageData } from './$types'
@@ -231,19 +231,6 @@
     title={canWrite ? 'Stem bewerken' : 'Stem bekijken'}
     subtitle={data.voice.name ?? ''}
   />
-
-  {#if !canWrite}
-    <div
-      class="alert alert-info"
-      role="status"
-    >
-      <Info
-        aria-hidden="true"
-        class="h-5 w-5"
-      />
-      <span>Alleen-lezen weergave — je hebt geen schrijfrechten.</span>
-    </div>
-  {/if}
 
   <div class="card bg-base-100">
     <div class="card-body">
