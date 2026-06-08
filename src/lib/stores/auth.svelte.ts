@@ -12,6 +12,7 @@ export class AuthStore {
   checked = $state(false)
 
   isAdmin = $derived(this.user?.role === 'admin')
+  canViewPronunciations = $derived(!!this.user)
   canEditPronunciations = $derived(this.user?.role === 'admin' || this.user?.role === 'editor')
 
   private checkPromise: Promise<boolean> | null = null

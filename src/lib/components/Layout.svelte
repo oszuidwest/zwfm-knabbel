@@ -145,7 +145,7 @@
             </li>
           {/each}
 
-          {#if auth.canEditPronunciations}
+          {#if auth.canViewPronunciations}
             <li class="mt-4 menu-title tracking-widest uppercase">AI</li>
             {#each aiNavItems as item (item.path)}
               {@const Icon = item.icon}
