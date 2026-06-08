@@ -1,11 +1,12 @@
 <script lang="ts">
   import { tick } from 'svelte'
   import { beforeNavigate, invalidateAll } from '$app/navigation'
-  import { ApiError } from '$lib/api/client'
+  import { ApiError, isProblemDetails } from '$lib/api/client'
   import { settingsApi } from '$lib/api/settings'
   import {
+    isPronunciationRuleField,
     pronunciationRulesSchema,
-    type PronunciationRuleFormData,
+    type PronunciationRuleField,
   } from '$lib/schemas/pronunciations'
   import { toast } from '$lib/stores/toast'
   import { formatDateTime } from '$lib/utils/format'
@@ -21,12 +22,13 @@
     TriangleAlert,
     X,
   } from '$lib/components/icons'
-  import type {
-    PronunciationRule,
-    PronunciationRulesList,
-    PronunciationRulesUpdate,
+  import {
+    createTTSUnavailable,
+    type TTSUnavailable,
+    type PronunciationRule,
+    type PronunciationRulesList,
+    type PronunciationRulesUpdate,
   } from '$lib/types'
-  import type { TTSUnavailable } from './+page'
 
   interface Props {
     initial: PronunciationRulesList
@@ -37,12 +39,16 @@
   let { initial, ttsUnavailable: initialTtsUnavailable, canEdit }: Props = $props()
 
   interface DraftRow {
-    _key: number
+    readonly _key: number
     string_to_replace: string
     alias: string
     case_sensitive: boolean
     word_boundaries: boolean
   }
+
+  type RowErrors = Record<number, Partial<Record<PronunciationRuleField, string>>>
+
+  const SERVER_RULE_ERROR_RE = /^rules\[(\d+)\]\.(\w+)$/
 
   let nextKey = 1
   const makeDraft = (r: PronunciationRule): DraftRow => ({
@@ -62,18 +68,17 @@
     }))
 
   // svelte-ignore state_referenced_locally
-  const snapshot = initial.rules.map(makeDraft)
+  let snapshot = $state.raw<DraftRow[]>(initial.rules.map(makeDraft))
 
-  let rows = $state<DraftRow[]>(structuredClone($state.snapshot(snapshot)))
+  // svelte-ignore state_referenced_locally
+  let rows = $state<DraftRow[]>(structuredClone(snapshot))
   // svelte-ignore state_referenced_locally
   let warning = $state<string | undefined>(initial.warning)
   // svelte-ignore state_referenced_locally
   let createdAt = $state<string | null>(initial.created_at)
   // svelte-ignore state_referenced_locally
   let ttsUnavailable = $state<TTSUnavailable | null>(initialTtsUnavailable)
-  let rowErrors = $state<Record<number, Partial<Record<keyof PronunciationRuleFormData, string>>>>(
-    {}
-  )
+  let rowErrors = $state<RowErrors>({})
   let globalError = $state<string | null>(null)
   let submitting = $state(false)
   let search = $state('')
@@ -96,9 +101,36 @@
     createdAt ? `Laatst opgeslagen: ${formatDateTime(createdAt)}` : null
   )
 
+  function focusRowWordInput(key: number): void {
+    const inputs = [`row-${key}-word`, `m-row-${key}-word`]
+      .map(id => document.getElementById(id))
+      .filter((el): el is HTMLInputElement => el instanceof HTMLInputElement)
+
+    const input = inputs.find(el => el.getClientRects().length > 0) ?? inputs[0]
+    input?.focus()
+  }
+
+  function applyRulesList(list: PronunciationRulesList): void {
+    snapshot = list.rules.map(makeDraft)
+    rows = structuredClone(snapshot)
+    warning = list.warning
+    createdAt = list.created_at
+    rowErrors = {}
+    globalError = null
+    search = ''
+  }
+
+  function resetToSnapshot(): void {
+    rows = structuredClone(snapshot)
+    rowErrors = {}
+    globalError = null
+    search = ''
+  }
+
   async function handleAddRow(): Promise<void> {
     if (!editable) return
     const key = nextKey++
+    search = ''
     rows = [
       ...rows,
       {
@@ -110,7 +142,7 @@
       },
     ]
     await tick()
-    document.getElementById(`row-${key}-word`)?.focus()
+    focusRowWordInput(key)
   }
 
   function handleRemoveRow(key: number): void {
@@ -122,7 +154,7 @@
     }
   }
 
-  function clearRowError(key: number, field: keyof PronunciationRuleFormData): void {
+  function clearRowError(key: number, field: PronunciationRuleField): void {
     const current = rowErrors[key]
     if (!current?.[field]) return
     const { [field]: _removed, ...rest } = current
@@ -142,20 +174,24 @@
     const payload = toPayload(rows)
     const parsed = pronunciationRulesSchema.safeParse({ rules: payload })
     if (!parsed.success) {
-      const nextErrors: typeof rowErrors = {}
+      const nextErrors: RowErrors = {}
+      let hasRowErrors = false
       for (const issue of parsed.error.issues) {
         if (issue.path[0] === 'rules' && typeof issue.path[1] === 'number') {
           const row = rows[issue.path[1]]
-          const field = issue.path[2] as keyof PronunciationRuleFormData
-          if (row) {
+          const field = issue.path[2]
+          if (row && typeof field === 'string' && isPronunciationRuleField(field)) {
             nextErrors[row._key] = { ...nextErrors[row._key], [field]: issue.message }
+            hasRowErrors = true
+          } else {
+            globalError = issue.message
           }
         } else {
           globalError = issue.message
         }
       }
       rowErrors = nextErrors
-      search = ''
+      if (hasRowErrors) search = ''
       toast.error('Controleer de fouten in het formulier')
       return
     }
@@ -168,11 +204,23 @@
 
     submitting = true
     try {
-      await settingsApi.updateTtsPronunciations({ rules: payload })
+      let saved: PronunciationRulesList
+      try {
+        saved = await settingsApi.updateTtsPronunciations({ rules: payload })
+      } catch (err) {
+        handleSaveError(err)
+        return
+      }
+
+      applyRulesList(saved)
       toast.success('Uitspraakregels opgeslagen')
-      await invalidateAll()
-    } catch (err) {
-      handleSaveError(err)
+
+      try {
+        await invalidateAll()
+      } catch (err) {
+        console.error('[pronunciations] refresh after save failed', err)
+        toast.warning('Opgeslagen, maar vernieuwen mislukt')
+      }
     } finally {
       submitting = false
     }
@@ -180,37 +228,35 @@
 
   function handleSaveError(err: unknown): void {
     if (!(err instanceof ApiError)) {
+      console.error('[pronunciations] unexpected save error', err)
       toast.error('Opslaan mislukt')
       return
     }
 
-    const details = err.details as
-      | {
-          code?: string
-          type?: string
-          detail?: string
-          hint?: string
-          errors?: Array<{ field: string; message: string }>
-        }
-      | undefined
+    const details = isProblemDetails(err.details) ? err.details : undefined
 
     if (err.status === 422 && details?.errors?.length) {
-      const re = /^rules\[(\d+)\]\.(\w+)$/
-      const nextErrors: typeof rowErrors = {}
+      const nextErrors: RowErrors = {}
       const globalMessages: string[] = []
       for (const e of details.errors) {
-        const m = re.exec(e.field)
+        const message = e.message ?? details.detail ?? 'De server heeft een veldfout teruggegeven'
+        if (!e.field) {
+          globalMessages.push(message)
+          continue
+        }
+
+        const m = SERVER_RULE_ERROR_RE.exec(e.field)
         if (!m) {
-          globalMessages.push(e.message)
+          globalMessages.push(message)
           continue
         }
         const idx = Number(m[1])
-        const field = m[2] as keyof PronunciationRuleFormData
+        const field = m[2]
         const row = rows[idx]
-        if (row) {
-          nextErrors[row._key] = { ...nextErrors[row._key], [field]: e.message }
+        if (row && isPronunciationRuleField(field)) {
+          nextErrors[row._key] = { ...nextErrors[row._key], [field]: message }
         } else {
-          globalMessages.push(e.message)
+          globalMessages.push(message)
         }
       }
       rowErrors = nextErrors
@@ -237,10 +283,7 @@
       return
     }
     if (err.status === 501) {
-      ttsUnavailable = {
-        detail: details?.detail ?? 'Text-to-speech is niet geconfigureerd op de server.',
-        hint: details?.hint,
-      }
+      ttsUnavailable = createTTSUnavailable(details)
       globalError = ttsUnavailable.detail
       toast.error('TTS niet geconfigureerd')
       return
@@ -260,15 +303,20 @@
   function handleCancel(): void {
     if (!isDirty) return
     if (!confirm('Weet je zeker dat je je wijzigingen wilt annuleren?')) return
-    rows = structuredClone($state.snapshot(snapshot))
-    rowErrors = {}
-    globalError = null
-    search = ''
+    resetToSnapshot()
   }
 
   async function handleReload(): Promise<void> {
     if (isDirty && !confirm('Je hebt niet-opgeslagen wijzigingen. Herladen?')) return
-    await invalidateAll()
+    try {
+      await invalidateAll()
+      await tick()
+      applyRulesList(initial)
+      ttsUnavailable = initialTtsUnavailable
+    } catch (err) {
+      console.error('[pronunciations] reload failed', err)
+      toast.error('Herladen mislukt')
+    }
   }
 
   beforeNavigate(({ cancel }) => {
@@ -277,16 +325,14 @@
     }
   })
 
-  $effect(() => {
-    const handler = (event: BeforeUnloadEvent): void => {
-      if (!isDirty) return
-      event.preventDefault()
-      event.returnValue = ''
-    }
-    window.addEventListener('beforeunload', handler)
-    return () => window.removeEventListener('beforeunload', handler)
-  })
+  function handleBeforeUnload(event: BeforeUnloadEvent): void {
+    if (!isDirty) return
+    event.preventDefault()
+    event.returnValue = ''
+  }
 </script>
+
+<svelte:window onbeforeunload={handleBeforeUnload} />
 
 <div class="space-y-4">
   {#if ttsUnavailable}
@@ -338,7 +384,6 @@
 
   <div class="card bg-base-100">
     <div class="card-body gap-4">
-      <!-- Toolbar -->
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <label class="input max-w-md">
           <Search
@@ -403,7 +448,6 @@
           Geen regels gevonden voor "{search}".
         </div>
       {:else}
-        <!-- Desktop: table -->
         <div class="hidden overflow-x-auto md:block">
           <table class="table">
             <thead>
@@ -430,7 +474,7 @@
               </tr>
             </thead>
             <tbody>
-              {#each filteredRows as row (row._key)}
+              {#each filteredRows as row, index (row._key)}
                 {@const errs = rowErrors[row._key]}
                 <tr>
                   <td class="align-top">
@@ -440,7 +484,7 @@
                       class={['input w-full', errs?.string_to_replace && 'input-error']}
                       bind:value={row.string_to_replace}
                       oninput={() => clearRowError(row._key, 'string_to_replace')}
-                      aria-label="Woord"
+                      aria-label="Woord regel {index + 1}"
                       disabled={!editable}
                     />
                     {#if errs?.string_to_replace}
@@ -454,7 +498,7 @@
                       class={['input w-full', errs?.alias && 'input-error']}
                       bind:value={row.alias}
                       oninput={() => clearRowError(row._key, 'alias')}
-                      aria-label="Uitspraak"
+                      aria-label="Uitspraak regel {index + 1}"
                       disabled={!editable}
                     />
                     {#if errs?.alias}
@@ -466,7 +510,7 @@
                       type="checkbox"
                       class="checkbox"
                       bind:checked={row.case_sensitive}
-                      aria-label="Hoofdlettergevoelig"
+                      aria-label="Hoofdlettergevoelig regel {index + 1}"
                       disabled={!editable}
                     />
                   </td>
@@ -475,7 +519,7 @@
                       type="checkbox"
                       class="checkbox"
                       bind:checked={row.word_boundaries}
-                      aria-label="Woordgrenzen"
+                      aria-label="Woordgrenzen regel {index + 1}"
                       disabled={!editable}
                     />
                   </td>
@@ -485,7 +529,7 @@
                         type="button"
                         class="btn btn-square btn-ghost btn-sm"
                         onclick={() => handleRemoveRow(row._key)}
-                        aria-label="Regel verwijderen"
+                        aria-label="Regel {index + 1} verwijderen"
                       >
                         <Trash2
                           aria-hidden="true"
@@ -500,9 +544,8 @@
           </table>
         </div>
 
-        <!-- Mobile: stacked cards -->
         <div class="space-y-3 md:hidden">
-          {#each filteredRows as row (row._key)}
+          {#each filteredRows as row, index (row._key)}
             {@const errs = rowErrors[row._key]}
             <div class="rounded-lg border border-base-300 p-4">
               <fieldset class="fieldset">
@@ -518,6 +561,7 @@
                   class={['input w-full', errs?.string_to_replace && 'input-error']}
                   bind:value={row.string_to_replace}
                   oninput={() => clearRowError(row._key, 'string_to_replace')}
+                  aria-label="Woord regel {index + 1}"
                   disabled={!editable}
                 />
                 {#if errs?.string_to_replace}
@@ -538,6 +582,7 @@
                   class={['input w-full', errs?.alias && 'input-error']}
                   bind:value={row.alias}
                   oninput={() => clearRowError(row._key, 'alias')}
+                  aria-label="Uitspraak regel {index + 1}"
                   disabled={!editable}
                 />
                 {#if errs?.alias}
@@ -551,6 +596,7 @@
                     type="checkbox"
                     class="checkbox checkbox-sm"
                     bind:checked={row.case_sensitive}
+                    aria-label="Hoofdlettergevoelig regel {index + 1}"
                     disabled={!editable}
                   />
                   <span class="text-sm">Hoofdlettergevoelig</span>
@@ -560,6 +606,7 @@
                     type="checkbox"
                     class="checkbox checkbox-sm"
                     bind:checked={row.word_boundaries}
+                    aria-label="Woordgrenzen regel {index + 1}"
                     disabled={!editable}
                   />
                   <span class="text-sm">Woordgrenzen</span>
@@ -572,6 +619,7 @@
                     type="button"
                     class="btn btn-ghost btn-sm"
                     onclick={() => handleRemoveRow(row._key)}
+                    aria-label="Regel {index + 1} verwijderen"
                   >
                     <Trash2
                       aria-hidden="true"

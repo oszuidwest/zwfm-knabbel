@@ -16,6 +16,21 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
   fetch?: FetchFn
 }
 
+export interface ProblemFieldError {
+  field?: string
+  message?: string
+}
+
+export interface ProblemDetails {
+  code?: string
+  type?: string
+  title?: string
+  status?: number
+  detail?: string
+  hint?: string
+  errors?: ProblemFieldError[]
+}
+
 class ApiError extends Error {
   constructor(
     public status: number,
@@ -25,6 +40,32 @@ class ApiError extends Error {
     super(message)
     this.name = 'ApiError'
   }
+}
+
+function isOptionalString(value: unknown): value is string | undefined {
+  return value === undefined || typeof value === 'string'
+}
+
+function isProblemFieldError(value: unknown): value is ProblemFieldError {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as Record<string, unknown>
+  return isOptionalString(candidate.field) && isOptionalString(candidate.message)
+}
+
+function isProblemDetails(value: unknown): value is ProblemDetails {
+  if (typeof value !== 'object' || value === null) return false
+
+  const candidate = value as Record<string, unknown>
+  return (
+    isOptionalString(candidate.code) &&
+    isOptionalString(candidate.type) &&
+    isOptionalString(candidate.title) &&
+    (candidate.status === undefined || typeof candidate.status === 'number') &&
+    isOptionalString(candidate.detail) &&
+    isOptionalString(candidate.hint) &&
+    (candidate.errors === undefined ||
+      (Array.isArray(candidate.errors) && candidate.errors.every(isProblemFieldError)))
+  )
 }
 
 async function parseErrorResponse(
@@ -53,6 +94,9 @@ function handleFetchError(err: unknown, timeoutMessage: string): never {
   if (err instanceof Error && err.name === 'AbortError') {
     throw new ApiError(0, timeoutMessage)
   }
+  if (err instanceof TypeError) {
+    throw new ApiError(0, 'Network error')
+  }
   throw err
 }
 
@@ -75,33 +119,35 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     }
   }
 
+  const requestBody = body ? JSON.stringify(body) : undefined
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 30000)
 
+  let response: Response
   try {
-    const response = await fetchFn(url, {
+    response = await fetchFn(url, {
       ...fetchOptions,
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...fetchOptions.headers,
       },
-      body: body ? JSON.stringify(body) : undefined,
+      body: requestBody,
       signal: controller.signal,
     })
-
-    clearTimeout(timeoutId)
-
-    if (!response.ok) {
-      const { message, details } = await parseErrorResponse(response, 'Request failed')
-      throw new ApiError(response.status, message, details)
-    }
-
-    return parseResponseBody<T>(response)
   } catch (err) {
     clearTimeout(timeoutId)
     handleFetchError(err, 'Request timeout')
   }
+
+  clearTimeout(timeoutId)
+
+  if (!response.ok) {
+    const { message, details } = await parseErrorResponse(response, 'Request failed')
+    throw new ApiError(response.status, message, details)
+  }
+
+  return parseResponseBody<T>(response)
 }
 
 async function upload<T>(
@@ -119,27 +165,28 @@ async function upload<T>(
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout for uploads
 
+  let response: Response
   try {
-    const response = await fetchFn(url, {
+    response = await fetchFn(url, {
       method: 'POST',
       credentials: 'include',
       // Don't set Content-Type - browser will set it with boundary for multipart/form-data
       body: formData,
       signal: controller.signal,
     })
-
-    clearTimeout(timeoutId)
-
-    if (!response.ok) {
-      const { message, details } = await parseErrorResponse(response, 'Upload failed')
-      throw new ApiError(response.status, message, details)
-    }
-
-    return parseResponseBody<T>(response)
   } catch (err) {
     clearTimeout(timeoutId)
     handleFetchError(err, 'Upload timeout')
   }
+
+  clearTimeout(timeoutId)
+
+  if (!response.ok) {
+    const { message, details } = await parseErrorResponse(response, 'Upload failed')
+    throw new ApiError(response.status, message, details)
+  }
+
+  return parseResponseBody<T>(response)
 }
 
 export function getMediaUrl(path: string | undefined | null): string | undefined {
@@ -171,5 +218,5 @@ export const api = {
   upload,
 }
 
-export { ApiError }
+export { ApiError, isProblemDetails }
 export type { FetchFn, PaginationFilters }

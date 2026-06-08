@@ -1,6 +1,6 @@
 import type { PageLoad } from './$types'
 import { redirect } from '@sveltejs/kit'
-import { ApiError } from '$lib/api/client'
+import { ApiError, isProblemDetails } from '$lib/api/client'
 import { settingsApi } from '$lib/api/settings'
 import { resolveInternalHref } from '$lib/utils/routes'
 
@@ -8,16 +8,6 @@ interface SettingsLoadError {
   status?: number
   message: string
   hint?: string
-}
-
-interface ProblemDetails {
-  detail?: string
-  title?: string
-  hint?: string
-}
-
-function isProblemDetails(value: unknown): value is ProblemDetails {
-  return typeof value === 'object' && value !== null
 }
 
 function toSettingsLoadError(err: unknown): SettingsLoadError {

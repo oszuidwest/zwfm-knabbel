@@ -1,22 +1,14 @@
 import { redirect } from '@sveltejs/kit'
-import { ApiError } from '$lib/api/client'
+import { ApiError, isProblemDetails } from '$lib/api/client'
 import { settingsApi } from '$lib/api/settings'
 import { resolveInternalHref } from '$lib/utils/routes'
-import type { PronunciationRulesList } from '$lib/types'
+import { createTTSUnavailable, type PronunciationRulesList, type TTSUnavailable } from '$lib/types'
 import type { PageLoad } from './$types'
 
-export interface TTSUnavailable {
-  detail: string
+interface PronunciationsLoadError {
+  status?: number
+  message: string
   hint?: string
-}
-
-interface ProblemDetails {
-  detail?: string
-  hint?: string
-}
-
-function isProblemDetails(value: unknown): value is ProblemDetails {
-  return typeof value === 'object' && value !== null
 }
 
 const emptyRules: PronunciationRulesList = {
@@ -25,10 +17,31 @@ const emptyRules: PronunciationRulesList = {
   created_at: null,
 }
 
+function toLoadError(err: ApiError): PronunciationsLoadError {
+  const details = isProblemDetails(err.details) ? err.details : undefined
+  if (err.status === 403) {
+    return {
+      status: err.status,
+      message: details?.detail ?? 'Geen toegang tot uitspraakregels.',
+      hint: details?.hint,
+    }
+  }
+
+  return {
+    status: err.status || undefined,
+    message: details?.detail ?? details?.title ?? err.message,
+    hint: details?.hint,
+  }
+}
+
 export const load: PageLoad = async ({ fetch }) => {
   try {
     const initial = await settingsApi.getTtsPronunciations(fetch)
-    return { initial, ttsUnavailable: null as TTSUnavailable | null }
+    return {
+      initial,
+      ttsUnavailable: null as TTSUnavailable | null,
+      loadError: null as PronunciationsLoadError | null,
+    }
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {
       throw redirect(303, resolveInternalHref('/login'))
@@ -38,10 +51,16 @@ export const load: PageLoad = async ({ fetch }) => {
       const details = isProblemDetails(err.details) ? err.details : undefined
       return {
         initial: emptyRules,
-        ttsUnavailable: {
-          detail: details?.detail ?? 'Text-to-speech is niet geconfigureerd op de server.',
-          hint: details?.hint,
-        } satisfies TTSUnavailable,
+        ttsUnavailable: createTTSUnavailable(details),
+        loadError: null as PronunciationsLoadError | null,
+      }
+    }
+
+    if (err instanceof ApiError) {
+      return {
+        initial: emptyRules,
+        ttsUnavailable: null as TTSUnavailable | null,
+        loadError: toLoadError(err),
       }
     }
 

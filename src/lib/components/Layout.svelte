@@ -61,7 +61,6 @@
   />
 
   <div class="drawer-content flex flex-col">
-    <!-- Mobile navbar -->
     <div class="navbar bg-base-100 lg:hidden">
       <div class="flex-none">
         <label
@@ -93,7 +92,6 @@
       </div>
     </div>
 
-    <!-- Page content -->
     <main class="min-h-screen flex-1 bg-base-200">
       <div class="p-4 lg:p-8">
         {@render children()}
@@ -108,7 +106,6 @@
       aria-label="Menu sluiten"
     ></label>
     <aside class="flex min-h-full w-80 flex-col bg-base-100">
-      <!-- Logo -->
       <div class="border-b border-base-300 p-6">
         <a
           href={resolveInternalHref('/')}
@@ -129,7 +126,6 @@
         </a>
       </div>
 
-      <!-- Navigation -->
       <nav class="flex-1 p-5">
         <ul class="menu gap-2 menu-md [&_a]:rounded-lg">
           <li class="menu-title tracking-widest uppercase">Menu</li>
@@ -149,7 +145,6 @@
             </li>
           {/each}
 
-          <!-- AI section (editors + admins) -->
           {#if auth.canEditPronunciations}
             <li class="mt-4 menu-title tracking-widest uppercase">AI</li>
             {#each aiNavItems as item (item.path)}
@@ -169,7 +164,6 @@
             {/each}
           {/if}
 
-          <!-- Admin section -->
           {#if auth.isAdmin}
             <li class="mt-4 menu-title tracking-widest uppercase">Admin</li>
             {#each adminNavItems as item (item.path)}
@@ -191,7 +185,6 @@
         </ul>
       </nav>
 
-      <!-- User info -->
       <div class="border-t border-base-300 p-4">
         <div class="flex items-center gap-3">
           <div class="avatar-online avatar avatar-placeholder">

@@ -30,3 +30,18 @@ export const pronunciationRulesSchema = z
   })
 
 export type PronunciationRuleFormData = z.infer<typeof pronunciationRuleSchema>
+
+export const pronunciationRuleFieldNames = [
+  'string_to_replace',
+  'alias',
+  'case_sensitive',
+  'word_boundaries',
+] as const
+
+export type PronunciationRuleField = (typeof pronunciationRuleFieldNames)[number]
+
+const pronunciationRuleFieldSet = new Set<string>(pronunciationRuleFieldNames)
+
+export function isPronunciationRuleField(field: string): field is PronunciationRuleField {
+  return pronunciationRuleFieldSet.has(field)
+}
