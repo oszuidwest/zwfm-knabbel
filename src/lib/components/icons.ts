@@ -4,6 +4,7 @@ export {
   Zap,
   ArchiveX,
   AudioWaveform,
+  BookOpen,
   CassetteTape,
   Check,
   CircleCheckBig,

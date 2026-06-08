@@ -405,7 +405,7 @@ export interface paths {
      *     - Story must have a `voice_id` assigned
      *     - The assigned voice must have an `elevenlabs_voice_id` configured
      *
-     *     **Audio pipeline:** ElevenLabs returns MP3 → converted to 48kHz mono WAV → stored as story audio.
+     *     **Audio pipeline:** ElevenLabs returns Opus (`opus_48000_128`) → converted to 48kHz mono WAV → stored as story audio.
      */
     post: operations['postStoriesIdTts']
     delete?: never
@@ -445,6 +445,34 @@ export interface paths {
      *     these settings.
      */
     patch: operations['patchSettingsTts']
+    trace?: never
+  }
+  '/api/v1/settings/tts/pronunciations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get TTS pronunciation rules
+     * @description Returns the alias pronunciation rules from the single Babbel-managed
+     *     ElevenLabs pronunciation dictionary. No upstream call is made until a
+     *     dictionary has been created by saving at least one rule.
+     */
+    get: operations['getSettingsTtsPronunciations']
+    /**
+     * Replace TTS pronunciation rules
+     * @description Replaces the complete alias-rule set for the Babbel-managed ElevenLabs
+     *     pronunciation dictionary. The dictionary is created lazily on the first
+     *     non-empty save. Editors and admins can write; viewers can only read.
+     */
+    put: operations['putSettingsTtsPronunciations']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
     trace?: never
   }
   '/api/v1/stories/{id}': {
@@ -989,6 +1017,38 @@ export interface components {
       /** @description Set to null to clear the stored seed. */
       seed?: number | null
       tts_style_prefix?: string
+    }
+    PronunciationRule: {
+      /** @description Text fragment ElevenLabs should replace before synthesis. */
+      string_to_replace: string
+      /** @description Replacement pronunciation for the text fragment. */
+      alias: string
+      /**
+       * @description Whether matching is case-sensitive. Defaults to true when omitted.
+       * @default true
+       */
+      case_sensitive: boolean | null
+      /**
+       * @description Whether matching is constrained to word boundaries. Defaults to true when omitted.
+       * @default true
+       */
+      word_boundaries: boolean | null
+    }
+    PronunciationRulesList: {
+      rules: components['schemas']['PronunciationRule'][]
+      /** @description ElevenLabs latest version ID. Null until a dictionary exists. */
+      latest_version_id: string | null
+      /**
+       * Format: date-time
+       * @description Dictionary creation time. Null until a dictionary exists.
+       */
+      created_at: string | null
+      /** @description Warns when the upstream dictionary is missing and will be recreated, or when non-alias ElevenLabs rules were discarded from the editor-facing list. */
+      warning?: string
+    }
+    PronunciationRulesUpdate: {
+      /** @description Complete replacement alias-rule set. Empty array clears all rules. */
+      rules: components['schemas']['PronunciationRule'][]
     }
     /** @description Represents the relationship between a station and voice with station-specific jingle configuration */
     StationVoice: {
@@ -1563,6 +1623,7 @@ export interface components {
      *     - `https://babbel.api/problems/duplicate` - Duplicate resource (e.g., station name already exists)
      *     - `https://babbel.api/problems/dependency-constraint` - Resource has dependencies that prevent deletion
      *     - `https://babbel.api/problems/admin-constraint` - Cannot delete last admin user
+     *     - `https://babbel.api/problems/pronunciation_rules.conflict` - Pronunciation dictionary changed concurrently
      */
     Conflict: {
       headers: {
@@ -2721,6 +2782,113 @@ export interface operations {
       403: components['responses']['Forbidden']
       422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
+      503: components['responses']['ServiceUnavailable']
+    }
+  }
+  getSettingsTtsPronunciations: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Current pronunciation rules */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PronunciationRulesList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      422: components['responses']['UnprocessableEntity']
+      429: components['responses']['TooManyRequests']
+      500: components['responses']['InternalServerError']
+      /** @description TTS is not configured on the server */
+      501: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "type": "https://babbel.api/problems/tts.not_configured",
+           *       "title": "Not Implemented",
+           *       "status": 501,
+           *       "detail": "Text-to-speech is not configured",
+           *       "hint": "Set BABBEL_ELEVENLABS_API_KEY to enable TTS"
+           *     }
+           */
+          'application/problem+json': components['schemas']['ProblemDetails']
+        }
+      }
+      502: components['responses']['BadGateway']
+      503: components['responses']['ServiceUnavailable']
+    }
+  }
+  putSettingsTtsPronunciations: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "rules": [
+         *         {
+         *           "string_to_replace": "Albert Heijn",
+         *           "alias": "albert hijn",
+         *           "case_sensitive": false,
+         *           "word_boundaries": true
+         *         }
+         *       ]
+         *     }
+         */
+        'application/json': components['schemas']['PronunciationRulesUpdate']
+      }
+    }
+    responses: {
+      /** @description Pronunciation rules replaced */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PronunciationRulesList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      409: components['responses']['Conflict']
+      422: components['responses']['UnprocessableEntity']
+      429: components['responses']['TooManyRequests']
+      500: components['responses']['InternalServerError']
+      /** @description TTS is not configured on the server */
+      501: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "type": "https://babbel.api/problems/tts.not_configured",
+           *       "title": "Not Implemented",
+           *       "status": 501,
+           *       "detail": "Text-to-speech is not configured",
+           *       "hint": "Set BABBEL_ELEVENLABS_API_KEY to enable TTS"
+           *     }
+           */
+          'application/problem+json': components['schemas']['ProblemDetails']
+        }
+      }
+      502: components['responses']['BadGateway']
       503: components['responses']['ServiceUnavailable']
     }
   }
