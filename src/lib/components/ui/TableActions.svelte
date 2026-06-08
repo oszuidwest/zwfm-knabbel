@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Pencil, Trash2, Eye } from '$lib/components/icons'
   import { resolveInternalHref } from '$lib/utils/routes'
+  import MaybeTooltip from './MaybeTooltip.svelte'
 
   interface Props {
     editHref: string
@@ -44,9 +45,10 @@
       />
     {/if}
   </a>
-  <div
-    class="tooltip tooltip-left"
-    data-tip={canDelete ? undefined : forbidTooltip}
+  <MaybeTooltip
+    when={!canDelete}
+    tip={forbidTooltip}
+    placement="tooltip-left"
   >
     <button
       class={['btn btn-ghost btn-sm', canDelete && 'text-error']}
@@ -59,5 +61,5 @@
         class="h-4 w-4"
       />
     </button>
-  </div>
+  </MaybeTooltip>
 </div>

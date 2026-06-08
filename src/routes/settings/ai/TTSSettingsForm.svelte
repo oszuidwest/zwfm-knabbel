@@ -14,7 +14,7 @@
   import { toast } from '$lib/stores/toast'
   import { formatDateTime } from '$lib/utils/format'
   import { validateForm } from '$lib/utils/validation'
-  import { SelectInput, TextareaInput, TextInput } from '$lib/components/ui'
+  import { MaybeTooltip, SelectInput, TextareaInput, TextInput } from '$lib/components/ui'
   import type { components, TTSSettings } from '$lib/types'
 
   type NumericSettingField = 'stability' | 'similarity_boost' | 'style' | 'speed'
@@ -274,9 +274,10 @@
         <RefreshCw class="h-5 w-5" />
         {reloadLabel}
       </button>
-      <div
-        class="tooltip tooltip-left"
-        data-tip={canEdit ? undefined : 'Geen rechten'}
+      <MaybeTooltip
+        when={!canEdit}
+        tip="Geen rechten"
+        placement="tooltip-left"
       >
         <button
           type="submit"
@@ -290,7 +291,7 @@
           {/if}
           Opslaan
         </button>
-      </div>
+      </MaybeTooltip>
     </div>
   </div>
 </form>

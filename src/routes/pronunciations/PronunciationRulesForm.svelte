@@ -10,7 +10,7 @@
   } from '$lib/schemas/pronunciations'
   import { toast } from '$lib/stores/toast'
   import { formatDateTime } from '$lib/utils/format'
-  import { EmptyState } from '$lib/components/ui'
+  import { EmptyState, MaybeTooltip } from '$lib/components/ui'
   import {
     BookOpen,
     Check,
@@ -433,9 +433,10 @@
             />
             Herlaad
           </button>
-          <div
-            class="tooltip tooltip-left"
-            data-tip={editable ? undefined : disabledTooltip}
+          <MaybeTooltip
+            when={!editable}
+            tip={disabledTooltip}
+            placement="tooltip-left"
           >
             <button
               type="button"
@@ -449,7 +450,7 @@
               />
               Nieuwe regel
             </button>
-          </div>
+          </MaybeTooltip>
         </div>
       </div>
 
@@ -540,9 +541,10 @@
                     />
                   </td>
                   <td class="text-right align-top">
-                    <div
-                      class="tooltip tooltip-left"
-                      data-tip={editable ? undefined : disabledTooltip}
+                    <MaybeTooltip
+                      when={!editable}
+                      tip={disabledTooltip}
+                      placement="tooltip-left"
                     >
                       <button
                         type="button"
@@ -556,7 +558,7 @@
                           class="h-4 w-4"
                         />
                       </button>
-                    </div>
+                    </MaybeTooltip>
                   </td>
                 </tr>
               {/each}
@@ -634,9 +636,10 @@
               </div>
 
               <div class="mt-3 flex justify-end">
-                <div
-                  class="tooltip tooltip-top"
-                  data-tip={editable ? undefined : disabledTooltip}
+                <MaybeTooltip
+                  when={!editable}
+                  tip={disabledTooltip}
+                  placement="tooltip-left"
                 >
                   <button
                     type="button"
@@ -651,7 +654,7 @@
                     />
                     Verwijder
                   </button>
-                </div>
+                </MaybeTooltip>
               </div>
             </div>
           {/each}
@@ -659,9 +662,10 @@
       {/if}
 
       <div class="flex justify-end gap-2 pt-2">
-        <div
-          class="tooltip tooltip-left"
-          data-tip={editable ? undefined : disabledTooltip}
+        <MaybeTooltip
+          when={!editable}
+          tip={disabledTooltip}
+          placement="tooltip-left"
         >
           <button
             type="button"
@@ -675,10 +679,11 @@
             />
             Annuleren
           </button>
-        </div>
-        <div
-          class="tooltip tooltip-left"
-          data-tip={editable ? undefined : disabledTooltip}
+        </MaybeTooltip>
+        <MaybeTooltip
+          when={!editable}
+          tip={disabledTooltip}
+          placement="tooltip-left"
         >
           <button
             type="button"
@@ -699,7 +704,7 @@
             {/if}
             Opslaan
           </button>
-        </div>
+        </MaybeTooltip>
       </div>
     </div>
   </div>

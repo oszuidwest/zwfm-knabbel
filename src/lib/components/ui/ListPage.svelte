@@ -6,6 +6,7 @@
   import { PageHeader, EmptyState, Pagination } from '$lib/components/ui'
   import type { PaginationInfo } from '$lib/utils/pagination'
   import { resolveInternalHref } from '$lib/utils/routes'
+  import MaybeTooltip from './MaybeTooltip.svelte'
   import type { Component, Snippet } from 'svelte'
 
   interface Props {
@@ -81,12 +82,13 @@
       {#if headerActions}
         {@render headerActions()}
       {:else if newHref}
-        <div
-          class="tooltip tooltip-left max-md:hidden"
-          data-tip={canCreate ? undefined : forbidTooltip}
+        <MaybeTooltip
+          when={!canCreate}
+          tip={forbidTooltip}
+          wrapperClass="max-md:hidden"
         >
           <a
-            href={resolveInternalHref(newHref)}
+            href={canCreate ? resolveInternalHref(newHref) : undefined}
             class={['btn btn-primary', !canCreate && 'btn-disabled']}
             role={canCreate ? undefined : 'button'}
             aria-disabled={!canCreate}
@@ -99,7 +101,7 @@
             />
             {newLabel}
           </a>
-        </div>
+        </MaybeTooltip>
       {/if}
     {/snippet}
   </PageHeader>
@@ -158,19 +160,29 @@
                 </div>
               {:else if onDelete}
                 <div class="flex gap-1">
-                  <span
-                    class="btn btn-square shrink-0 btn-ghost btn-sm"
-                    aria-hidden="true"
-                  >
-                    {#if canEdit}
-                      <Pencil class="h-4 w-4" />
-                    {:else}
-                      <Eye class="h-4 w-4" />
-                    {/if}
-                  </span>
-                  <div
-                    class="tooltip tooltip-top"
-                    data-tip={canDelete ? undefined : forbidTooltip}
+                  {#if editHref}
+                    <a
+                      href={resolveInternalHref(editHref(item))}
+                      class="btn btn-square shrink-0 btn-ghost btn-sm"
+                      aria-label={canEdit ? 'Bewerken' : 'Bekijken'}
+                    >
+                      {#if canEdit}
+                        <Pencil
+                          aria-hidden="true"
+                          class="h-4 w-4"
+                        />
+                      {:else}
+                        <Eye
+                          aria-hidden="true"
+                          class="h-4 w-4"
+                        />
+                      {/if}
+                    </a>
+                  {/if}
+                  <MaybeTooltip
+                    when={!canDelete}
+                    tip={forbidTooltip}
+                    placement="tooltip-left"
                   >
                     <button
                       class={[
@@ -186,7 +198,7 @@
                         class="h-4 w-4"
                       />
                     </button>
-                  </div>
+                  </MaybeTooltip>
                 </div>
               {/if}
             </div>

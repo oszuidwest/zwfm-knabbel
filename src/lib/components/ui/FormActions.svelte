@@ -1,12 +1,15 @@
 <script lang="ts">
+  import type { Component } from 'svelte'
   import { X, Check } from '$lib/components/icons'
   import { resolveInternalHref } from '$lib/utils/routes'
+  import MaybeTooltip from './MaybeTooltip.svelte'
 
   interface Props {
     cancelHref: string
     submitting: boolean
     submitLabel?: string
     cancelLabel?: string
+    submitIcon?: Component
     canSubmit?: boolean
     forbidTooltip?: string
   }
@@ -16,6 +19,7 @@
     submitting,
     submitLabel = 'Opslaan',
     cancelLabel = 'Annuleren',
+    submitIcon: SubmitIcon = Check,
     canSubmit = true,
     forbidTooltip = 'Geen rechten',
   }: Props = $props()
@@ -31,9 +35,10 @@
     <X class="h-5 w-5" />
     {cancelLabel}
   </a>
-  <div
-    class="tooltip tooltip-left"
-    data-tip={canSubmit ? undefined : forbidTooltip}
+  <MaybeTooltip
+    when={!canSubmit}
+    tip={forbidTooltip}
+    placement="tooltip-left"
   >
     <button
       type="submit"
@@ -43,9 +48,12 @@
       {#if submitting}
         <span class="loading loading-sm loading-spinner"></span>
       {:else}
-        <Check class="h-5 w-5" />
+        <SubmitIcon
+          aria-hidden="true"
+          class="h-5 w-5"
+        />
       {/if}
       {submitLabel}
     </button>
-  </div>
+  </MaybeTooltip>
 </div>

@@ -80,7 +80,8 @@
       })
       bulletins = [...bulletins, ...res.data]
       bulletinsTotal = res.total
-    } catch {
+    } catch (err) {
+      console.error('[stories] load more bulletins failed', err)
       toast.error('Kon meer bulletins niet laden')
     } finally {
       loadingMore = false

@@ -2,6 +2,7 @@
   import './layout.css'
   import { page } from '$app/state'
   import { afterNavigate, goto } from '$app/navigation'
+  import { untrack } from 'svelte'
   import { createAuthStore, setAuthContext } from '$lib/stores/auth.svelte'
   import Layout from '$lib/components/Layout.svelte'
   import Toast from '$lib/components/Toast.svelte'
@@ -10,10 +11,8 @@
   import type { LayoutProps } from './$types'
 
   let { data, children }: LayoutProps = $props()
-  const auth = createAuthStore()
+  const auth = createAuthStore(untrack(() => data.user))
   setAuthContext(auth)
-  // svelte-ignore state_referenced_locally
-  auth.hydrate(data.user)
 
   const publicRoutes = ['/login', '/auth/oauth/callback']
 

@@ -2,6 +2,7 @@
   import type { Snippet } from 'svelte'
   import { Plus } from '$lib/components/icons'
   import { resolveInternalHref } from '$lib/utils/routes'
+  import MaybeTooltip from './MaybeTooltip.svelte'
 
   interface Props {
     title: string
@@ -42,12 +43,13 @@
   {#if actions}
     {@render actions()}
   {:else if actionHref}
-    <div
-      class="tooltip tooltip-left max-md:hidden"
-      data-tip={canAction ? undefined : forbidTooltip}
+    <MaybeTooltip
+      when={!canAction}
+      tip={forbidTooltip}
+      wrapperClass="max-md:hidden"
     >
       <a
-        href={resolvedActionHref}
+        href={canAction ? resolvedActionHref : undefined}
         class={['btn btn-primary', !canAction && 'btn-disabled']}
         role={canAction ? undefined : 'button'}
         aria-disabled={!canAction}
@@ -60,6 +62,6 @@
         />
         {actionLabel ?? 'Nieuw'}
       </a>
-    </div>
+    </MaybeTooltip>
   {/if}
 </div>

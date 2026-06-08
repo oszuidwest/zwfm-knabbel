@@ -17,6 +17,12 @@ export class AuthStore {
 
   private checkPromise: Promise<boolean> | null = null
 
+  constructor(initialUser?: User | null) {
+    if (initialUser !== undefined) {
+      this.hydrate(initialUser)
+    }
+  }
+
   hydrate(user: User | null): void {
     this.user = user
     this.loading = false
@@ -51,7 +57,8 @@ export class AuthStore {
       const user = await authApi.getMe()
       this.user = user
       return true
-    } catch {
+    } catch (err) {
+      console.error('[auth] checkAuth failed', err)
       this.user = null
       return false
     } finally {
@@ -79,6 +86,6 @@ export class AuthStore {
 
 export const [getAuthContext, setAuthContext] = createContext<AuthStore>()
 
-export function createAuthStore(): AuthStore {
-  return new AuthStore()
+export function createAuthStore(initialUser?: User | null): AuthStore {
+  return new AuthStore(initialUser)
 }

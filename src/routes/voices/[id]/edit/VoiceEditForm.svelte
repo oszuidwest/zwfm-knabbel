@@ -8,7 +8,7 @@
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
   import { resolveInternalHref } from '$lib/utils/routes'
-  import { TextInput, PageHeader } from '$lib/components/ui'
+  import { MaybeTooltip, TextInput, PageHeader } from '$lib/components/ui'
   import StationConfigDashboard from './StationConfigDashboard.svelte'
   import { X, Check, Info } from '$lib/components/icons'
   import type { StationVoice } from '$lib/types'
@@ -254,9 +254,10 @@
         />
 
         <div class="flex justify-end gap-2">
-          <div
-            class="tooltip tooltip-left"
-            data-tip={canWrite ? undefined : 'Geen rechten'}
+          <MaybeTooltip
+            when={!canWrite}
+            tip="Geen rechten"
+            placement="tooltip-left"
           >
             <button
               type="submit"
@@ -270,7 +271,7 @@
               {/if}
               Naam opslaan
             </button>
-          </div>
+          </MaybeTooltip>
         </div>
       </form>
     </div>

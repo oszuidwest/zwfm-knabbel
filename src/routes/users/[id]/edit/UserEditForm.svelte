@@ -61,7 +61,13 @@
 
       await usersApi.update(data.user.id!, updateData)
       if (isSelfRoleChange) {
-        await auth.checkAuth({ force: true })
+        const refreshed = await auth.checkAuth({ force: true })
+        if (!refreshed) {
+          toast.warning('Je rol is bijgewerkt, maar je sessie kon niet opnieuw worden geladen.')
+          goto(resolveInternalHref('/login'))
+          return
+        }
+
         toast.success('Je rol is bijgewerkt')
         goto(resolveInternalHref('/stories'))
         return

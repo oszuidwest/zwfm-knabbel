@@ -5,8 +5,8 @@
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { resolveInternalHref } from '$lib/utils/routes'
-  import { RefreshCw, X } from '$lib/components/icons'
-  import { PageHeader, SelectInput } from '$lib/components/ui'
+  import { RefreshCw } from '$lib/components/icons'
+  import { FormActions, PageHeader, SelectInput } from '$lib/components/ui'
   import { toSelectOptions } from '$lib/utils/form'
 
   let { data } = $props()
@@ -33,7 +33,7 @@
       toast.success('Bulletin gegenereerd')
       goto(resolveInternalHref(`/bulletins/${bulletin.id}`))
     } catch (err) {
-      notifyMutationError(err, err instanceof Error ? err.message : 'Genereren mislukt')
+      notifyMutationError(err, 'Genereren mislukt')
     } finally {
       generating = false
     }
@@ -70,30 +70,14 @@
           </ul>
         </div>
 
-        <div class="flex justify-end gap-2 pt-4">
-          <a
-            href={resolveInternalHref('/bulletins')}
-            class="btn btn-ghost"
-          >
-            <X class="h-5 w-5" />
-            Annuleren
-          </a>
-          <button
-            type="submit"
-            class="btn btn-primary"
-            disabled={generating || !selectedStation || !canGenerate}
-          >
-            {#if generating}
-              <span class="loading loading-sm loading-spinner"></span>
-            {:else}
-              <RefreshCw
-                aria-hidden="true"
-                class="h-5 w-5"
-              />
-            {/if}
-            Genereren
-          </button>
-        </div>
+        <FormActions
+          cancelHref="/bulletins"
+          submitting={generating}
+          submitLabel="Genereren"
+          submitIcon={RefreshCw}
+          canSubmit={canGenerate && !!selectedStation}
+          forbidTooltip={canGenerate ? 'Selecteer eerst een zender' : 'Geen rechten'}
+        />
       </form>
     </div>
   </div>

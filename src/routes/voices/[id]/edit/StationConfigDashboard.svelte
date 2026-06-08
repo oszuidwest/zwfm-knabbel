@@ -27,6 +27,7 @@
 
   let dragOver = $state<number | null>(null)
   let playingIndex = $state<number | null>(null)
+  // bind:this populates this map for imperative audio playback only.
   let audioElements: Record<number, HTMLAudioElement | null> = {}
   const effectiveDisabled = $derived(disabled || !canEdit)
 
