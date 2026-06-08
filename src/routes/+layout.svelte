@@ -18,6 +18,12 @@
 
   const currentPathname = $derived(page.url.pathname)
   const isPublic = $derived(isPublicRoute(currentPathname))
+  const isSessionExpiredLogin = $derived(
+    currentPathname === '/login' && page.url.searchParams.get('expired') === '1'
+  )
+  const isAuthenticatedLoginRedirect = $derived(
+    !!auth.user && currentPathname === '/login' && !isSessionExpiredLogin
+  )
 
   function isPublicRoute(pathname: string): boolean {
     return publicRoutes.some(r => pathname.startsWith(r))
@@ -30,6 +36,16 @@
   $effect(() => {
     if (!auth.checked || auth.user || isPublic) return
     void goto(resolveInternalHref('/login'))
+  })
+
+  $effect(() => {
+    if (!auth.checked || !isSessionExpiredLogin || !auth.user) return
+    auth.hydrate(null)
+  })
+
+  $effect(() => {
+    if (!auth.checked || !isAuthenticatedLoginRedirect) return
+    void goto(resolveInternalHref('/stories'))
   })
 
   async function guardRoute(pathname: string): Promise<void> {
@@ -55,11 +71,11 @@
   <title>Babbel - Nieuwsbulletinsysteem</title>
 </svelte:head>
 
-{#if auth.loading}
+{#if auth.loading || isAuthenticatedLoginRedirect}
   <div class="flex min-h-screen items-center justify-center bg-base-200">
     <span class="loading loading-lg loading-spinner text-primary"></span>
   </div>
-{:else if auth.user}
+{:else if auth.user && !isSessionExpiredLogin}
   <Layout>
     {@render children()}
   </Layout>

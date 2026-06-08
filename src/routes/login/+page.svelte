@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { page } from '$app/state'
   import { authApi } from '$lib/api/auth'
-  import { AudioWaveform, Grid2x2 } from '$lib/components/icons'
+  import { AudioWaveform, Grid2x2, TriangleAlert } from '$lib/components/icons'
 
   let ssoLoading = $state(false)
+  const sessionExpired = $derived(page.url.searchParams.get('expired') === '1')
 
   function handleSsoLogin(): void {
     ssoLoading = true
@@ -25,6 +27,19 @@
         <h1 class="page-title">Babbel</h1>
         <p class="page-subtitle">Nieuwsbulletinsysteem</p>
       </div>
+
+      {#if sessionExpired}
+        <div
+          class="alert mb-4 alert-warning"
+          role="status"
+        >
+          <TriangleAlert
+            aria-hidden="true"
+            class="h-5 w-5"
+          />
+          <span>Je sessie is verlopen. Log opnieuw in.</span>
+        </div>
+      {/if}
 
       <button
         type="button"

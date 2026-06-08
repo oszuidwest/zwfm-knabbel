@@ -9,10 +9,10 @@ export function requirePermission<R extends Resource>(
   action: Action<R>
 ): asserts user is User {
   if (!user) {
-    throw redirect(303, resolveInternalHref('/login'))
+    redirect(303, resolveInternalHref('/login'))
   }
 
   if (!can(user.role, resource, action)) {
-    throw redirect(303, resolveInternalHref('/stories?denied=1'))
+    redirect(303, resolveInternalHref('/stories?denied=1'))
   }
 }

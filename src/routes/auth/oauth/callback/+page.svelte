@@ -1,8 +1,9 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { goto } from '$app/navigation'
+  import { goto, invalidate } from '$app/navigation'
   import { onMount } from 'svelte'
   import { getAuthContext } from '$lib/stores/auth.svelte'
+  import { AUTH_DEPENDENCY } from '$lib/auth/session'
   import { authApi } from '$lib/api/auth'
   import { toast } from '$lib/stores/toast'
   import { resolveInternalHref } from '$lib/utils/routes'
@@ -43,6 +44,7 @@
         const authenticated = await auth.checkAuth({ force: true })
 
         if (authenticated) {
+          await invalidate(AUTH_DEPENDENCY)
           status = 'success'
           toast.success('Succesvol ingelogd')
           goto(resolveInternalHref('/stories'))

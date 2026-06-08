@@ -1,8 +1,9 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
-  import { page } from '$app/state'
-  import { goto } from '$app/navigation'
+  import { navigating, page } from '$app/state'
+  import { goto, invalidate } from '$app/navigation'
   import { getAuthContext } from '$lib/stores/auth.svelte'
+  import { AUTH_DEPENDENCY } from '$lib/auth/session'
   import { getRoleLabel } from '$lib/utils/labels'
   import { resolveInternalHref } from '$lib/utils/routes'
   import {
@@ -40,14 +41,16 @@
   ]
 
   const adminNavItems: NavItem[] = [{ path: '/users', label: 'Gebruikers', icon: Users }]
+  const activePathname = $derived(navigating.to?.url.pathname ?? page.url.pathname)
 
   function isActive(path: string): boolean {
-    return page.url.pathname === path || page.url.pathname.startsWith(`${path}/`)
+    return activePathname === path || activePathname.startsWith(`${path}/`)
   }
 
   async function handleLogout(): Promise<void> {
     await auth.logout()
-    goto(resolveInternalHref('/login'))
+    await invalidate(AUTH_DEPENDENCY)
+    await goto(resolveInternalHref('/login'))
   }
 </script>
 

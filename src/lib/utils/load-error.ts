@@ -16,7 +16,7 @@ export function throwResourceLoadError(
   }
 
   if (err.status === 401) {
-    redirect(303, resolveInternalHref('/login'))
+    redirectToLogin(true)
   }
 
   if (err.status === 403) {
@@ -36,4 +36,8 @@ export function throwResourceLoadError(
   }
 
   error(err.status, err.message || failed)
+}
+
+export function redirectToLogin(expired = false): never {
+  redirect(303, resolveInternalHref(expired ? '/login?expired=1' : '/login'))
 }

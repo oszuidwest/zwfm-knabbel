@@ -1,8 +1,7 @@
-import { redirect } from '@sveltejs/kit'
 import { ApiError, isProblemDetails } from '$lib/api/client'
 import { settingsApi } from '$lib/api/settings'
 import { requirePermission } from '$lib/auth/guard'
-import { resolveInternalHref } from '$lib/utils/routes'
+import { redirectToLogin } from '$lib/utils/load-error'
 import { createTTSUnavailable, type PronunciationRulesList, type TTSUnavailable } from '$lib/types'
 import type { PageLoad } from './$types'
 
@@ -48,7 +47,7 @@ export const load: PageLoad = async ({ fetch, parent }) => {
     }
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {
-      throw redirect(303, resolveInternalHref('/login'))
+      redirectToLogin(true)
     }
 
     if (err instanceof ApiError && err.status === 501) {

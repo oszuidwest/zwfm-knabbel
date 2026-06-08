@@ -1,9 +1,8 @@
 import type { PageLoad } from './$types'
-import { redirect } from '@sveltejs/kit'
 import { ApiError, isProblemDetails } from '$lib/api/client'
 import { settingsApi } from '$lib/api/settings'
 import { requirePermission } from '$lib/auth/guard'
-import { resolveInternalHref } from '$lib/utils/routes'
+import { redirectToLogin } from '$lib/utils/load-error'
 
 interface SettingsLoadError {
   status?: number
@@ -39,7 +38,7 @@ export const load: PageLoad = async ({ fetch, parent }) => {
     }
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {
-      throw redirect(303, resolveInternalHref('/login'))
+      redirectToLogin(true)
     }
 
     return {

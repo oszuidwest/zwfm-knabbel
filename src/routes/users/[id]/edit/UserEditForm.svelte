@@ -4,6 +4,7 @@
   import { userSchema, type UserFormData } from '$lib/schemas/user'
   import { usersApi } from '$lib/api/users'
   import { getAuthContext } from '$lib/stores/auth.svelte'
+  import { AUTH_DEPENDENCY } from '$lib/auth/session'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
   import { roleOptions } from '$lib/utils/labels'
@@ -69,7 +70,7 @@
         }
 
         toast.success('Je rol is bijgewerkt')
-        goto(resolveInternalHref('/stories'))
+        await goto(resolveInternalHref('/stories'), { invalidate: [AUTH_DEPENDENCY] })
         return
       }
 
