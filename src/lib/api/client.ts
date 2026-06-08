@@ -123,6 +123,10 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   }
 
   const requestBody = body !== undefined ? JSON.stringify(body) : undefined
+  const headers = new Headers(fetchOptions.headers)
+  if (requestBody !== undefined && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 30000)
 
@@ -131,10 +135,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     response = await fetchFn(url, {
       ...fetchOptions,
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...fetchOptions.headers,
-      },
+      headers,
       body: requestBody,
       signal: controller.signal,
     })

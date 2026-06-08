@@ -1,7 +1,7 @@
 import { ApiError, isProblemDetails } from '$lib/api/client'
 import { settingsApi } from '$lib/api/settings'
 import { requirePermission } from '$lib/auth/guard'
-import { redirectToLogin } from '$lib/utils/load-error'
+import { redirectToLogin, settleLoad } from '$lib/utils/load-error'
 import { createTTSUnavailable, type PronunciationRulesList, type TTSUnavailable } from '$lib/types'
 import type { PageLoad } from './$types'
 
@@ -35,38 +35,41 @@ function toLoadError(err: ApiError): PronunciationsLoadError {
 }
 
 export const load: PageLoad = async ({ fetch, parent }) => {
+  const initialResult = settleLoad(settingsApi.getTtsPronunciations(fetch))
+
   const { user } = await parent()
   requirePermission(user, 'pronunciation_rules', 'read')
 
-  try {
-    const initial = await settingsApi.getTtsPronunciations(fetch)
+  const result = await initialResult
+  if (result.ok) {
     return {
-      initial,
+      initial: result.value,
       ttsUnavailable: null as TTSUnavailable | null,
       loadError: null as PronunciationsLoadError | null,
     }
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 401) {
-      redirectToLogin(true)
-    }
-
-    if (err instanceof ApiError && err.status === 501) {
-      const details = isProblemDetails(err.details) ? err.details : undefined
-      return {
-        initial: emptyRules,
-        ttsUnavailable: createTTSUnavailable(details),
-        loadError: null as PronunciationsLoadError | null,
-      }
-    }
-
-    if (err instanceof ApiError) {
-      return {
-        initial: emptyRules,
-        ttsUnavailable: null as TTSUnavailable | null,
-        loadError: toLoadError(err),
-      }
-    }
-
-    throw err
   }
+
+  const err = result.err
+  if (err instanceof ApiError && err.status === 401) {
+    redirectToLogin(true)
+  }
+
+  if (err instanceof ApiError && err.status === 501) {
+    const details = isProblemDetails(err.details) ? err.details : undefined
+    return {
+      initial: emptyRules,
+      ttsUnavailable: createTTSUnavailable(details),
+      loadError: null as PronunciationsLoadError | null,
+    }
+  }
+
+  if (err instanceof ApiError) {
+    return {
+      initial: emptyRules,
+      ttsUnavailable: null as TTSUnavailable | null,
+      loadError: toLoadError(err),
+    }
+  }
+
+  throw err
 }

@@ -24,7 +24,7 @@
     } else {
       url.searchParams.delete('station')
     }
-    goto(resolveInternalHref(`${url.pathname}${url.search}${url.hash}`), { invalidateAll: true })
+    goto(resolveInternalHref(`${url.pathname}${url.search}${url.hash}`))
   }
 </script>
 

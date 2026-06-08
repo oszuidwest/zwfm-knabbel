@@ -2,7 +2,7 @@ import type { PageLoad } from './$types'
 import { ApiError, isProblemDetails } from '$lib/api/client'
 import { settingsApi } from '$lib/api/settings'
 import { requirePermission } from '$lib/auth/guard'
-import { redirectToLogin } from '$lib/utils/load-error'
+import { redirectToLogin, settleLoad } from '$lib/utils/load-error'
 
 interface SettingsLoadError {
   status?: number
@@ -28,22 +28,26 @@ function toSettingsLoadError(err: unknown): SettingsLoadError {
 }
 
 export const load: PageLoad = async ({ fetch, parent }) => {
+  const settingsResult = settleLoad(settingsApi.getTts(fetch))
+
   const { user } = await parent()
   requirePermission(user, 'settings_tts', 'read')
 
-  try {
+  const result = await settingsResult
+  if (result.ok) {
     return {
-      settings: await settingsApi.getTts(fetch),
+      settings: result.value,
       loadError: null,
     }
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 401) {
-      redirectToLogin(true)
-    }
+  }
 
-    return {
-      settings: null,
-      loadError: toSettingsLoadError(err),
-    }
+  const err = result.err
+  if (err instanceof ApiError && err.status === 401) {
+    redirectToLogin(true)
+  }
+
+  return {
+    settings: null,
+    loadError: toSettingsLoadError(err),
   }
 }

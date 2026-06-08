@@ -1,7 +1,7 @@
 import type { PageLoad } from './$types'
 import { requirePermission } from '$lib/auth/guard'
 import { storiesApi, type StoryFilters } from '$lib/api/stories'
-import { throwResourceLoadError } from '$lib/utils/load-error'
+import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
 import { toLocalDateString } from '$lib/utils/format'
 import { getPaginationParams, getPaginationInfo } from '$lib/utils/pagination'
 import { WEEKDAY_BITS_BY_DAY } from '$lib/types'
@@ -21,9 +21,6 @@ function getDateAndWeekdayBit(dateFilter: string): { date: string; weekdayBit: n
 }
 
 export const load: PageLoad = async ({ fetch, url, parent }) => {
-  const { user } = await parent()
-  requirePermission(user, 'stories', 'read')
-
   const statusFilter = url.searchParams.get('status') ?? ''
   const dateFilter = url.searchParams.get('date') ?? ''
   const audioFilter = url.searchParams.get('audio') ?? ''
@@ -61,17 +58,18 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
     params['filter[audio_url]'] = ''
   }
 
-  try {
-    const response = await storiesApi.getAll(params, fetch)
+  const responseResult = settleLoad(storiesApi.getAll(params, fetch))
 
-    return {
-      stories: response.data,
-      pagination: getPaginationInfo(response.total, page, limit),
-    }
-  } catch (err) {
-    throwResourceLoadError(err, {
-      notFound: 'Berichten niet gevonden',
-      failed: 'Berichten laden mislukt',
-    })
+  const { user } = await parent()
+  requirePermission(user, 'stories', 'read')
+
+  const response = unwrapLoadResult(await responseResult, {
+    notFound: 'Berichten niet gevonden',
+    failed: 'Berichten laden mislukt',
+  })
+
+  return {
+    stories: response.data,
+    pagination: getPaginationInfo(response.total, page, limit),
   }
 }

@@ -7,6 +7,20 @@ interface ResourceLoadErrorOptions {
   failed?: string
 }
 
+export type SettledLoad<T> = { ok: true; value: T } | { ok: false; err: unknown }
+
+export function settleLoad<T>(promise: Promise<T>): Promise<SettledLoad<T>> {
+  return promise.then(
+    value => ({ ok: true, value }),
+    err => ({ ok: false, err })
+  )
+}
+
+export function unwrapLoadResult<T>(result: SettledLoad<T>, options: ResourceLoadErrorOptions): T {
+  if (result.ok) return result.value
+  throwResourceLoadError(result.err, options)
+}
+
 export function throwResourceLoadError(
   err: unknown,
   { notFound, failed = 'Laden mislukt' }: ResourceLoadErrorOptions

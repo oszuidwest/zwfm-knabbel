@@ -38,7 +38,7 @@
   const hasActiveFilters = $derived(!!(statusFilter || dateFilter || audioFilter || searchQuery))
   const canWrite = $derived(auth.can('stories', 'write'))
 
-  // Update URL and trigger server-side reload
+  // The tracked query parameters rerun this page load automatically.
   function updateFilters(updates: Record<string, string>): void {
     const url = new URL(page.url)
     // Reset to page 1 when filters change
@@ -50,7 +50,7 @@
         url.searchParams.delete(key)
       }
     }
-    goto(resolveInternalHref(`${url.pathname}${url.search}${url.hash}`), { invalidateAll: true })
+    goto(resolveInternalHref(`${url.pathname}${url.search}${url.hash}`))
   }
 
   const handleDelete = (story: Story) =>
