@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tick } from 'svelte'
   import { beforeNavigate, invalidateAll } from '$app/navigation'
-  import { ApiError, isProblemDetails } from '$lib/api/client'
+  import { ApiError, isProblemDetails, notifyMutationError } from '$lib/api/client'
   import { settingsApi } from '$lib/api/settings'
   import {
     isPronunciationRuleField,
@@ -10,7 +10,7 @@
   } from '$lib/schemas/pronunciations'
   import { toast } from '$lib/stores/toast'
   import { formatDateTime } from '$lib/utils/format'
-  import { EmptyState } from '$lib/components/ui'
+  import { EmptyState, MaybeTooltip } from '$lib/components/ui'
   import {
     BookOpen,
     Check,
@@ -67,6 +67,24 @@
       word_boundaries: r.word_boundaries,
     }))
 
+  function initialDraftState(): {
+    snapshot: DraftRow[]
+    rows: DraftRow[]
+    warning: string | undefined
+    createdAt: string | null
+    ttsUnavailable: TTSUnavailable | null
+  } {
+    const initialSnapshot = initial.rules.map(makeDraft)
+
+    return {
+      snapshot: initialSnapshot,
+      rows: structuredClone(initialSnapshot),
+      warning: initial.warning,
+      createdAt: initial.created_at,
+      ttsUnavailable: initialTtsUnavailable,
+    }
+  }
+
   function draftsEqual(a: DraftRow[], b: DraftRow[]): boolean {
     if (a.length !== b.length) return false
 
@@ -81,26 +99,23 @@
     })
   }
 
-  // svelte-ignore state_referenced_locally
-  let snapshot = $state.raw<DraftRow[]>(initial.rules.map(makeDraft))
-
-  // svelte-ignore state_referenced_locally
-  let rows = $state<DraftRow[]>(structuredClone(snapshot))
-  // svelte-ignore state_referenced_locally
-  let warning = $state<string | undefined>(initial.warning)
-  // svelte-ignore state_referenced_locally
-  let createdAt = $state<string | null>(initial.created_at)
-  // svelte-ignore state_referenced_locally
-  let ttsUnavailable = $state<TTSUnavailable | null>(initialTtsUnavailable)
+  const draftState = initialDraftState()
+  let snapshot = $state.raw<DraftRow[]>(draftState.snapshot)
+  let rows = $state<DraftRow[]>(draftState.rows)
+  let warning = $state<string | undefined>(draftState.warning)
+  let createdAt = $state<string | null>(draftState.createdAt)
+  let ttsUnavailable = $state<TTSUnavailable | null>(draftState.ttsUnavailable)
   let rowErrors = $state<RowErrors>({})
   let globalError = $state<string | null>(null)
   let submitting = $state(false)
   let search = $state('')
 
   const editable = $derived(canEdit && !ttsUnavailable)
+  const disabledTooltip = $derived(canEdit ? 'TTS niet geconfigureerd' : 'Geen rechten')
 
   const isDirty = $derived(!draftsEqual(rows, snapshot))
   const saveDisabled = $derived(!editable || !isDirty || submitting)
+  const cancelDisabled = $derived(!editable || !isDirty || submitting)
 
   const filteredRows = $derived.by(() => {
     const q = search.trim().toLowerCase()
@@ -292,10 +307,6 @@
       toast.error('Conflict — herlaad de pagina')
       return
     }
-    if (err.status === 403) {
-      toast.error('Geen rechten om uitspraakregels te wijzigen')
-      return
-    }
     if (err.status === 501) {
       ttsUnavailable = createTTSUnavailable(details)
       globalError = ttsUnavailable.detail
@@ -311,7 +322,7 @@
       toast.error('Te veel verzoeken — probeer het later opnieuw')
       return
     }
-    toast.error(details?.detail ?? err.message ?? 'Opslaan mislukt')
+    notifyMutationError(err, details?.detail ?? err.message ?? 'Opslaan mislukt')
   }
 
   function handleCancel(): void {
@@ -435,11 +446,16 @@
             />
             Herlaad
           </button>
-          {#if editable}
+          <MaybeTooltip
+            when={!editable}
+            tip={disabledTooltip}
+            placement="tooltip-left"
+          >
             <button
               type="button"
               class="btn btn-primary btn-sm"
               onclick={handleAddRow}
+              disabled={!editable}
             >
               <Plus
                 aria-hidden="true"
@@ -447,7 +463,7 @@
               />
               Nieuwe regel
             </button>
-          {/if}
+          </MaybeTooltip>
         </div>
       </div>
 
@@ -538,11 +554,16 @@
                     />
                   </td>
                   <td class="text-right align-top">
-                    {#if editable}
+                    <MaybeTooltip
+                      when={!editable}
+                      tip={disabledTooltip}
+                      placement="tooltip-left"
+                    >
                       <button
                         type="button"
                         class="btn btn-square btn-ghost btn-sm"
                         onclick={() => handleRemoveRow(row._key)}
+                        disabled={!editable}
                         aria-label="Regel {index + 1} verwijderen"
                       >
                         <Trash2
@@ -550,7 +571,7 @@
                           class="h-4 w-4"
                         />
                       </button>
-                    {/if}
+                    </MaybeTooltip>
                   </td>
                 </tr>
               {/each}
@@ -627,12 +648,17 @@
                 </label>
               </div>
 
-              {#if editable}
-                <div class="mt-3 flex justify-end">
+              <div class="mt-3 flex justify-end">
+                <MaybeTooltip
+                  when={!editable}
+                  tip={disabledTooltip}
+                  placement="tooltip-left"
+                >
                   <button
                     type="button"
                     class="btn btn-ghost btn-sm"
                     onclick={() => handleRemoveRow(row._key)}
+                    disabled={!editable}
                     aria-label="Regel {index + 1} verwijderen"
                   >
                     <Trash2
@@ -641,20 +667,24 @@
                     />
                     Verwijder
                   </button>
-                </div>
-              {/if}
+                </MaybeTooltip>
+              </div>
             </div>
           {/each}
         </div>
       {/if}
 
-      {#if editable}
-        <div class="flex justify-end gap-2 pt-2">
+      <div class="flex justify-end gap-2 pt-2">
+        <MaybeTooltip
+          when={!editable}
+          tip={disabledTooltip}
+          placement="tooltip-left"
+        >
           <button
             type="button"
             class="btn btn-ghost"
             onclick={handleCancel}
-            disabled={!isDirty || submitting}
+            disabled={cancelDisabled}
           >
             <X
               aria-hidden="true"
@@ -662,6 +692,12 @@
             />
             Annuleren
           </button>
+        </MaybeTooltip>
+        <MaybeTooltip
+          when={!editable}
+          tip={disabledTooltip}
+          placement="tooltip-left"
+        >
           <button
             type="button"
             class="btn btn-primary"
@@ -681,8 +717,8 @@
             {/if}
             Opslaan
           </button>
-        </div>
-      {/if}
+        </MaybeTooltip>
+      </div>
     </div>
   </div>
 </div>

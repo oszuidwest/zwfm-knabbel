@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit'
 import { ApiError, isProblemDetails } from '$lib/api/client'
 import { settingsApi } from '$lib/api/settings'
+import { requirePermission } from '$lib/auth/guard'
 import { resolveInternalHref } from '$lib/utils/routes'
 import { createTTSUnavailable, type PronunciationRulesList, type TTSUnavailable } from '$lib/types'
 import type { PageLoad } from './$types'
@@ -34,7 +35,10 @@ function toLoadError(err: ApiError): PronunciationsLoadError {
   }
 }
 
-export const load: PageLoad = async ({ fetch }) => {
+export const load: PageLoad = async ({ fetch, parent }) => {
+  const { user } = await parent()
+  requirePermission(user, 'pronunciation_rules', 'read')
+
   try {
     const initial = await settingsApi.getTtsPronunciations(fetch)
     return {

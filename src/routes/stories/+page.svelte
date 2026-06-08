@@ -2,6 +2,7 @@
   import { goto, invalidateAll } from '$app/navigation'
   import { page } from '$app/state'
   import { storiesApi } from '$lib/api/stories'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
   import { deleteWithConfirm } from '$lib/utils/crud'
   import { formatDate } from '$lib/utils/format'
   import { resolveInternalHref } from '$lib/utils/routes'
@@ -20,6 +21,7 @@
   import type { Story } from '$lib/types'
 
   let { data } = $props()
+  const auth = getAuthContext()
   let showFilterModal = $state(false)
   let readModeStory = $state<Story | null>(null)
 
@@ -34,6 +36,7 @@
 
   // Check if any filter is active
   const hasActiveFilters = $derived(!!(statusFilter || dateFilter || audioFilter || searchQuery))
+  const canWrite = $derived(auth.can('stories', 'write'))
 
   // Update URL and trigger server-side reload
   function updateFilters(updates: Record<string, string>): void {
@@ -91,6 +94,7 @@
     subtitle="{data.pagination.totalItems} berichten"
     actionHref="/stories/new"
     actionLabel="Nieuw bericht"
+    canAction={canWrite}
   />
 
   <!-- Date tabs + Audio filter -->
@@ -182,8 +186,12 @@
       title="Geen berichten"
       description={hasActiveFilters
         ? 'Geen berichten gevonden met deze filters.'
-        : 'Maak je eerste bericht aan om te beginnen.'}
-      action={!hasActiveFilters ? { href: '/stories/new', label: 'Nieuw bericht' } : undefined}
+        : canWrite
+          ? 'Maak je eerste bericht aan om te beginnen.'
+          : 'Nog geen berichten aanwezig.'}
+      action={!hasActiveFilters && canWrite
+        ? { href: '/stories/new', label: 'Nieuw bericht' }
+        : undefined}
     />
   {:else}
     <!-- Mobile: Cards view -->
@@ -330,6 +338,8 @@
                     <TableActions
                       editHref="/stories/{story.id}/edit"
                       onDelete={() => handleDelete(story)}
+                      canEdit={canWrite}
+                      canDelete={canWrite}
                     />
                   </div>
                 </td>
@@ -345,16 +355,18 @@
 </div>
 
 <!-- FAB: New story button (mobile only) -->
-<a
-  href={resolveInternalHref('/stories/new')}
-  class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
-  aria-label="Nieuw bericht"
->
-  <Plus
-    aria-hidden="true"
-    class="h-6 w-6"
-  />
-</a>
+{#if canWrite}
+  <a
+    href={resolveInternalHref('/stories/new')}
+    class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
+    aria-label="Nieuw bericht"
+  >
+    <Plus
+      aria-hidden="true"
+      class="h-6 w-6"
+    />
+  </a>
+{/if}
 
 <!-- Filter modal (mobile) -->
 <FilterModal

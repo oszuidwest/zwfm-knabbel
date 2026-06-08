@@ -5,9 +5,10 @@
   interface Props {
     value: Weekdays
     label?: string
+    disabled?: boolean
   }
 
-  let { value = $bindable(), label = 'Dagen' }: Props = $props()
+  let { value = $bindable(), label = 'Dagen', disabled = false }: Props = $props()
 </script>
 
 <fieldset class="fieldset">
@@ -19,6 +20,7 @@
           type="checkbox"
           bind:checked={value[key as keyof Weekdays]}
           class="checkbox checkbox-sm checkbox-primary"
+          {disabled}
         />
         <span>{dayLabel}</span>
       </label>

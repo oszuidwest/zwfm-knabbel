@@ -1,14 +1,16 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
+  import { notifyMutationError } from '$lib/api/client'
   import { voiceSchema, type VoiceFormData } from '$lib/schemas/voice'
   import { voicesApi } from '$lib/api/voices'
   import { stationVoicesApi } from '$lib/api/station-voices'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
   import { resolveInternalHref } from '$lib/utils/routes'
-  import { TextInput, PageHeader } from '$lib/components/ui'
+  import { MaybeTooltip, TextInput, PageHeader } from '$lib/components/ui'
   import StationConfigDashboard from './StationConfigDashboard.svelte'
-  import { X, Check } from '$lib/components/icons'
+  import { X, Check, Info } from '$lib/components/icons'
   import type { StationVoice } from '$lib/types'
   import type { StationConfig } from './station-config'
   import type { PageData } from './$types'
@@ -18,6 +20,7 @@
   }
 
   let { data }: Props = $props()
+  const auth = getAuthContext()
 
   function initialForm(): VoiceFormData {
     return { name: data.voice.name ?? '' }
@@ -31,6 +34,7 @@
   let errors = $state<Record<string, string>>({})
   let submitting = $state(false)
   let stationConfigs = $state<StationConfig[]>(initialStationConfigs())
+  const canWrite = $derived(auth.can('voices', 'write'))
 
   function buildStationConfigs(pageData: PageData): StationConfig[] {
     const stationVoicesByStationId = pageData.stationVoices.reduce<Record<number, StationVoice>>(
@@ -66,6 +70,7 @@
     e.preventDefault()
     e.stopPropagation()
 
+    if (!canWrite) return
     if (submitting) return
     if (stationConfigs.some(c => c.saving)) return
 
@@ -82,8 +87,8 @@
       await voicesApi.update(data.voice.id!, form)
       toast.success('Stem bijgewerkt')
       goto(resolveInternalHref('/voices'))
-    } catch {
-      toast.error('Bijwerken mislukt')
+    } catch (err) {
+      notifyMutationError(err, 'Bijwerken mislukt')
     } finally {
       submitting = false
     }
@@ -99,6 +104,7 @@
     e?.preventDefault()
     e?.stopPropagation()
 
+    if (!canWrite) return
     const config = stationConfigs[index]
     if (!config || config.saving || submitting) return
 
@@ -140,17 +146,19 @@
       } else {
         updateConfig(index, { saving: false })
       }
-    } catch {
+    } catch (err) {
       updateConfig(index, { saving: false })
-      toast.error('Actie mislukt')
+      notifyMutationError(err, 'Actie mislukt')
     }
   }
 
   function handleMixPointChange(index: number, value: number): void {
+    if (!canWrite) return
     updateConfig(index, { mixPoint: value })
   }
 
   async function saveMixPoint(index: number): Promise<void> {
+    if (!canWrite) return
     const config = stationConfigs[index]
     if (!config?.stationVoiceId || config.saving || config.mixPoint === config.savedMixPoint) return
 
@@ -162,17 +170,19 @@
         mix_point: mixPoint,
       })
       updateConfig(index, { savedMixPoint: mixPoint, saving: false })
-    } catch {
+    } catch (err) {
       updateConfig(index, { saving: false })
-      toast.error('Mix point opslaan mislukt')
+      notifyMutationError(err, 'Mix point opslaan mislukt')
     }
   }
 
   function handleJingleSelect(index: number, file: File): void {
+    if (!canWrite) return
     updateConfig(index, { jingleFile: file })
   }
 
   async function uploadJingle(index: number): Promise<void> {
+    if (!canWrite) return
     const config = stationConfigs[index]
     if (!config?.stationVoiceId || !config.jingleFile || config.saving) return
 
@@ -186,12 +196,16 @@
 
       let audioUrl: string | null = null
       let hasAudio = false
+      let refreshFailed = false
       try {
         const updated = await stationVoicesApi.getById(stationVoiceId)
         hasAudio = !!updated.audio_file
         audioUrl = hasAudio ? (updated.audio_url ?? null) : null
-      } catch {
-        // Refresh failed, but upload succeeded — show success with stale audio state
+      } catch (err) {
+        console.warn('[voices] jingle refresh failed after upload', err)
+        refreshFailed = true
+        hasAudio = config.hasAudio
+        audioUrl = config.audioUrl
       }
 
       updateConfig(index, {
@@ -200,19 +214,36 @@
         jingleFile: null,
         saving: false,
       })
-      toast.success('Jingle geupload')
-    } catch {
+      if (refreshFailed) {
+        toast.warning('Jingle geupload, maar audiostatus kon niet worden ververst')
+      } else {
+        toast.success('Jingle geupload')
+      }
+    } catch (err) {
       updateConfig(index, { saving: false })
-      toast.error('Jingle upload mislukt')
+      notifyMutationError(err, 'Jingle upload mislukt')
     }
   }
 </script>
 
 <div class="space-y-6">
   <PageHeader
-    title="Stem bewerken"
+    title={canWrite ? 'Stem bewerken' : 'Stem bekijken'}
     subtitle={data.voice.name ?? ''}
   />
+
+  {#if !canWrite}
+    <div
+      class="alert alert-info"
+      role="status"
+    >
+      <Info
+        aria-hidden="true"
+        class="h-5 w-5"
+      />
+      <span>Alleen-lezen weergave — je hebt geen schrijfrechten.</span>
+    </div>
+  {/if}
 
   <div class="card bg-base-100">
     <div class="card-body">
@@ -227,21 +258,28 @@
           bind:value={form.name}
           error={errors.name}
           placeholder="Bijv. Dutch Male"
+          disabled={!canWrite}
         />
 
         <div class="flex justify-end gap-2">
-          <button
-            type="submit"
-            class="btn btn-primary"
-            disabled={submitting}
+          <MaybeTooltip
+            when={!canWrite}
+            tip="Geen rechten"
+            placement="tooltip-left"
           >
-            {#if submitting}
-              <span class="loading loading-sm loading-spinner"></span>
-            {:else}
-              <Check class="h-5 w-5" />
-            {/if}
-            Naam opslaan
-          </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              disabled={submitting || !canWrite}
+            >
+              {#if submitting}
+                <span class="loading loading-sm loading-spinner"></span>
+              {:else}
+                <Check class="h-5 w-5" />
+              {/if}
+              Naam opslaan
+            </button>
+          </MaybeTooltip>
         </div>
       </form>
     </div>
@@ -257,6 +295,7 @@
       <StationConfigDashboard
         configs={stationConfigs}
         disabled={submitting}
+        canEdit={canWrite}
         onToggle={toggleStation}
         onMixPointChange={handleMixPointChange}
         onMixPointSave={saveMixPoint}

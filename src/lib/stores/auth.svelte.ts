@@ -1,5 +1,7 @@
 import { createContext } from 'svelte'
+import { ApiError } from '$lib/api/client'
 import { authApi } from '$lib/api/auth'
+import { can as policyCan, type Action, type Resource, type Role } from '$lib/auth/policy'
 import type { User } from '$lib/types'
 
 interface CheckAuthOptions {
@@ -11,13 +13,26 @@ export class AuthStore {
   loading = $state(true)
   checked = $state(false)
 
-  isAdmin = $derived(this.user?.role === 'admin')
-  canViewPronunciations = $derived(!!this.user)
-  canEditPronunciations = $derived(this.user?.role === 'admin' || this.user?.role === 'editor')
-  canViewTtsSettings = $derived(!!this.user)
-  canEditTtsSettings = $derived(this.user?.role === 'admin')
+  role = $derived<Role | undefined>(this.user?.role)
+  isAdmin = $derived(this.role === 'admin')
 
   private checkPromise: Promise<boolean> | null = null
+
+  constructor(initialUser?: User | null) {
+    if (initialUser !== undefined) {
+      this.hydrate(initialUser)
+    }
+  }
+
+  hydrate(user: User | null): void {
+    this.user = user
+    this.loading = false
+    this.checked = true
+  }
+
+  can<R extends Resource>(resource: R, action: Action<R>): boolean {
+    return policyCan(this.role, resource, action)
+  }
 
   async checkAuth(options: CheckAuthOptions = {}): Promise<boolean> {
     if (this.checkPromise && !options.force) {
@@ -43,7 +58,10 @@ export class AuthStore {
       const user = await authApi.getMe()
       this.user = user
       return true
-    } catch {
+    } catch (err) {
+      if (!(err instanceof ApiError) || err.status !== 401) {
+        console.error('[auth] checkAuth failed', err)
+      }
       this.user = null
       return false
     } finally {
@@ -60,8 +78,8 @@ export class AuthStore {
   async logout(): Promise<void> {
     try {
       await authApi.logout()
-    } catch {
-      // Ignore logout errors
+    } catch (err) {
+      console.warn('[auth] logout failed', err)
     }
     this.user = null
     this.loading = false
@@ -71,6 +89,6 @@ export class AuthStore {
 
 export const [getAuthContext, setAuthContext] = createContext<AuthStore>()
 
-export function createAuthStore(): AuthStore {
-  return new AuthStore()
+export function createAuthStore(initialUser?: User | null): AuthStore {
+  return new AuthStore(initialUser)
 }

@@ -2,9 +2,14 @@ import type { PageLoad } from './$types'
 import { voicesApi } from '$lib/api/voices'
 import { stationsApi } from '$lib/api/stations'
 import { stationVoicesApi } from '$lib/api/station-voices'
+import { requirePermission } from '$lib/auth/guard'
+import { throwResourceLoadError } from '$lib/utils/load-error'
 import { error } from '@sveltejs/kit'
 
-export const load: PageLoad = async ({ params, fetch }) => {
+export const load: PageLoad = async ({ params, fetch, parent }) => {
+  const { user } = await parent()
+  requirePermission(user, 'voices', 'read')
+
   const voiceId = Number(params.id)
 
   if (isNaN(voiceId)) {
@@ -23,7 +28,10 @@ export const load: PageLoad = async ({ params, fetch }) => {
       stations: stationsRes.data,
       stationVoices: stationVoicesRes.data,
     }
-  } catch {
-    error(404, 'Stem niet gevonden')
+  } catch (err) {
+    throwResourceLoadError(err, {
+      notFound: 'Stem niet gevonden',
+      failed: 'Stem laden mislukt',
+    })
   }
 }

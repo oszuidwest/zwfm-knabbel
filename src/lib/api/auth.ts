@@ -1,4 +1,4 @@
-import { api } from './client'
+import { api, type FetchFn } from './client'
 import { PUBLIC_API_URL } from '$env/static/public'
 import type { User } from '$lib/types'
 
@@ -19,7 +19,7 @@ export const authApi = {
 
   logout: () => api.delete<{ message: string }>('/sessions/current'),
 
-  getMe: () => api.get<User>('/sessions/current'),
+  getMe: (customFetch?: FetchFn) => api.get<User>('/sessions/current', undefined, customFetch),
 
   /**
    * Initiate OIDC login by redirecting to the OAuth endpoint

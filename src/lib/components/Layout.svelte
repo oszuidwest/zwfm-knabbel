@@ -143,7 +143,7 @@
             </li>
           {/each}
 
-          {#if auth.canViewPronunciations || auth.canViewTtsSettings}
+          {#if auth.can('pronunciation_rules', 'read') || auth.can('settings_tts', 'read')}
             <li class="mt-4 menu-title tracking-widest uppercase">AI</li>
             {#each aiNavItems as item (item.path)}
               {@const Icon = item.icon}
@@ -162,8 +162,8 @@
             {/each}
           {/if}
 
-          {#if auth.isAdmin}
-            <li class="mt-4 menu-title tracking-widest uppercase">Admin</li>
+          {#if auth.can('users', 'read')}
+            <li class="mt-4 menu-title tracking-widest uppercase">Beheer</li>
             {#each adminNavItems as item (item.path)}
               {@const Icon = item.icon}
               <li>

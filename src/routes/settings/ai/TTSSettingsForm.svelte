@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation'
-  import { ApiError } from '$lib/api/client'
+  import { ApiError, notifyMutationError } from '$lib/api/client'
   import { settingsApi } from '$lib/api/settings'
   import {
     textNormalizationOptions,
@@ -14,7 +14,7 @@
   import { toast } from '$lib/stores/toast'
   import { formatDateTime } from '$lib/utils/format'
   import { validateForm } from '$lib/utils/validation'
-  import { SelectInput, TextareaInput, TextInput } from '$lib/components/ui'
+  import { MaybeTooltip, SelectInput, TextareaInput, TextInput } from '$lib/components/ui'
   import type { components, TTSSettings } from '$lib/types'
 
   type NumericSettingField = 'stability' | 'similarity_boost' | 'style' | 'speed'
@@ -109,7 +109,7 @@
           }
         }
 
-        toast.error('Opslaan mislukt')
+        notifyMutationError(err, 'Opslaan mislukt')
         return
       }
 
@@ -274,11 +274,15 @@
         <RefreshCw class="h-5 w-5" />
         {reloadLabel}
       </button>
-      {#if canEdit}
+      <MaybeTooltip
+        when={!canEdit}
+        tip="Geen rechten"
+        placement="tooltip-left"
+      >
         <button
           type="submit"
           class="btn btn-primary"
-          disabled={submitting || !isDirty}
+          disabled={formDisabled || !isDirty}
         >
           {#if submitting}
             <span class="loading loading-sm loading-spinner"></span>
@@ -287,7 +291,7 @@
           {/if}
           Opslaan
         </button>
-      {/if}
+      </MaybeTooltip>
     </div>
   </div>
 </form>

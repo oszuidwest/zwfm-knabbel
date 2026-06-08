@@ -1,12 +1,16 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
+  import { notifyMutationError } from '$lib/api/client'
   import { userCreateSchema, type UserFormData } from '$lib/schemas/user'
   import { usersApi } from '$lib/api/users'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
   import { roleOptions } from '$lib/utils/labels'
   import { resolveInternalHref } from '$lib/utils/routes'
   import { TextInput, SelectInput, FormActions, PageHeader } from '$lib/components/ui'
+
+  const auth = getAuthContext()
 
   let form = $state<UserFormData>({
     username: '',
@@ -19,9 +23,11 @@
 
   let errors = $state<Record<string, string>>({})
   let submitting = $state(false)
+  const canWrite = $derived(auth.can('users', 'write'))
 
   async function handleSubmit(e: Event): Promise<void> {
     e.preventDefault()
+    if (!canWrite) return
 
     const result = validateForm(userCreateSchema, form)
     if (!result.success) {
@@ -41,8 +47,8 @@
       })
       toast.success('Gebruiker aangemaakt')
       goto(resolveInternalHref('/users'))
-    } catch {
-      toast.error('Aanmaken mislukt')
+    } catch (err) {
+      notifyMutationError(err, 'Aanmaken mislukt')
     } finally {
       submitting = false
     }
@@ -68,6 +74,7 @@
             bind:value={form.username}
             error={errors.username}
             placeholder="bijv. jdoe"
+            disabled={!canWrite}
           />
 
           <TextInput
@@ -76,6 +83,7 @@
             bind:value={form.full_name}
             error={errors.full_name}
             placeholder="bijv. Jan de Vries"
+            disabled={!canWrite}
           />
         </div>
 
@@ -87,6 +95,7 @@
             bind:value={form.email}
             error={errors.email}
             placeholder="bijv. jan@example.nl"
+            disabled={!canWrite}
           />
 
           <SelectInput
@@ -95,6 +104,7 @@
             bind:value={form.role}
             options={roleOptions}
             error={errors.role}
+            disabled={!canWrite}
           />
         </div>
 
@@ -105,6 +115,7 @@
             type="password"
             bind:value={form.password}
             error={errors.password}
+            disabled={!canWrite}
           />
 
           <TextInput
@@ -113,12 +124,14 @@
             type="password"
             bind:value={form.confirmPassword}
             error={errors.confirmPassword}
+            disabled={!canWrite}
           />
         </div>
 
         <FormActions
           cancelHref="/users"
           {submitting}
+          canSubmit={canWrite}
         />
       </form>
     </div>

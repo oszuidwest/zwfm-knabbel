@@ -48,7 +48,7 @@
         Opnieuw laden
       </button>
     </div>
-  {:else if !auth.canEditTtsSettings}
+  {:else if !auth.can('settings_tts', 'write')}
     <div
       class="alert alert-info"
       role="status"
@@ -65,7 +65,7 @@
     {#key JSON.stringify(data.settings)}
       <TTSSettingsForm
         settings={data.settings}
-        canEdit={auth.canEditTtsSettings}
+        canEdit={auth.can('settings_tts', 'write')}
       />
     {/key}
   {/if}

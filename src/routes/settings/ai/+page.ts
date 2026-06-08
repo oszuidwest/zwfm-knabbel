@@ -2,6 +2,7 @@ import type { PageLoad } from './$types'
 import { redirect } from '@sveltejs/kit'
 import { ApiError, isProblemDetails } from '$lib/api/client'
 import { settingsApi } from '$lib/api/settings'
+import { requirePermission } from '$lib/auth/guard'
 import { resolveInternalHref } from '$lib/utils/routes'
 
 interface SettingsLoadError {
@@ -27,7 +28,10 @@ function toSettingsLoadError(err: unknown): SettingsLoadError {
   return { message: 'Spraakmodel laden mislukt' }
 }
 
-export const load: PageLoad = async ({ fetch }) => {
+export const load: PageLoad = async ({ fetch, parent }) => {
+  const { user } = await parent()
+  requirePermission(user, 'settings_tts', 'read')
+
   try {
     return {
       settings: await settingsApi.getTts(fetch),
