@@ -119,7 +119,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     }
   }
 
-  const requestBody = body ? JSON.stringify(body) : undefined
+  const requestBody = body !== undefined ? JSON.stringify(body) : undefined
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 30000)
 

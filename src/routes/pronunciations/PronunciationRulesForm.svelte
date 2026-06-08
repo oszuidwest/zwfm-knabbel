@@ -67,6 +67,20 @@
       word_boundaries: r.word_boundaries,
     }))
 
+  function draftsEqual(a: DraftRow[], b: DraftRow[]): boolean {
+    if (a.length !== b.length) return false
+
+    return a.every((row, index) => {
+      const other = b[index]
+      return (
+        row.string_to_replace.trim() === other.string_to_replace.trim() &&
+        row.alias.trim() === other.alias.trim() &&
+        row.case_sensitive === other.case_sensitive &&
+        row.word_boundaries === other.word_boundaries
+      )
+    })
+  }
+
   // svelte-ignore state_referenced_locally
   let snapshot = $state.raw<DraftRow[]>(initial.rules.map(makeDraft))
 
@@ -85,7 +99,7 @@
 
   const editable = $derived(canEdit && !ttsUnavailable)
 
-  const isDirty = $derived(JSON.stringify(toPayload(rows)) !== JSON.stringify(toPayload(snapshot)))
+  const isDirty = $derived(!draftsEqual(rows, snapshot))
   const saveDisabled = $derived(!editable || !isDirty || submitting)
 
   const filteredRows = $derived.by(() => {
@@ -237,17 +251,17 @@
 
     if (err.status === 422 && details?.errors?.length) {
       const nextErrors: RowErrors = {}
-      const globalMessages: string[] = []
+      const globalMessages = new Set<string>()
       for (const e of details.errors) {
         const message = e.message ?? details.detail ?? 'De server heeft een veldfout teruggegeven'
         if (!e.field) {
-          globalMessages.push(message)
+          globalMessages.add(message)
           continue
         }
 
         const m = SERVER_RULE_ERROR_RE.exec(e.field)
         if (!m) {
-          globalMessages.push(message)
+          globalMessages.add(message)
           continue
         }
         const idx = Number(m[1])
@@ -256,16 +270,16 @@
         if (row && isPronunciationRuleField(field)) {
           nextErrors[row._key] = { ...nextErrors[row._key], [field]: message }
         } else {
-          globalMessages.push(message)
+          globalMessages.add(message)
         }
       }
       rowErrors = nextErrors
-      if (globalMessages.length > 0) {
-        globalError = globalMessages.join(' ')
+      if (globalMessages.size > 0) {
+        globalError = [...globalMessages].join(' ')
       }
       search = ''
       toast.error(
-        globalMessages.length > 0
+        globalMessages.size > 0
           ? 'De server heeft fouten gevonden'
           : 'De server heeft fouten gevonden — zie de rijen.'
       )
