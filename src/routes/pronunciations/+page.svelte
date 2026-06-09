@@ -10,7 +10,7 @@
   let { data }: PageProps = $props()
   const auth = getAuthContext()
 
-  const subtitle = 'Beheer lokale inline IPA-regels voor tekst-naar-spraak generatie.'
+  const subtitle = 'Stuur hoe ElevenLabs v3 namen, plaatsen en lastige woorden uitspreekt.'
   const formKey = $derived(
     [data.initial.updated_at, data.initial.rules.length].filter(Boolean).join('|')
   )

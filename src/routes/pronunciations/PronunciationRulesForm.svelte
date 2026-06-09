@@ -14,6 +14,7 @@
   import {
     BookOpen,
     Check,
+    Info,
     Plus,
     RefreshCw,
     Search,
@@ -102,6 +103,8 @@
 
   const editable = $derived(canEdit)
   const disabledTooltip = 'Geen rechten'
+  const inlineIpaHint =
+    'Vul alleen de IPA-klanken in, zonder schuine strepen. De app zet de /.../ automatisch om de klanken heen.'
 
   const isDirty = $derived(!draftsEqual(rows, snapshot))
   const saveDisabled = $derived(!editable || !isDirty || submitting)
@@ -255,17 +258,22 @@
 
     if ((err.status === 400 || err.status === 422) && details?.errors?.length) {
       const nextErrors: RowErrors = {}
-      const globalMessages = new Set<string>()
+      const globalMessages: string[] = []
+      const addGlobalMessage = (message: string): void => {
+        if (!globalMessages.includes(message)) {
+          globalMessages.push(message)
+        }
+      }
       for (const e of details.errors) {
         const message = e.message ?? details.detail ?? 'De server heeft een veldfout teruggegeven'
         if (!e.field) {
-          globalMessages.add(message)
+          addGlobalMessage(message)
           continue
         }
 
         const m = SERVER_RULE_ERROR_RE.exec(e.field)
         if (!m) {
-          globalMessages.add(message)
+          addGlobalMessage(message)
           continue
         }
         const idx = Number(m[1])
@@ -274,16 +282,16 @@
         if (row && isPronunciationRuleField(field)) {
           nextErrors[row._key] = { ...nextErrors[row._key], [field]: message }
         } else {
-          globalMessages.add(message)
+          addGlobalMessage(message)
         }
       }
       rowErrors = nextErrors
-      if (globalMessages.size > 0) {
-        globalError = [...globalMessages].join(' ')
+      if (globalMessages.length > 0) {
+        globalError = globalMessages.join(' ')
       }
       search = ''
       toast.error(
-        globalMessages.size > 0
+        globalMessages.length > 0
           ? 'De server heeft fouten gevonden'
           : 'De server heeft fouten gevonden — zie de rijen.'
       )
@@ -353,6 +361,29 @@
 
   <div class="card bg-base-100">
     <div class="card-body gap-4">
+      <div
+        class="alert alert-info alert-soft items-start"
+        role="note"
+      >
+        <Info
+          aria-hidden="true"
+          class="mt-0.5 h-5 w-5 shrink-0"
+        />
+        <div class="space-y-1 text-sm leading-relaxed">
+          <h2 class="font-semibold">Wanneer gebruik je uitspraakregels?</h2>
+          <p>
+            Een regel koppelt een woord of tekstfragment uit de story aan IPA-klanken voor
+            ElevenLabs v3. Zo corrigeer je namen, plaatsen, merken en afkortingen zonder de
+            storytekst zelf aan te passen.
+          </p>
+          <p class="text-base-content/70">
+            IPA is het Internationaal Fonetisch Alfabet: een klankschrift voor uitspraak.
+            Bijvoorbeeld: <span class="font-mono">Albert Heijn</span> ->
+            <span class="font-mono">ˈɑlbərt ˈɦɛin</span>. {inlineIpaHint}
+          </p>
+        </div>
+      </div>
+
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <label class="input max-w-md">
           <Search
@@ -361,7 +392,7 @@
           />
           <input
             type="text"
-            placeholder="Zoek in woord of IPA…"
+            placeholder="Zoek in tekst of IPA…"
             aria-label="Zoek in uitspraakregels"
             bind:value={search}
           />
@@ -415,7 +446,7 @@
         <EmptyState
           icon={BookOpen}
           title="Nog geen uitspraakregels"
-          description="Voeg een regel toe om woorden met IPA aan te sturen."
+          description="Voeg een woord of tekstfragment toe en geef de IPA-uitspraak zonder /.../."
         />
       {:else if filteredRows.length === 0}
         <div class="py-10 text-center text-base-content/60">
@@ -426,22 +457,32 @@
           <table class="table">
             <thead>
               <tr>
-                <th class="w-2/5">Woord</th>
-                <th class="w-2/5">IPA</th>
-                <th class="w-24 text-center">
+                <th class="w-2/5">
+                  <span>Woord of tekst</span>
+                  <span class="block text-xs font-normal text-base-content/60">
+                    Exacte tekst in de story
+                  </span>
+                </th>
+                <th class="w-2/5">
+                  <span>IPA-uitspraak</span>
+                  <span class="block text-xs font-normal text-base-content/60">
+                    Klankschrift, zonder /.../
+                  </span>
+                </th>
+                <th class="w-28 text-center">
                   <span
                     class="tooltip tooltip-left"
                     data-tip="Aan: alleen exacte hoofdletters/kleine letters matchen. Uit: hoofdletterongevoelig matchen."
                   >
-                    Hfd
+                    Hoofdletters
                   </span>
                 </th>
-                <th class="w-24 text-center">
+                <th class="w-28 text-center">
                   <span
                     class="tooltip tooltip-left"
                     data-tip="Aan: alleen hele woorden matchen. Uit: ook midden in een woord matchen (bv. 'art' in 'kunst')."
                   >
-                    Grens
+                    Hele woorden
                   </span>
                 </th>
                 <th class="w-16 text-right">Acties</th>
@@ -458,7 +499,8 @@
                       class={['input w-full', errs?.string_to_replace && 'input-error']}
                       bind:value={row.string_to_replace}
                       oninput={() => clearRowError(row._key, 'string_to_replace')}
-                      aria-label="Woord regel {index + 1}"
+                      aria-label="Woord of tekst regel {index + 1}"
+                      placeholder="Albert Heijn"
                       disabled={!editable}
                     />
                     {#if errs?.string_to_replace}
@@ -472,7 +514,8 @@
                       class={['input w-full', errs?.ipa && 'input-error']}
                       bind:value={row.ipa}
                       oninput={() => clearRowError(row._key, 'ipa')}
-                      aria-label="IPA regel {index + 1}"
+                      aria-label="IPA-uitspraak regel {index + 1}"
+                      placeholder="ˈɑlbərt ˈɦɛin"
                       disabled={!editable}
                     />
                     {#if errs?.ipa}
@@ -532,7 +575,7 @@
                   for="m-row-{row._key}-word"
                   class="fieldset-legend"
                 >
-                  Woord
+                  Woord of tekst
                 </label>
                 <input
                   id="m-row-{row._key}-word"
@@ -540,11 +583,14 @@
                   class={['input w-full', errs?.string_to_replace && 'input-error']}
                   bind:value={row.string_to_replace}
                   oninput={() => clearRowError(row._key, 'string_to_replace')}
-                  aria-label="Woord regel {index + 1}"
+                  aria-label="Woord of tekst regel {index + 1}"
+                  placeholder="Albert Heijn"
                   disabled={!editable}
                 />
                 {#if errs?.string_to_replace}
                   <p class="label text-error">{errs.string_to_replace}</p>
+                {:else}
+                  <p class="label">Exacte tekst die in de story voorkomt.</p>
                 {/if}
               </fieldset>
 
@@ -553,7 +599,7 @@
                   for="m-row-{row._key}-ipa"
                   class="fieldset-legend"
                 >
-                  IPA
+                  IPA-uitspraak
                 </label>
                 <input
                   id="m-row-{row._key}-ipa"
@@ -561,11 +607,14 @@
                   class={['input w-full', errs?.ipa && 'input-error']}
                   bind:value={row.ipa}
                   oninput={() => clearRowError(row._key, 'ipa')}
-                  aria-label="IPA regel {index + 1}"
+                  aria-label="IPA-uitspraak regel {index + 1}"
+                  placeholder="ˈɑlbərt ˈɦɛin"
                   disabled={!editable}
                 />
                 {#if errs?.ipa}
                   <p class="label text-error">{errs.ipa}</p>
+                {:else}
+                  <p class="label">{inlineIpaHint}</p>
                 {/if}
               </fieldset>
 
@@ -588,7 +637,7 @@
                     aria-label="Woordgrenzen regel {index + 1}"
                     disabled={!editable}
                   />
-                  <span class="text-sm">Woordgrenzen</span>
+                  <span class="text-sm">Alleen hele woorden</span>
                 </label>
               </div>
 

@@ -41,7 +41,7 @@
       min: 0,
       max: 1,
       step: 0.01,
-      hint: 'Lager geeft meer variatie en emotie. Hoger klinkt constanter, maar kan ook vlakker worden.',
+      hint: 'Lager geeft meer expressie en variatie. Hoger klinkt voorspelbaarder.',
     },
     {
       field: 'similarity_boost',
@@ -49,7 +49,7 @@
       min: 0,
       max: 1,
       step: 0.01,
-      hint: 'Bepaalt hoe dicht de generatie bij de gekozen stem blijft. Te hoog kan ruis of bijgeluiden uit de bronstem versterken.',
+      hint: 'Hoger blijft dichter bij de gekozen stem. Te hoog kan bijgeluiden versterken.',
     },
     {
       field: 'style',
@@ -57,7 +57,7 @@
       min: 0,
       max: 1,
       step: 0.01,
-      hint: 'Versterkt de spreekstijl van de stem. ElevenLabs raadt meestal 0 aan, omdat hogere waarden minder stabiel kunnen zijn.',
+      hint: 'Versterkt de spreekstijl van de stem. 0 is meestal het stabielste startpunt.',
     },
     {
       field: 'speed',
@@ -65,16 +65,16 @@
       min: 0.7,
       max: 1.2,
       step: 0.01,
-      hint: '1,0 is normale snelheid. Lager is trager, hoger is sneller; uitersten kunnen de audiokwaliteit raken.',
+      hint: '1,0 is normale snelheid. Lager vertraagt, hoger versnelt.',
     },
   ]
 
   const textNormalizationHint =
-    'Zet getallen, symbolen en afkortingen om naar beter uitspreekbare tekst. Auto laat ElevenLabs zelf kiezen.'
+    'Maakt cijfers, symbolen en afkortingen beter uitspreekbaar. Auto laat ElevenLabs kiezen.'
   const seedHint =
-    'Probeert dezelfde tekst, stem en instellingen herhaalbaarder te maken. Leeg betekent willekeurig; exact hetzelfde resultaat is niet gegarandeerd.'
+    'Leeg is willekeurig. Een vaste seed helpt herhalen, maar garandeert geen gelijke audio.'
   const stylePrefixHint =
-    'Vaste Eleven v3-stijlaanwijzing die voor elke storytekst wordt gezet, bijvoorbeeld [nieuwslezer] of [rustig].'
+    'Vaste v3-aanwijzing voor elke story, bijvoorbeeld [nieuwslezer] of [rustig].'
 
   // Svelte warns when prop values are captured directly into state initializers.
   // This lazy reader makes the keyed component's one-time form initialization explicit.
@@ -147,7 +147,7 @@
         return
       }
 
-      toast.success('Tekst-naar-spraak opgeslagen')
+      toast.success('Spraakgeneratie opgeslagen')
       await invalidateAll()
     } finally {
       submitting = false
@@ -194,11 +194,11 @@
         class="h-5 w-5 text-primary"
         aria-hidden="true"
       />
-      <h2 class="card-title">Tekst-naar-spraak</h2>
+      <h2 class="card-title">Spraakgeneratie</h2>
     </div>
     <p class="max-w-3xl text-sm leading-relaxed text-base-content/70">
-      ElevenLabs blijft per generatie licht variabel. Deze instellingen sturen vooral hoeveel ruimte
-      het model krijgt voor variatie, niet exact dezelfde audio.
+      ElevenLabs blijft per generatie licht variabel. Deze instellingen sturen de kans op expressie,
+      consistentie en herhaalbaarheid.
     </p>
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -257,9 +257,9 @@
             aria-label="{setting.label} slider"
           />
           {#if errors[setting.field]}
-            <p class="label text-error">{errors[setting.field]}</p>
+            <p class="label max-w-full whitespace-normal text-error">{errors[setting.field]}</p>
           {:else}
-            <p class="label">{setting.hint}</p>
+            <p class="label max-w-full whitespace-normal">{setting.hint}</p>
           {/if}
         </div>
       {/each}

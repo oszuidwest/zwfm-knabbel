@@ -16,7 +16,7 @@
 
 <div class="space-y-6">
   <PageHeader
-    title="Tekst-naar-spraak"
+    title="Spraakgeneratie"
     subtitle="Globale ElevenLabs v3-instellingen"
   />
 
@@ -27,7 +27,7 @@
         aria-hidden="true"
       />
       <div>
-        <h2 class="font-semibold">Tekst-naar-spraak niet beschikbaar</h2>
+        <h2 class="font-semibold">Spraakgeneratie niet beschikbaar</h2>
         <p class="text-sm">
           {#if data.loadError.status}
             HTTP {data.loadError.status}: {data.loadError.message}

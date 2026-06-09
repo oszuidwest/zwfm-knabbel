@@ -21,8 +21,8 @@
   </label>
   {@render children()}
   {#if error}
-    <p class="label text-error">{error}</p>
+    <p class="label max-w-full whitespace-normal text-error">{error}</p>
   {:else if hint}
-    <p class="label">{hint}</p>
+    <p class="label max-w-full whitespace-normal">{hint}</p>
   {/if}
 </fieldset>
