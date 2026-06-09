@@ -14,7 +14,6 @@
   import {
     BookOpen,
     Check,
-    Info,
     Plus,
     RefreshCw,
     Search,
@@ -23,8 +22,6 @@
     X,
   } from '$lib/components/icons'
   import {
-    createTTSUnavailable,
-    type TTSUnavailable,
     type PronunciationRule,
     type PronunciationRulesList,
     type PronunciationRulesUpdate,
@@ -32,16 +29,15 @@
 
   interface Props {
     initial: PronunciationRulesList
-    ttsUnavailable: TTSUnavailable | null
     canEdit: boolean
   }
 
-  let { initial, ttsUnavailable: initialTtsUnavailable, canEdit }: Props = $props()
+  let { initial, canEdit }: Props = $props()
 
   interface DraftRow {
     readonly _key: number
     string_to_replace: string
-    alias: string
+    ipa: string
     case_sensitive: boolean
     word_boundaries: boolean
   }
@@ -53,16 +49,16 @@
   let nextKey = 1
   const makeDraft = (r: PronunciationRule): DraftRow => ({
     _key: nextKey++,
-    string_to_replace: r.string_to_replace ?? '',
-    alias: r.alias ?? '',
-    case_sensitive: r.case_sensitive ?? true,
-    word_boundaries: r.word_boundaries ?? true,
+    string_to_replace: r.string_to_replace,
+    ipa: r.ipa,
+    case_sensitive: r.case_sensitive,
+    word_boundaries: r.word_boundaries,
   })
 
   const toPayload = (drafts: DraftRow[]): PronunciationRulesUpdate['rules'] =>
     drafts.map(r => ({
       string_to_replace: r.string_to_replace.trim(),
-      alias: r.alias.trim(),
+      ipa: r.ipa.trim(),
       case_sensitive: r.case_sensitive,
       word_boundaries: r.word_boundaries,
     }))
@@ -70,18 +66,14 @@
   function initialDraftState(): {
     snapshot: DraftRow[]
     rows: DraftRow[]
-    warning: string | undefined
-    createdAt: string | null
-    ttsUnavailable: TTSUnavailable | null
+    updatedAt: string | null
   } {
     const initialSnapshot = initial.rules.map(makeDraft)
 
     return {
       snapshot: initialSnapshot,
       rows: structuredClone(initialSnapshot),
-      warning: initial.warning,
-      createdAt: initial.created_at,
-      ttsUnavailable: initialTtsUnavailable,
+      updatedAt: initial.updated_at,
     }
   }
 
@@ -92,7 +84,7 @@
       const other = b[index]
       return (
         row.string_to_replace.trim() === other.string_to_replace.trim() &&
-        row.alias.trim() === other.alias.trim() &&
+        row.ipa.trim() === other.ipa.trim() &&
         row.case_sensitive === other.case_sensitive &&
         row.word_boundaries === other.word_boundaries
       )
@@ -102,16 +94,14 @@
   const draftState = initialDraftState()
   let snapshot = $state.raw<DraftRow[]>(draftState.snapshot)
   let rows = $state<DraftRow[]>(draftState.rows)
-  let warning = $state<string | undefined>(draftState.warning)
-  let createdAt = $state<string | null>(draftState.createdAt)
-  let ttsUnavailable = $state<TTSUnavailable | null>(draftState.ttsUnavailable)
+  let updatedAt = $state<string | null>(draftState.updatedAt)
   let rowErrors = $state<RowErrors>({})
   let globalError = $state<string | null>(null)
   let submitting = $state(false)
   let search = $state('')
 
-  const editable = $derived(canEdit && !ttsUnavailable)
-  const disabledTooltip = $derived(canEdit ? 'TTS niet geconfigureerd' : 'Geen rechten')
+  const editable = $derived(canEdit)
+  const disabledTooltip = 'Geen rechten'
 
   const isDirty = $derived(!draftsEqual(rows, snapshot))
   const saveDisabled = $derived(!editable || !isDirty || submitting)
@@ -121,13 +111,13 @@
     const q = search.trim().toLowerCase()
     if (!q) return rows
     return rows.filter(
-      r => r.string_to_replace.toLowerCase().includes(q) || r.alias.toLowerCase().includes(q)
+      r => r.string_to_replace.toLowerCase().includes(q) || r.ipa.toLowerCase().includes(q)
     )
   })
 
   const countLabel = $derived(`${rows.length} ${rows.length === 1 ? 'regel' : 'regels'}`)
   const savedAtLabel = $derived(
-    createdAt ? `Laatst opgeslagen: ${formatDateTime(createdAt)}` : null
+    updatedAt ? `Laatst opgeslagen: ${formatDateTime(updatedAt)}` : null
   )
 
   function focusRowWordInput(key: number): void {
@@ -142,8 +132,7 @@
   function applyRulesList(list: PronunciationRulesList): void {
     snapshot = list.rules.map(makeDraft)
     rows = structuredClone(snapshot)
-    warning = list.warning
-    createdAt = list.created_at
+    updatedAt = list.updated_at
     rowErrors = {}
     globalError = null
     search = ''
@@ -165,7 +154,7 @@
       {
         _key: key,
         string_to_replace: '',
-        alias: '',
+        ipa: '',
         case_sensitive: true,
         word_boundaries: true,
       },
@@ -264,7 +253,7 @@
 
     const details = isProblemDetails(err.details) ? err.details : undefined
 
-    if (err.status === 422 && details?.errors?.length) {
+    if ((err.status === 400 || err.status === 422) && details?.errors?.length) {
       const nextErrors: RowErrors = {}
       const globalMessages = new Set<string>()
       for (const e of details.errors) {
@@ -301,28 +290,18 @@
       return
     }
 
-    if (err.status === 409) {
-      globalError =
-        'De koppeling met het uitspraakwoordenboek is intussen gewijzigd. Herlaad de pagina om de nieuwste versie te zien.'
-      toast.error('Conflict — herlaad de pagina')
-      return
-    }
-    if (err.status === 501) {
-      ttsUnavailable = createTTSUnavailable(details)
-      globalError = ttsUnavailable.detail
-      toast.error('TTS niet geconfigureerd')
-      return
-    }
-    if (err.status === 502 || err.status === 503) {
-      globalError = details?.hint ?? details?.detail ?? 'ElevenLabs niet bereikbaar'
+    if (err.status === 413) {
+      globalError = details?.detail ?? 'De lijst met uitspraakregels is te groot.'
       toast.error(globalError)
       return
     }
-    if (err.status === 429) {
-      toast.error('Te veel verzoeken — probeer het later opnieuw')
+    if (err.status === 503) {
+      globalError =
+        details?.detail ?? details?.hint ?? 'Uitspraakregels zijn tijdelijk niet beschikbaar'
+      toast.error(globalError)
       return
     }
-    notifyMutationError(err, details?.detail ?? err.message ?? 'Opslaan mislukt')
+    notifyMutationError(err, 'Opslaan mislukt')
   }
 
   function handleCancel(): void {
@@ -337,7 +316,6 @@
       await invalidateAll()
       await tick()
       applyRulesList(initial)
-      ttsUnavailable = initialTtsUnavailable
     } catch (err) {
       console.error('[pronunciations] reload failed', err)
       toast.error('Herladen mislukt')
@@ -360,40 +338,6 @@
 <svelte:window onbeforeunload={handleBeforeUnload} />
 
 <div class="space-y-4">
-  {#if ttsUnavailable}
-    <div
-      class="alert alert-info"
-      role="status"
-    >
-      <Info
-        aria-hidden="true"
-        class="h-5 w-5"
-      />
-      <div>
-        <div class="font-medium">Text-to-speech is niet geconfigureerd</div>
-        <div class="text-sm">
-          {ttsUnavailable.detail}
-          {#if ttsUnavailable.hint}
-            <div class="opacity-80">{ttsUnavailable.hint}</div>
-          {/if}
-        </div>
-      </div>
-    </div>
-  {/if}
-
-  {#if warning}
-    <div
-      class="alert alert-warning"
-      role="alert"
-    >
-      <TriangleAlert
-        aria-hidden="true"
-        class="h-5 w-5"
-      />
-      <span>{warning}</span>
-    </div>
-  {/if}
-
   {#if globalError}
     <div
       class="alert alert-error"
@@ -417,7 +361,7 @@
           />
           <input
             type="text"
-            placeholder="Zoek in woord of uitspraak…"
+            placeholder="Zoek in woord of IPA…"
             aria-label="Zoek in uitspraakregels"
             bind:value={search}
           />
@@ -471,7 +415,7 @@
         <EmptyState
           icon={BookOpen}
           title="Nog geen uitspraakregels"
-          description="Voeg een regel toe om woorden anders uit te laten spreken."
+          description="Voeg een regel toe om woorden met IPA aan te sturen."
         />
       {:else if filteredRows.length === 0}
         <div class="py-10 text-center text-base-content/60">
@@ -483,7 +427,7 @@
             <thead>
               <tr>
                 <th class="w-2/5">Woord</th>
-                <th class="w-2/5">Uitspraak</th>
+                <th class="w-2/5">IPA</th>
                 <th class="w-24 text-center">
                   <span
                     class="tooltip tooltip-left"
@@ -523,16 +467,16 @@
                   </td>
                   <td class="align-top">
                     <input
-                      id="row-{row._key}-alias"
+                      id="row-{row._key}-ipa"
                       type="text"
-                      class={['input w-full', errs?.alias && 'input-error']}
-                      bind:value={row.alias}
-                      oninput={() => clearRowError(row._key, 'alias')}
-                      aria-label="Uitspraak regel {index + 1}"
+                      class={['input w-full', errs?.ipa && 'input-error']}
+                      bind:value={row.ipa}
+                      oninput={() => clearRowError(row._key, 'ipa')}
+                      aria-label="IPA regel {index + 1}"
                       disabled={!editable}
                     />
-                    {#if errs?.alias}
-                      <p class="label text-error">{errs.alias}</p>
+                    {#if errs?.ipa}
+                      <p class="label text-error">{errs.ipa}</p>
                     {/if}
                   </td>
                   <td class="text-center align-top">
@@ -606,22 +550,22 @@
 
               <fieldset class="fieldset">
                 <label
-                  for="m-row-{row._key}-alias"
+                  for="m-row-{row._key}-ipa"
                   class="fieldset-legend"
                 >
-                  Uitspraak
+                  IPA
                 </label>
                 <input
-                  id="m-row-{row._key}-alias"
+                  id="m-row-{row._key}-ipa"
                   type="text"
-                  class={['input w-full', errs?.alias && 'input-error']}
-                  bind:value={row.alias}
-                  oninput={() => clearRowError(row._key, 'alias')}
-                  aria-label="Uitspraak regel {index + 1}"
+                  class={['input w-full', errs?.ipa && 'input-error']}
+                  bind:value={row.ipa}
+                  oninput={() => clearRowError(row._key, 'ipa')}
+                  aria-label="IPA regel {index + 1}"
                   disabled={!editable}
                 />
-                {#if errs?.alias}
-                  <p class="label text-error">{errs.alias}</p>
+                {#if errs?.ipa}
+                  <p class="label text-error">{errs.ipa}</p>
                 {/if}
               </fieldset>
 

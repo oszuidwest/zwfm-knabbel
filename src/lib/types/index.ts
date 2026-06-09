@@ -1,5 +1,4 @@
 export type * from './api'
-export * from './pronunciations'
 
 import type { components } from './api'
 

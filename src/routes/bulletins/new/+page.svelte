@@ -33,7 +33,7 @@
       toast.success('Bulletin gegenereerd')
       goto(resolveInternalHref(`/bulletins/${bulletin.id}`))
     } catch (err) {
-      notifyMutationError(err, err instanceof Error ? err.message : 'Genereren mislukt')
+      notifyMutationError(err, 'Genereren mislukt')
     } finally {
       generating = false
     }

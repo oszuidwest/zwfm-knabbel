@@ -2,7 +2,7 @@ import { ApiError, isProblemDetails } from '$lib/api/client'
 import { settingsApi } from '$lib/api/settings'
 import { requirePermission } from '$lib/auth/guard'
 import { redirectToLogin, settleLoad } from '$lib/utils/load-error'
-import { createTTSUnavailable, type PronunciationRulesList, type TTSUnavailable } from '$lib/types'
+import type { PronunciationRulesList } from '$lib/types'
 import type { PageLoad } from './$types'
 
 interface PronunciationsLoadError {
@@ -13,8 +13,7 @@ interface PronunciationsLoadError {
 
 const emptyRules: PronunciationRulesList = {
   rules: [],
-  latest_version_id: null,
-  created_at: null,
+  updated_at: null,
 }
 
 function toLoadError(err: ApiError): PronunciationsLoadError {
@@ -44,7 +43,6 @@ export const load: PageLoad = async ({ fetch, parent }) => {
   if (result.ok) {
     return {
       initial: result.value,
-      ttsUnavailable: null as TTSUnavailable | null,
       loadError: null as PronunciationsLoadError | null,
     }
   }
@@ -54,19 +52,9 @@ export const load: PageLoad = async ({ fetch, parent }) => {
     redirectToLogin(true)
   }
 
-  if (err instanceof ApiError && err.status === 501) {
-    const details = isProblemDetails(err.details) ? err.details : undefined
-    return {
-      initial: emptyRules,
-      ttsUnavailable: createTTSUnavailable(details),
-      loadError: null as PronunciationsLoadError | null,
-    }
-  }
-
   if (err instanceof ApiError) {
     return {
       initial: emptyRules,
-      ttsUnavailable: null as TTSUnavailable | null,
       loadError: toLoadError(err),
     }
   }

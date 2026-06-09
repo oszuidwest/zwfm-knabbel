@@ -10,18 +10,9 @@
   let { data }: PageProps = $props()
   const auth = getAuthContext()
 
-  const subtitle =
-    'Beheer hoe ElevenLabs specifieke woorden uitspreekt voor de tekst-naar-spraak generatie.'
+  const subtitle = 'Beheer lokale inline IPA-regels voor tekst-naar-spraak generatie.'
   const formKey = $derived(
-    [
-      data.initial.latest_version_id,
-      data.initial.created_at,
-      data.initial.warning,
-      data.ttsUnavailable?.detail,
-      data.ttsUnavailable?.hint,
-    ]
-      .filter(Boolean)
-      .join('|')
+    [data.initial.updated_at, data.initial.rules.length].filter(Boolean).join('|')
   )
 
   async function reloadPronunciations(): Promise<void> {
@@ -80,7 +71,6 @@
     {#key formKey}
       <PronunciationRulesForm
         initial={data.initial}
-        ttsUnavailable={data.ttsUnavailable}
         canEdit={auth.can('pronunciation_rules', 'write')}
       />
     {/key}

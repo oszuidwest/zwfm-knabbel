@@ -6,7 +6,6 @@
     textNormalizationOptions,
     toTTSSettingsFormData,
     toTTSSettingsUpdate,
-    ttsModelOptions,
     ttsSettingsSchema,
     type TTSSettingsFormData,
   } from '$lib/schemas/tts-settings'
@@ -53,7 +52,6 @@
   let submitting = $state(false)
 
   const isDirty = $derived(JSON.stringify(form) !== JSON.stringify(savedForm))
-  const isV3Model = $derived(form.model === 'eleven_v3')
   const reloadLabel = $derived(isDirty ? 'Wijzigingen verwerpen' : 'Herladen')
   const formDisabled = $derived(submitting || !canEdit)
 
@@ -100,7 +98,7 @@
       try {
         await settingsApi.updateTts(toTTSSettingsUpdate(result.data))
       } catch (err) {
-        if (err instanceof ApiError && err.status === 422) {
+        if (err instanceof ApiError && (err.status === 400 || err.status === 422)) {
           const validationErrors = validationErrorsFromDetails(err.details)
           if (Object.keys(validationErrors).length > 0) {
             errors = validationErrors
@@ -113,7 +111,7 @@
         return
       }
 
-      toast.success('Spraakmodel opgeslagen')
+      toast.success('Tekst-naar-spraak opgeslagen')
       await invalidateAll()
     } finally {
       submitting = false
@@ -141,8 +139,8 @@
     </div>
   </div>
   <div class="rounded-lg border border-base-300 bg-base-100 p-4">
-    <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">Model</div>
-    <div class="mt-2 font-semibold">{settings.model}</div>
+    <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">Engine</div>
+    <div class="mt-2 font-semibold">Eleven v3</div>
   </div>
   <div class="rounded-lg border border-base-300 bg-base-100 p-4">
     <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">Bijgewerkt</div>
@@ -164,15 +162,6 @@
     </div>
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <SelectInput
-        id="model"
-        label="Model"
-        bind:value={form.model}
-        options={ttsModelOptions}
-        error={errors.model}
-        disabled={formDisabled}
-      />
-
       <SelectInput
         id="apply_text_normalization"
         label="Tekstnormalisatie"
@@ -233,22 +222,6 @@
         placeholder="Leeg voor willekeurig"
         disabled={formDisabled}
       />
-
-      <fieldset class="fieldset">
-        <label
-          class="fieldset-legend"
-          for="use_speaker_boost"
-        >
-          Speaker boost
-        </label>
-        <input
-          id="use_speaker_boost"
-          type="checkbox"
-          class="toggle toggle-primary"
-          bind:checked={form.use_speaker_boost}
-          disabled={formDisabled}
-        />
-      </fieldset>
     </div>
 
     <TextareaInput
@@ -256,12 +229,10 @@
       label="Eleven v3 stijlprefix"
       bind:value={form.tts_style_prefix}
       error={errors.tts_style_prefix}
-      hint={isV3Model
-        ? 'Alleen toegepast bij model Eleven v3'
-        : 'Niet beschikbaar voor het huidige model'}
+      hint="Wordt voor storytekst gezet voordat Eleven v3 synthese start"
       rows={3}
       placeholder="[nieuwslezer] "
-      disabled={formDisabled || !isV3Model}
+      disabled={formDisabled}
     />
 
     <div class="flex justify-end gap-2 pt-2">
