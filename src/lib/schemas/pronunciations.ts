@@ -1,15 +1,27 @@
 import { z } from 'zod'
 
+const hasControlCharacter = (value: string): boolean =>
+  [...value].some(char => {
+    const code = char.charCodeAt(0)
+    return code < 32 || code === 127
+  })
+
 export const pronunciationRuleSchema = z.object({
   string_to_replace: z.string().trim().min(1, 'Woord is verplicht'),
-  alias: z.string().trim().min(1, 'Uitspraak is verplicht'),
+  ipa: z
+    .string()
+    .trim()
+    .min(1, 'IPA is verplicht')
+    .max(255, 'Maximaal 255 tekens')
+    .refine(value => !value.includes('/'), 'Gebruik IPA zonder schuine strepen')
+    .refine(value => !hasControlCharacter(value), 'Controlekarakters zijn niet toegestaan'),
   case_sensitive: z.boolean(),
   word_boundaries: z.boolean(),
 })
 
 export const pronunciationRulesSchema = z
   .object({
-    rules: z.array(pronunciationRuleSchema).max(5000, 'Maximaal 5000 regels toegestaan'),
+    rules: z.array(pronunciationRuleSchema).max(1000, 'Maximaal 1000 regels toegestaan'),
   })
   .superRefine((data, ctx) => {
     const seen = new Map<string, number>()
@@ -33,7 +45,7 @@ export type PronunciationRuleFormData = z.infer<typeof pronunciationRuleSchema>
 
 export const pronunciationRuleFieldNames = [
   'string_to_replace',
-  'alias',
+  'ipa',
   'case_sensitive',
   'word_boundaries',
 ] as const

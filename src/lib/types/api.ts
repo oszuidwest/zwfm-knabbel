@@ -395,8 +395,10 @@ export interface paths {
      *
      *     TTS request options are read from the global settings row exposed at
      *     `GET/PATCH /api/v1/settings/tts`. The API key and timeout remain environment
-     *     configuration; model, voice settings, text normalization, seed, and the
-     *     Eleven v3 style prefix are database-backed settings.
+     *     configuration; Babbel always sends `eleven_v3`. Voice settings, text
+     *     normalization, seed, and the Eleven v3 style prefix are database-backed
+     *     settings. Local pronunciation rules are injected as inline IPA before
+     *     the TTS request is sent.
      *
      *     **Prerequisites:**
      *     - TTS must be enabled (BABBEL_ELEVENLABS_API_KEY configured)
@@ -456,16 +458,17 @@ export interface paths {
     }
     /**
      * Get TTS pronunciation rules
-     * @description Returns the alias pronunciation rules from the single Babbel-managed
-     *     ElevenLabs pronunciation dictionary. No upstream call is made until a
-     *     dictionary has been created by saving at least one rule.
+     * @description Returns local pronunciation rules used for ElevenLabs v3 inline IPA
+     *     injection. No ElevenLabs API call is made for this management route.
      */
     get: operations['getSettingsTtsPronunciations']
     /**
      * Replace TTS pronunciation rules
-     * @description Replaces the complete alias-rule set for the Babbel-managed ElevenLabs
-     *     pronunciation dictionary. The dictionary is created lazily on the first
-     *     non-empty save. Editors and admins can write; viewers can only read.
+     * @description Replaces the complete local pronunciation rule set used for ElevenLabs
+     *     v3 inline IPA injection. Editors and admins can write; viewers can
+     *     only read. IPA injection is 80-90% consistent according to ElevenLabs
+     *     guidance; keep abbreviations case-sensitive when matching inside URLs
+     *     would be undesirable.
      */
     put: operations['putSettingsTtsPronunciations']
     post?: never
@@ -973,26 +976,19 @@ export interface components {
     }
     /** @description Global singleton ElevenLabs text-to-speech settings. */
     TTSSettings: {
-      /**
-       * @description ElevenLabs model ID used for subsequent story TTS generation.
-       * @enum {string}
-       */
-      model: 'eleven_v3' | 'eleven_multilingual_v2' | 'eleven_flash_v2_5'
       /** Format: float */
       stability: number
       /** Format: float */
       similarity_boost: number
       /** Format: float */
       style: number
-      /** @description Preserved in settings, but omitted from Eleven v3 request bodies. */
-      use_speaker_boost: boolean
       /** Format: float */
       speed: number
       /** @enum {string} */
       apply_text_normalization: 'auto' | 'on' | 'off'
       /** @description Best-effort deterministic seed. Null means random output. */
       seed: number | null
-      /** @description Audio-tag prefix applied only when model is eleven_v3. */
+      /** @description Audio-tag prefix prepended to story text before eleven_v3 synthesis. */
       tts_style_prefix: string
       /** Format: date-time */
       updated_at: string
@@ -1001,15 +997,12 @@ export interface components {
     }
     /** @description Partial update for global singleton TTS settings. */
     TTSSettingsUpdate: {
-      /** @enum {string} */
-      model?: 'eleven_v3' | 'eleven_multilingual_v2' | 'eleven_flash_v2_5'
       /** Format: float */
       stability?: number
       /** Format: float */
       similarity_boost?: number
       /** Format: float */
       style?: number
-      use_speaker_boost?: boolean
       /** Format: float */
       speed?: number
       /** @enum {string} */
@@ -1018,11 +1011,11 @@ export interface components {
       seed?: number | null
       tts_style_prefix?: string
     }
-    PronunciationRule: {
-      /** @description Text fragment ElevenLabs should replace before synthesis. */
+    PronunciationRuleInput: {
+      /** @description Literal story-text fragment to replace with inline IPA. */
       string_to_replace: string
-      /** @description Replacement pronunciation for the text fragment. */
-      alias: string
+      /** @description IPA pronunciation without surrounding slashes. Forward slashes and control characters are rejected. ElevenLabs v3 inline IPA is typically 80-90% consistent. */
+      ipa: string
       /**
        * @description Whether matching is case-sensitive. Defaults to true when omitted.
        * @default true
@@ -1034,21 +1027,24 @@ export interface components {
        */
       word_boundaries: boolean | null
     }
+    PronunciationRule: {
+      string_to_replace: string
+      /** @description IPA pronunciation without surrounding slashes. */
+      ipa: string
+      case_sensitive: boolean
+      word_boundaries: boolean
+    }
     PronunciationRulesList: {
       rules: components['schemas']['PronunciationRule'][]
-      /** @description ElevenLabs latest version ID. Null until a dictionary exists. */
-      latest_version_id: string | null
       /**
        * Format: date-time
-       * @description Dictionary creation time. Null until a dictionary exists.
+       * @description Maximum updated_at across local rules, or null when the table is empty.
        */
-      created_at: string | null
-      /** @description Warns when the upstream dictionary is missing and will be recreated, or when non-alias ElevenLabs rules were discarded from the editor-facing list. */
-      warning?: string
+      updated_at: string | null
     }
     PronunciationRulesUpdate: {
-      /** @description Complete replacement alias-rule set. Empty array clears all rules. */
-      rules: components['schemas']['PronunciationRule'][]
+      /** @description Complete replacement inline-IPA rule set. Empty array clears all rules. */
+      rules: components['schemas']['PronunciationRuleInput'][]
     }
     /** @description Represents the relationship between a station and voice with station-specific jingle configuration */
     StationVoice: {
@@ -1471,7 +1467,7 @@ export interface components {
        * @example abc123def456
        */
       trace_id?: string
-      /** @description Array of validation errors (for 422 responses) */
+      /** @description Field-level errors for validation or strict request-parsing responses (400 and 422) */
       errors?: {
         /**
          * @description Field name that failed validation
@@ -1592,6 +1588,7 @@ export interface components {
     /** @description Unauthorized */
     Unauthorized: {
       headers: {
+        'WWW-Authenticate': components['headers']['WWWAuthenticate']
         [name: string]: unknown
       }
       content: {
@@ -1623,7 +1620,6 @@ export interface components {
      *     - `https://babbel.api/problems/duplicate` - Duplicate resource (e.g., station name already exists)
      *     - `https://babbel.api/problems/dependency-constraint` - Resource has dependencies that prevent deletion
      *     - `https://babbel.api/problems/admin-constraint` - Cannot delete last admin user
-     *     - `https://babbel.api/problems/pronunciation_rules.conflict` - Pronunciation dictionary changed concurrently
      */
     Conflict: {
       headers: {
@@ -1796,7 +1792,12 @@ export interface components {
     }
   }
   requestBodies: never
-  headers: never
+  headers: {
+    /** @description URI reference for the newly created resource */
+    Location: string
+    /** @description Authentication challenge for session-based endpoints */
+    WWWAuthenticate: string
+  }
   pathItems: never
 }
 export type $defs = Record<string, never>
@@ -1860,6 +1861,7 @@ export interface operations {
           'Content-Type'?: string
           'Content-Disposition'?: string
           'Cache-Control'?: string
+          'X-Bulletin-Id'?: number
           'X-Bulletin-Cached'?: 'true' | 'false'
           [name: string]: unknown
         }
@@ -1870,6 +1872,7 @@ export interface operations {
       /** @description Invalid or missing API key */
       401: {
         headers: {
+          'WWW-Authenticate': components['headers']['WWWAuthenticate']
           [name: string]: unknown
         }
         content: {
@@ -2160,6 +2163,7 @@ export interface operations {
       /** @description Station created */
       201: {
         headers: {
+          Location: components['headers']['Location']
           [name: string]: unknown
         }
         content: {
@@ -2174,6 +2178,7 @@ export interface operations {
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       409: components['responses']['Conflict']
+      413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
@@ -2235,6 +2240,7 @@ export interface operations {
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
       409: components['responses']['Conflict']
+      413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
@@ -2351,6 +2357,7 @@ export interface operations {
       /** @description Voice created */
       201: {
         headers: {
+          Location: components['headers']['Location']
           [name: string]: unknown
         }
         content: {
@@ -2365,6 +2372,7 @@ export interface operations {
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       409: components['responses']['Conflict']
+      413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
@@ -2430,6 +2438,7 @@ export interface operations {
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
       409: components['responses']['Conflict']
+      413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
@@ -2570,6 +2579,7 @@ export interface operations {
       /** @description Story created */
       201: {
         headers: {
+          Location: components['headers']['Location']
           [name: string]: unknown
         }
         content: {
@@ -2583,6 +2593,7 @@ export interface operations {
       400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+      413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
@@ -2778,8 +2789,10 @@ export interface operations {
           'application/json': components['schemas']['TTSSettings']
         }
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+      413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
       503: components['responses']['ServiceUnavailable']
@@ -2805,28 +2818,7 @@ export interface operations {
       }
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
-      422: components['responses']['UnprocessableEntity']
-      429: components['responses']['TooManyRequests']
       500: components['responses']['InternalServerError']
-      /** @description TTS is not configured on the server */
-      501: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          /**
-           * @example {
-           *       "type": "https://babbel.api/problems/tts.not_configured",
-           *       "title": "Not Implemented",
-           *       "status": 501,
-           *       "detail": "Text-to-speech is not configured",
-           *       "hint": "Set BABBEL_ELEVENLABS_API_KEY to enable TTS"
-           *     }
-           */
-          'application/problem+json': components['schemas']['ProblemDetails']
-        }
-      }
-      502: components['responses']['BadGateway']
       503: components['responses']['ServiceUnavailable']
     }
   }
@@ -2844,7 +2836,7 @@ export interface operations {
          *       "rules": [
          *         {
          *           "string_to_replace": "Albert Heijn",
-         *           "alias": "albert hijn",
+         *           "ipa": "ˈɑlbərt ˈɦɛin",
          *           "case_sensitive": false,
          *           "word_boundaries": true
          *         }
@@ -2864,31 +2856,12 @@ export interface operations {
           'application/json': components['schemas']['PronunciationRulesList']
         }
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
-      409: components['responses']['Conflict']
+      413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
-      429: components['responses']['TooManyRequests']
       500: components['responses']['InternalServerError']
-      /** @description TTS is not configured on the server */
-      501: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          /**
-           * @example {
-           *       "type": "https://babbel.api/problems/tts.not_configured",
-           *       "title": "Not Implemented",
-           *       "status": 501,
-           *       "detail": "Text-to-speech is not configured",
-           *       "hint": "Set BABBEL_ELEVENLABS_API_KEY to enable TTS"
-           *     }
-           */
-          'application/problem+json': components['schemas']['ProblemDetails']
-        }
-      }
-      502: components['responses']['BadGateway']
       503: components['responses']['ServiceUnavailable']
     }
   }
@@ -2961,6 +2934,7 @@ export interface operations {
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
@@ -3033,6 +3007,7 @@ export interface operations {
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      413: components['responses']['PayloadTooLarge']
     }
   }
   getStoriesIdBulletins: {
@@ -3200,6 +3175,7 @@ export interface operations {
       /** @description User created */
       201: {
         headers: {
+          Location: components['headers']['Location']
           [name: string]: unknown
         }
         content: {
@@ -3214,6 +3190,7 @@ export interface operations {
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       409: components['responses']['Conflict']
+      413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
@@ -3274,6 +3251,7 @@ export interface operations {
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
       409: components['responses']['Conflict']
+      413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
@@ -3340,6 +3318,7 @@ export interface operations {
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      413: components['responses']['PayloadTooLarge']
     }
   }
   getBulletins: {
@@ -3757,6 +3736,7 @@ export interface operations {
       /** @description Station-voice relationship created */
       201: {
         headers: {
+          Location: components['headers']['Location']
           [name: string]: unknown
         }
         content: {
@@ -3771,6 +3751,7 @@ export interface operations {
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       409: components['responses']['Conflict']
+      413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
@@ -3906,6 +3887,7 @@ export interface operations {
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
       409: components['responses']['Conflict']
+      413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }

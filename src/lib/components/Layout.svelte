@@ -37,7 +37,7 @@
 
   const aiNavItems: NavItem[] = [
     { path: '/pronunciations', label: 'Uitspraakregels', icon: BookOpen },
-    { path: '/settings/ai', label: 'Spraakmodel', icon: Sparkles },
+    { path: '/settings/ai', label: 'Tekst-naar-spraak', icon: Sparkles },
   ]
 
   const adminNavItems: NavItem[] = [{ path: '/users', label: 'Gebruikers', icon: Users }]

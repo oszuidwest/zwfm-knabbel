@@ -16,8 +16,8 @@
 
 <div class="space-y-6">
   <PageHeader
-    title="Spraakmodel"
-    subtitle="Globale ElevenLabs instellingen voor tekst-naar-spraak"
+    title="Tekst-naar-spraak"
+    subtitle="Globale ElevenLabs v3-instellingen"
   />
 
   {#if data.loadError}
@@ -27,7 +27,7 @@
         aria-hidden="true"
       />
       <div>
-        <h2 class="font-semibold">Spraakmodel niet beschikbaar</h2>
+        <h2 class="font-semibold">Tekst-naar-spraak niet beschikbaar</h2>
         <p class="text-sm">
           {#if data.loadError.status}
             HTTP {data.loadError.status}: {data.loadError.message}

@@ -24,7 +24,7 @@ function toSettingsLoadError(err: unknown): SettingsLoadError {
     return { message: err.message }
   }
 
-  return { message: 'Spraakmodel laden mislukt' }
+  return { message: 'Tekst-naar-spraak laden mislukt' }
 }
 
 export const load: PageLoad = async ({ fetch, parent }) => {
