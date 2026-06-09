@@ -19,7 +19,7 @@ export type PronunciationRulesList = components['schemas']['PronunciationRulesLi
 export type PronunciationRulesUpdate = components['schemas']['PronunciationRulesUpdate']
 export type Bulletin = components['schemas']['BulletinResponse']
 
-// UI uses Weekdays booleans, service converts to bitmask for API
+/** Weekdays stores schedule state in the shape forms can bind directly. */
 export interface Weekdays {
   monday: boolean
   tuesday: boolean
@@ -30,7 +30,7 @@ export interface Weekdays {
   sunday: boolean
 }
 
-// Bitmask values: Sunday=1, Monday=2, Tuesday=4, Wed=8, Thu=16, Fri=32, Sat=64
+/** WEEKDAY_BITS maps form weekday keys to the API bitmask contract. */
 export const WEEKDAY_BITS = {
   sunday: 1,
   monday: 2,
@@ -41,7 +41,7 @@ export const WEEKDAY_BITS = {
   saturday: 64,
 } as const
 
-/** Indexed by JavaScript day number (0=Sunday, 1=Monday, etc.) */
+/** WEEKDAY_BITS_BY_DAY is indexed by JavaScript day number, where Sunday is 0. */
 export const WEEKDAY_BITS_BY_DAY: Record<number, number> = {
   0: WEEKDAY_BITS.sunday,
   1: WEEKDAY_BITS.monday,

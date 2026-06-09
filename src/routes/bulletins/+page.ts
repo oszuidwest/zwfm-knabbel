@@ -49,7 +49,7 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
             throw err
           }
           console.warn('[bulletins] voice name lookup failed', err)
-          // Ignore errors, just don't add voice_name
+          // Voice names are an enhancement; keep the bulletin list available on lookup failures.
         }
         return bulletin
       })

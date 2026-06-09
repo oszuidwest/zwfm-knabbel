@@ -10,7 +10,7 @@ interface DeleteOptions {
 }
 
 /**
- * Handles delete operation with confirmation and toast notifications
+ * deleteWithConfirm centralizes destructive-action confirmation and toast handling.
  */
 export async function deleteWithConfirm({
   name,

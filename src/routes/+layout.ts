@@ -4,7 +4,7 @@ import { AUTH_DEPENDENCY } from '$lib/auth/session'
 import type { User } from '$lib/types'
 import type { LayoutLoad } from './$types'
 
-// SPA mode - disable SSR
+// Client-only rendering keeps session state owned by the browser/API session.
 export const ssr = false
 export const prerender = false
 
@@ -15,7 +15,7 @@ export const load: LayoutLoad = async ({ fetch, depends }) => {
   try {
     user = await authApi.getMe(fetch)
   } catch (err) {
-    // Alleen 401 betekent anoniem. Netwerkfouten, timeouts en 5xx blijven echte load-errors.
+    // Only 401 means anonymous; network errors, timeouts, and 5xx stay load errors.
     if (!(err instanceof ApiError) || err.status !== 401) {
       throw err
     }

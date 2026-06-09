@@ -27,7 +27,7 @@
 
   let dragOver = $state<number | null>(null)
   let playingIndex = $state<number | null>(null)
-  // bind:this populates this map for imperative audio playback only.
+  // audioElements is populated by bind:this for imperative playback only.
   let audioElements: Record<number, HTMLAudioElement | null> = {}
   const effectiveDisabled = $derived(disabled || !canEdit)
 
@@ -116,7 +116,6 @@
         ]}
       >
         <div class="card-body space-y-5 p-5">
-          <!-- Header -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div
@@ -156,7 +155,6 @@
           </div>
 
           {#if config.enabled}
-            <!-- Mixpunt -->
             <div class="space-y-3">
               <div class="flex items-center justify-between">
                 <label
@@ -185,12 +183,10 @@
               <p class="text-xs text-base-content/50">Wanneer de stem begint over de jingle</p>
             </div>
 
-            <!-- Jingle -->
             <div class="space-y-3">
               <span class="text-sm font-medium">Jingle</span>
 
               {#if config.hasAudio && config.audioUrl}
-                <!-- Audio player -->
                 <div class="flex items-center gap-3 rounded-xl bg-base-200 p-3">
                   <audio
                     bind:this={audioElements[index]}
@@ -246,7 +242,6 @@
               {/if}
 
               {#if config.jingleFile}
-                <!-- File selected, waiting for upload -->
                 <div
                   class="flex items-center gap-3 rounded-xl border-2 border-warning bg-warning/10 p-3"
                 >
@@ -275,7 +270,6 @@
                   </button>
                 </div>
               {:else if !config.hasAudio}
-                <!-- Dropzone -->
                 <input
                   id="jingle-input-{config.station.id}"
                   type="file"

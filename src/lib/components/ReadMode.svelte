@@ -12,7 +12,7 @@
   let scrollContainer = $state<HTMLDivElement | null>(null)
   let scrollProgress = $state(0)
 
-  // Wake Lock to keep screen on
+  // wakeLock keeps the script readable during recording sessions when available.
   let wakeLock: WakeLockSentinel | null = null
 
   $effect(() => {
@@ -21,7 +21,7 @@
         try {
           wakeLock = await navigator.wakeLock.request('screen')
         } catch {
-          // Wake lock request failed (e.g., low battery, tab hidden)
+          // Some browsers deny wake lock while hidden, low on power, or unsupported.
         }
       }
     }
@@ -43,7 +43,6 @@
     }
   })
 
-  // Track scroll progress
   function handleScroll(): void {
     if (!scrollContainer) return
     const { scrollTop, scrollHeight, clientHeight } = scrollContainer
@@ -53,9 +52,8 @@
 
   const hasText = $derived(!!text?.trim())
 
-  // Calculate word count and estimated reading time
   const wordCount = $derived(text?.trim().split(/\s+/).filter(Boolean).length ?? 0)
-  // Average reading speed for broadcast: ~150 words per minute
+  // Broadcast scripts are read slower than casual prose, around 150 words per minute.
   const readingTimeSeconds = $derived(Math.ceil((wordCount / 150) * 60))
   const readingTimeFormatted = $derived(formatDuration(readingTimeSeconds))
 
@@ -102,14 +100,12 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<!-- Overlay with atmospheric gradient -->
 <div
   class="fixed inset-0 z-50 flex flex-col overflow-hidden bg-black transition-opacity duration-200 before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,oklch(from_var(--color-primary)_l_c_h/0.08),transparent_50%)] starting:opacity-0"
   role="dialog"
   aria-modal="true"
   aria-label="Leesmodus"
 >
-  <!-- Progress bar -->
   <div class="absolute top-0 right-0 left-0 z-10 h-[3px] bg-white/5">
     <div
       class="h-full bg-linear-to-r from-primary to-primary/70 shadow-[0_0_12px_oklch(from_var(--color-primary)_l_c_h/0.4)] transition-[width] duration-150 ease-out"
@@ -118,7 +114,6 @@
   </div>
 
   {#if hasText}
-    <!-- Header with metadata -->
     <div class="relative flex min-h-14 shrink-0 items-center justify-center px-4 py-5 md:py-4">
       <div
         class="flex items-center gap-2 font-mono text-xs tracking-widest text-white/60 uppercase md:text-sm"
@@ -129,7 +124,6 @@
       </div>
     </div>
 
-    <!-- Content with top fade -->
     <div
       bind:this={scrollContainer}
       onscroll={handleScroll}
@@ -144,7 +138,6 @@
       </div>
     </div>
 
-    <!-- FAB Close button -->
     <button
       class="fixed right-5 bottom-5 z-50 flex size-12 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-primary/80 text-white shadow-[0_4px_12px_rgba(0,0,0,0.3),0_0_20px_oklch(from_var(--color-primary)_l_c_h/0.4)] backdrop-blur-md transition-all duration-200 ease-out hover:scale-105 hover:bg-primary/90 hover:shadow-[0_6px_20px_rgba(0,0,0,0.4),0_0_30px_oklch(from_var(--color-primary)_l_c_h/0.4)] active:scale-95 md:right-6 md:bottom-6 md:size-14"
       onclick={onclose}
@@ -156,7 +149,6 @@
       />
     </button>
   {:else}
-    <!-- Empty state -->
     <div class="flex flex-1 flex-col items-center justify-center gap-4 text-white/40">
       <TriangleAlert
         aria-hidden="true"

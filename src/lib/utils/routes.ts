@@ -1,7 +1,7 @@
 import { resolve } from '$app/paths'
 
 /**
- * Resolves an internal path through `$app/paths.resolve` so base-path deploys
+ * resolveInternalHref resolves internal paths through `$app/paths.resolve` so base-path deploys
  * keep working. Pass-through for non-`/`-prefixed values (external URLs, `#`).
  *
  * Policy: resolve at the DOM/`goto` boundary. Shared UI components that render

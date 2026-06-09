@@ -25,23 +25,18 @@
   let showFilterModal = $state(false)
   let readModeStory = $state<Story | null>(null)
 
-  // Filter state from URL parameters
   const statusFilter = $derived(page.url.searchParams.get('status') ?? '')
   const dateFilter = $derived(page.url.searchParams.get('date') ?? '')
   const audioFilter = $derived(page.url.searchParams.get('audio') ?? '')
   const searchQuery = $derived(page.url.searchParams.get('q') ?? '')
 
-  // Count hidden filters for mobile badge
   const hiddenFilterCount = $derived((statusFilter ? 1 : 0) + (searchQuery ? 1 : 0))
-
-  // Check if any filter is active
   const hasActiveFilters = $derived(!!(statusFilter || dateFilter || audioFilter || searchQuery))
   const canWrite = $derived(auth.can('stories', 'write'))
 
-  // The tracked query parameters rerun this page load automatically.
   function updateFilters(updates: Record<string, string>): void {
     const url = new URL(page.url)
-    // Reset to page 1 when filters change
+    // New filters can make the current page number invalid.
     url.searchParams.delete('page')
     for (const [key, value] of Object.entries(updates)) {
       if (value) {
@@ -97,7 +92,6 @@
     canAction={canWrite}
   />
 
-  <!-- Date tabs + Audio filter -->
   <div class="flex flex-wrap items-center gap-2">
     <div class="tabs tabs-box tabs-sm md:tabs-md">
       <button
@@ -134,7 +128,6 @@
       <option value="with">Met audio</option>
     </select>
 
-    <!-- More filters button (mobile) -->
     <button
       class="btn btn-outline btn-sm md:hidden"
       onclick={() => (showFilterModal = true)}
@@ -149,7 +142,6 @@
       {/if}
     </button>
 
-    <!-- Desktop filters -->
     <div class="hidden items-center gap-2 md:flex">
       <select
         class="select select-sm"
@@ -194,7 +186,6 @@
         : undefined}
     />
   {:else}
-    <!-- Mobile: Cards view -->
     <div class="space-y-2 md:hidden">
       {#each data.stories as story (story.id)}
         <a
@@ -263,7 +254,6 @@
       {/each}
     </div>
 
-    <!-- Desktop: Table view -->
     <div class="card hidden bg-base-100 md:block">
       <div class="overflow-x-auto">
         <table class="table">
@@ -354,7 +344,6 @@
   {/if}
 </div>
 
-<!-- FAB: New story button (mobile only) -->
 {#if canWrite}
   <a
     href={resolveInternalHref('/stories/new')}
@@ -368,7 +357,6 @@
   </a>
 {/if}
 
-<!-- Filter modal (mobile) -->
 <FilterModal
   bind:open={showFilterModal}
   hasActiveFilters={hiddenFilterCount > 0}
@@ -402,7 +390,6 @@
   </fieldset>
 </FilterModal>
 
-<!-- Leesmodus overlay -->
 {#if readModeStory}
   <ReadMode
     text={readModeStory.text}

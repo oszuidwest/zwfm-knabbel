@@ -7,7 +7,7 @@
  */
 
 /**
- * Convert an array of objects with id/name to select options with string values.
+ * toSelectOptions converts API records to select options with string values.
  * Use this when populating SelectInput options from API data.
  *
  * @example
@@ -29,7 +29,7 @@ export function toSelectOptions<T extends { id?: number | null; name?: string | 
 }
 
 /**
- * Convert a string value from a select input to a number, or null if empty.
+ * toNumberOrNull converts a select value to a number, or null when empty.
  * Use this when preparing form data for API submission.
  *
  * @example
@@ -44,7 +44,7 @@ export function toNumberOrNull(value: string | null | undefined): number | null 
 }
 
 /**
- * Convert a number or null to a string for use in select inputs.
+ * toStringOrEmpty converts API numeric IDs to strings for select inputs.
  * Use this when initializing form state from API data.
  *
  * @example

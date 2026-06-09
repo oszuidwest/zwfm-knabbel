@@ -77,7 +77,7 @@ async function parseErrorResponse(
 ): Promise<{ message: string; details?: unknown }> {
   try {
     const errorData = await response.json()
-    // Support both standard error formats and RFC 7807 problem details
+    // Babbel returns both legacy error envelopes and RFC 7807 problem details.
     const message =
       errorData.detail || errorData.message || errorData.title || errorData.error || fallbackMessage
     return { message, details: errorData }
@@ -172,14 +172,14 @@ async function upload<T>(
   formData.append(fieldName, file)
 
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout for uploads
+  const timeoutId = setTimeout(() => controller.abort(), 120000)
 
   let response: Response
   try {
     response = await fetchFn(url, {
       method: 'POST',
       credentials: 'include',
-      // Don't set Content-Type - browser will set it with boundary for multipart/form-data
+      // Let the browser include the multipart boundary in Content-Type.
       body: formData,
       signal: controller.signal,
     })
@@ -206,7 +206,7 @@ async function upload<T>(
 export function getMediaUrl(path: string | undefined | null): string | undefined {
   if (!path) return undefined
   if (path.startsWith('http://') || path.startsWith('https://')) return path
-  // Remove /api/v1 prefix if present, then prepend full API base
+  // API media fields may be root-relative or already include /api/v1.
   const cleanPath = path.startsWith('/api/v1')
     ? path
     : `/api/v1${path.startsWith('/') ? '' : '/'}${path}`

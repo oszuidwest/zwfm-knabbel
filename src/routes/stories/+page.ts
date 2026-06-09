@@ -26,10 +26,8 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
   const audioFilter = url.searchParams.get('audio') ?? ''
   const searchQuery = url.searchParams.get('q') ?? ''
 
-  // Pagination params
   const { page, limit, offset } = getPaginationParams(url.searchParams)
 
-  // Build API filter params
   const params: StoryFilters = {
     limit,
     offset,
@@ -43,7 +41,6 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
     params.search = searchQuery
   }
 
-  // Date filter: today/tomorrow
   const dateInfo = getDateAndWeekdayBit(dateFilter)
   if (dateInfo) {
     params['filter[start_date][lte]'] = dateInfo.date
@@ -51,7 +48,6 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
     params['filter[weekdays][band]'] = dateInfo.weekdayBit
   }
 
-  // Audio filter (filter on audio_url presence)
   if (audioFilter === 'with') {
     params['filter[audio_url][ne]'] = ''
   } else if (audioFilter === 'without') {

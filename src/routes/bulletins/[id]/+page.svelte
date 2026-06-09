@@ -45,7 +45,6 @@
   />
 
   <div class="grid gap-6 md:grid-cols-2">
-    <!-- Info Card -->
     <div class="card bg-base-100">
       <div class="card-body">
         <h2 class="card-title">Informatie</h2>
@@ -82,7 +81,6 @@
       </div>
     </div>
 
-    <!-- Audio Card -->
     <div class="card bg-base-100">
       <div class="card-body">
         <h2 class="card-title">Audio</h2>
@@ -128,7 +126,6 @@
     </div>
   </div>
 
-  <!-- Stories Card -->
   {#if data.stories.length > 0}
     <div class="card bg-base-100">
       <div class="card-body">
@@ -178,7 +175,6 @@
     </div>
   {/if}
 
-  <!-- Actions -->
   <div class="flex gap-2">
     <a
       href={resolveInternalHref('/bulletins')}

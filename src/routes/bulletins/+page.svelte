@@ -10,14 +10,12 @@
   let { data } = $props()
   const auth = getAuthContext()
 
-  // Get selected station from URL (single source of truth)
   const selectedStation = $derived(page.url.searchParams.get('station') ?? '')
   const canGenerate = $derived(auth.can('bulletins', 'generate'))
 
-  // Update station filter via URL
   function updateStationFilter(stationId: string): void {
     const url = new URL(page.url)
-    // Reset to page 1 when filter changes
+    // New filters can make the current page number invalid.
     url.searchParams.delete('page')
     if (stationId) {
       url.searchParams.set('station', stationId)
@@ -37,7 +35,6 @@
     canAction={canGenerate}
   />
 
-  <!-- Controls -->
   <div class="flex flex-wrap gap-2">
     <select
       class="select flex-1 select-sm sm:flex-none"
@@ -62,7 +59,6 @@
       action={canGenerate ? { href: '/bulletins/new', label: 'Genereren' } : undefined}
     />
   {:else}
-    <!-- Mobile: Cards view -->
     <div class="space-y-2 md:hidden">
       {#each data.bulletins as bulletin (bulletin.id)}
         <a
@@ -107,7 +103,6 @@
       {/each}
     </div>
 
-    <!-- Desktop: Table view -->
     <div class="card hidden bg-base-100 md:block">
       <div class="overflow-x-auto">
         <table class="table">
@@ -152,7 +147,6 @@
   {/if}
 </div>
 
-<!-- FAB: Generate bulletin link (mobile only) -->
 {#if canGenerate}
   <a
     href={resolveInternalHref('/bulletins/new')}

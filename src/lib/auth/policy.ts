@@ -1,6 +1,6 @@
 export type Role = 'admin' | 'editor' | 'viewer'
 
-// Mirrors zwfm-babbel/internal/auth/service.go initializeRBAC.
+// Keep POLICY in sync with zwfm-babbel/internal/auth/service.go initializeRBAC.
 export const POLICY = {
   stations: { read: ['admin', 'editor', 'viewer'], write: ['admin', 'editor'] },
   voices: { read: ['admin', 'editor', 'viewer'], write: ['admin', 'editor'] },

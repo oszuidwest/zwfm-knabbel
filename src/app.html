@@ -7,13 +7,13 @@
       content="width=device-width, initial-scale=1"
     />
     <script>
-      // Sync DaisyUI theme met systeemvoorkeur (voorkomt flash)
+      // Set the daisyUI theme before Svelte mounts to avoid a light/dark flash.
       ;(function () {
         const theme = window.matchMedia('(prefers-color-scheme: dark)').matches
           ? 'business'
           : 'corporate'
         document.documentElement.setAttribute('data-theme', theme)
-        // Live reageren op systeemwijzigingen
+        // Keep the theme aligned when the OS preference changes.
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
           document.documentElement.setAttribute('data-theme', e.matches ? 'business' : 'corporate')
         })

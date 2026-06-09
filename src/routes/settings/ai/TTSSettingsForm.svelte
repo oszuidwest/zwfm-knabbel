@@ -33,12 +33,48 @@
     min: number
     max: number
     step: number
+    hint: string
   }[] = [
-    { field: 'stability', label: 'Stabiliteit', min: 0, max: 1, step: 0.01 },
-    { field: 'similarity_boost', label: 'Similarity boost', min: 0, max: 1, step: 0.01 },
-    { field: 'style', label: 'Stijl', min: 0, max: 1, step: 0.01 },
-    { field: 'speed', label: 'Snelheid', min: 0.7, max: 1.2, step: 0.01 },
+    {
+      field: 'stability',
+      label: 'Stabiliteit',
+      min: 0,
+      max: 1,
+      step: 0.01,
+      hint: 'Lager geeft meer variatie en emotie. Hoger klinkt constanter, maar kan ook vlakker worden.',
+    },
+    {
+      field: 'similarity_boost',
+      label: 'Stemgelijkenis',
+      min: 0,
+      max: 1,
+      step: 0.01,
+      hint: 'Bepaalt hoe dicht de generatie bij de gekozen stem blijft. Te hoog kan ruis of bijgeluiden uit de bronstem versterken.',
+    },
+    {
+      field: 'style',
+      label: 'Stijl',
+      min: 0,
+      max: 1,
+      step: 0.01,
+      hint: 'Versterkt de spreekstijl van de stem. ElevenLabs raadt meestal 0 aan, omdat hogere waarden minder stabiel kunnen zijn.',
+    },
+    {
+      field: 'speed',
+      label: 'Snelheid',
+      min: 0.7,
+      max: 1.2,
+      step: 0.01,
+      hint: '1,0 is normale snelheid. Lager is trager, hoger is sneller; uitersten kunnen de audiokwaliteit raken.',
+    },
   ]
+
+  const textNormalizationHint =
+    'Zet getallen, symbolen en afkortingen om naar beter uitspreekbare tekst. Auto laat ElevenLabs zelf kiezen.'
+  const seedHint =
+    'Probeert dezelfde tekst, stem en instellingen herhaalbaarder te maken. Leeg betekent willekeurig; exact hetzelfde resultaat is niet gegarandeerd.'
+  const stylePrefixHint =
+    'Vaste Eleven v3-stijlaanwijzing die voor elke storytekst wordt gezet, bijvoorbeeld [nieuwslezer] of [rustig].'
 
   // Svelte warns when prop values are captured directly into state initializers.
   // This lazy reader makes the keyed component's one-time form initialization explicit.
@@ -160,6 +196,10 @@
       />
       <h2 class="card-title">Tekst-naar-spraak</h2>
     </div>
+    <p class="max-w-3xl text-sm leading-relaxed text-base-content/70">
+      ElevenLabs blijft per generatie licht variabel. Deze instellingen sturen vooral hoeveel ruimte
+      het model krijgt voor variatie, niet exact dezelfde audio.
+    </p>
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
       <SelectInput
@@ -168,6 +208,16 @@
         bind:value={form.apply_text_normalization}
         options={textNormalizationOptions}
         error={errors.apply_text_normalization}
+        hint={textNormalizationHint}
+        disabled={formDisabled}
+      />
+      <TextInput
+        id="seed"
+        label="Seed"
+        bind:value={form.seed}
+        error={errors.seed}
+        hint={seedHint}
+        placeholder="Leeg voor willekeurig"
         disabled={formDisabled}
       />
     </div>
@@ -208,28 +258,19 @@
           />
           {#if errors[setting.field]}
             <p class="label text-error">{errors[setting.field]}</p>
+          {:else}
+            <p class="label">{setting.hint}</p>
           {/if}
         </div>
       {/each}
     </div>
 
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <TextInput
-        id="seed"
-        label="Seed"
-        bind:value={form.seed}
-        error={errors.seed}
-        placeholder="Leeg voor willekeurig"
-        disabled={formDisabled}
-      />
-    </div>
-
     <TextareaInput
       id="tts_style_prefix"
-      label="Eleven v3 stijlprefix"
+      label="Eleven v3-stijlprefix"
       bind:value={form.tts_style_prefix}
       error={errors.tts_style_prefix}
-      hint="Wordt voor storytekst gezet voordat Eleven v3 synthese start"
+      hint={stylePrefixHint}
       rows={3}
       placeholder="[nieuwslezer] "
       disabled={formDisabled}

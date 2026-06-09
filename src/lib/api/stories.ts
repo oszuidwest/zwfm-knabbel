@@ -44,8 +44,7 @@ export const storiesApi = {
 
   uploadAudio: (id: number, file: File) => api.upload<Story>(`/stories/${id}/audio`, file),
 
-  // Helper to convert form data with Weekdays object to API format
-  // Handles string → number conversion for voice_id (HTML select returns strings)
+  // toApiFormat keeps select-string and weekday-object UI state at the API boundary.
   toApiFormat: (data: {
     title: string
     text: string

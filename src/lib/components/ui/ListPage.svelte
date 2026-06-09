@@ -22,13 +22,13 @@
     pagination?: PaginationInfo
     headerActions?: Snippet
     cardContent: Snippet<[T]>
-    /** Custom card actions. If not provided and onDelete is set, default edit/delete buttons are shown */
+    /** cardActions overrides the default edit/delete buttons on mobile cards. */
     cardActions?: Snippet<[T]>
     tableHeader: Snippet
     tableRow: Snippet<[T]>
-    /** Called when delete button is clicked. Required for default cardActions to show */
+    /** onDelete enables the default delete button when custom card actions are absent. */
     onDelete?: (item: T, e?: Event) => void
-    /** Label for delete button aria-label. Defaults to item.name or 'dit item' */
+    /** deleteLabel provides the item name used in the delete button aria-label. */
     deleteLabel?: (item: T) => string
     canCreate?: boolean
     canEdit?: boolean
@@ -114,7 +114,6 @@
       action={newHref && canCreate ? { href: newHref, label: newLabel } : undefined}
     />
   {:else}
-    <!-- Mobile: Cards view -->
     <div class="space-y-2 md:hidden">
       {#each items as item (item.id)}
         {@const Icon = icon}
@@ -207,7 +206,6 @@
       {/each}
     </div>
 
-    <!-- Desktop: Table view -->
     <div class="card hidden bg-base-100 md:block">
       <div class="overflow-x-auto">
         <table class="table">
@@ -233,7 +231,6 @@
   {/if}
 </div>
 
-<!-- FAB: New item button (mobile only) -->
 {#if newHref && canCreate}
   <a
     href={resolveInternalHref(newHref)}

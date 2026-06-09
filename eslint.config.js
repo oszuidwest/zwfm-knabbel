@@ -51,11 +51,11 @@ export default tseslint.config(
         },
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
-      // Disable navigation rules for SPA mode (all navigation is client-side)
+      // Route helpers resolve internal hrefs at render/navigation boundaries.
       'svelte/no-navigation-without-resolve': 'off',
-      // Keys in each blocks - warning instead of error
+      // Keep unkeyed each blocks visible without failing CI during incremental cleanup.
       'svelte/require-each-key': 'warn',
-      // Allow native Map in scripts (not reactive state)
+      // Plain Map instances are allowed outside reactive Svelte state.
       'svelte/prefer-svelte-reactivity': 'off',
     },
   }
