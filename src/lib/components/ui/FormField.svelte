@@ -14,15 +14,17 @@
 
 <fieldset class="fieldset">
   <label
-    class="fieldset-legend"
+    class="fieldset-legend text-base font-medium"
     for={id}
   >
     {label}
   </label>
   {@render children()}
   {#if error}
-    <p class="label max-w-full whitespace-normal text-error">{error}</p>
+    <p class="label max-w-full whitespace-normal text-sm leading-relaxed text-error">{error}</p>
   {:else if hint}
-    <p class="label max-w-full whitespace-normal">{hint}</p>
+    <p class="label max-w-full whitespace-normal text-sm leading-relaxed text-base-content/70">
+      {hint}
+    </p>
   {/if}
 </fieldset>

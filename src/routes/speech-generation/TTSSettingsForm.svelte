@@ -257,9 +257,15 @@
             aria-label="{setting.label} slider"
           />
           {#if errors[setting.field]}
-            <p class="label max-w-full whitespace-normal text-error">{errors[setting.field]}</p>
+            <p class="label max-w-full whitespace-normal text-sm leading-relaxed text-error">
+              {errors[setting.field]}
+            </p>
           {:else}
-            <p class="label max-w-full whitespace-normal">{setting.hint}</p>
+            <p
+              class="label max-w-full whitespace-normal text-sm leading-relaxed text-base-content/70"
+            >
+              {setting.hint}
+            </p>
           {/if}
         </div>
       {/each}
