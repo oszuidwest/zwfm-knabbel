@@ -49,10 +49,10 @@
   let nextKey = 1
   const makeDraft = (r: PronunciationRule): DraftRow => ({
     _key: nextKey++,
-    string_to_replace: r.string_to_replace ?? '',
-    ipa: r.ipa ?? '',
-    case_sensitive: r.case_sensitive ?? true,
-    word_boundaries: r.word_boundaries ?? true,
+    string_to_replace: r.string_to_replace,
+    ipa: r.ipa,
+    case_sensitive: r.case_sensitive,
+    word_boundaries: r.word_boundaries,
   })
 
   const toPayload = (drafts: DraftRow[]): PronunciationRulesUpdate['rules'] =>
@@ -297,11 +297,11 @@
     }
     if (err.status === 503) {
       globalError =
-        details?.hint ?? details?.detail ?? 'Uitspraakregels zijn tijdelijk niet beschikbaar'
+        details?.detail ?? details?.hint ?? 'Uitspraakregels zijn tijdelijk niet beschikbaar'
       toast.error(globalError)
       return
     }
-    notifyMutationError(err, details?.detail ?? err.message ?? 'Opslaan mislukt')
+    notifyMutationError(err, 'Opslaan mislukt')
   }
 
   function handleCancel(): void {

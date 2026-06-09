@@ -1,10 +1,7 @@
 import { z } from 'zod'
 
 const hasControlCharacter = (value: string): boolean =>
-  [...value].some(char => {
-    const code = char.charCodeAt(0)
-    return code < 32 || code === 127
-  })
+  [...value].some(char => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127)
 
 export const pronunciationRuleSchema = z.object({
   string_to_replace: z.string().trim().min(1, 'Woord is verplicht'),
@@ -13,6 +10,7 @@ export const pronunciationRuleSchema = z.object({
     .trim()
     .min(1, 'IPA is verplicht')
     .max(255, 'Maximaal 255 tekens')
+    // Inline IPA is sent verbatim; surrounding slashes would be spoken, not parsed.
     .refine(value => !value.includes('/'), 'Gebruik IPA zonder schuine strepen')
     .refine(value => !hasControlCharacter(value), 'Controlekarakters zijn niet toegestaan'),
   case_sensitive: z.boolean(),

@@ -49,12 +49,7 @@ export function toTTSSettingsFormData(settings: TTSSettings): TTSSettingsFormDat
 
 export function toTTSSettingsUpdate(form: TTSSettingsFormData): TTSSettingsUpdate {
   return {
-    stability: form.stability,
-    similarity_boost: form.similarity_boost,
-    style: form.style,
-    speed: form.speed,
-    apply_text_normalization: form.apply_text_normalization,
+    ...form,
     seed: form.seed === '' ? null : Number(form.seed),
-    tts_style_prefix: form.tts_style_prefix,
   }
 }

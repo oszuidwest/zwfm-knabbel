@@ -236,7 +236,7 @@ export function notifyMutationError(err: unknown, fallbackMessage: string): void
   if (err instanceof ApiError && err.notified) return
   if (err instanceof ApiError) {
     const details = isProblemDetails(err.details) ? err.details : undefined
-    toast.error(details?.detail ?? err.message ?? fallbackMessage)
+    toast.error(details?.detail ?? fallbackMessage)
     return
   }
   toast.error(fallbackMessage)
