@@ -36,6 +36,5 @@
     class={['textarea w-full resize-y leading-relaxed', error && 'textarea-error']}
     {rows}
     {placeholder}
-    {disabled}
-  ></textarea>
+    {disabled}></textarea>
 </FormField>
