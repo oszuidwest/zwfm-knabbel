@@ -8,7 +8,7 @@
     error?: string
     hint?: string
     disabled?: boolean
-    /** URL of existing audio file - shows player when provided and no new file selected */
+    /** existingAudioUrl shows the current audio until the user selects a replacement. */
     existingAudioUrl?: string
     onchange?: (file: File | null) => void
   }
@@ -30,7 +30,7 @@
     onchange?.(file)
   }
 
-  // Show existing audio when URL provided and no new file selected (hint contains filename)
+  // showExistingAudio hides the old audio after a replacement file is selected.
   const showExistingAudio = $derived(existingAudioUrl && !hint)
 </script>
 
@@ -55,8 +55,7 @@
     type="file"
     {accept}
     onchange={handleChange}
-    class="file-input-bordered file-input w-full file-input-primary"
-    class:file-input-error={error}
+    class={['file-input w-full file-input-primary', error && 'file-input-error']}
     {disabled}
   />
 </FormField>

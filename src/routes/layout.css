@@ -3,7 +3,7 @@
   themes: corporate, business;
 }
 
-/* Support light/dark color schemes based on theme */
+/* Theme blocks set browser color-scheme while preserving the brand primary. */
 [data-theme='corporate'] {
   color-scheme: light;
   --radius-selector: 0.25rem;
@@ -16,7 +16,7 @@
   --color-primary: oklch(54.8% 0.245 357.3); /* #e6007e */
 }
 
-/* Page header utilities using DaisyUI variables */
+/* Shared page typography uses daisyUI theme variables for contrast. */
 .page-title {
   font-size: 1.5rem;
   line-height: 2rem;
@@ -25,7 +25,7 @@
 
 .page-subtitle {
   font-size: 0.875rem;
-  color: oklch(var(--bc) / 0.6);
+  color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
 }
 
 .section-title {

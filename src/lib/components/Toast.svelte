@@ -1,11 +1,11 @@
 <script lang="ts">
   import { toast } from '$lib/stores/toast'
-  import { CheckCircle, AlertCircle, AlertTriangle, Info, X } from './icons'
+  import { CircleCheckBig, CircleAlert, TriangleAlert, Info, X } from './icons'
 
   const iconMap = {
-    success: CheckCircle,
-    error: AlertCircle,
-    warning: AlertTriangle,
+    success: CircleCheckBig,
+    error: CircleAlert,
+    warning: TriangleAlert,
     info: Info,
   }
 
@@ -20,7 +20,10 @@
 <div class="toast toast-end z-50">
   {#each $toast as t (t.id)}
     {@const Icon = iconMap[t.type]}
-    <div class="alert {alertClass[t.type]}">
+    <div
+      role="alert"
+      class="alert {alertClass[t.type]}"
+    >
       <Icon class="h-5 w-5" />
       <span>{t.message}</span>
       <button

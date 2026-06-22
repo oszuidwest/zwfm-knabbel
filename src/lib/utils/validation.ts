@@ -5,7 +5,7 @@ export type ValidationResult<T> =
   | { success: false; data: undefined; errors: Record<string, string> }
 
 /**
- * Validates form data against a Zod schema and returns typed errors per field.
+ * validateForm validates data with Zod and returns one display error per field.
  *
  * @example
  * ```typescript
@@ -27,7 +27,7 @@ export function validateForm<T>(schema: ZodSchema<T>, data: unknown): Validation
   const errors: Record<string, string> = {}
   for (const issue of result.error.issues) {
     const field = String(issue.path[0])
-    // Only take the first error per field
+    // Keep the first message stable so fields do not flicker between errors.
     if (!errors[field]) {
       errors[field] = issue.message
     }

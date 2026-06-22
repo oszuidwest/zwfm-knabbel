@@ -15,8 +15,13 @@ export interface PaginationInfo {
   hasPrevPage: boolean
 }
 
+export interface VisiblePage {
+  id: string
+  page: number | null
+}
+
 /**
- * Parse pagination params from URL search params
+ * getPaginationParams reads the current page from URL params and derives API offsets.
  */
 export function getPaginationParams(
   searchParams: URLSearchParams,
@@ -29,7 +34,7 @@ export function getPaginationParams(
 }
 
 /**
- * Calculate pagination info from API response
+ * getPaginationInfo converts API totals into the pagination state used by the UI.
  */
 export function getPaginationInfo(total: number, page: number, limit: number): PaginationInfo {
   const totalPages = Math.max(1, Math.ceil(total / limit))
@@ -44,57 +49,51 @@ export function getPaginationInfo(total: number, page: number, limit: number): P
 }
 
 /**
- * Calculate which page numbers to display with ellipsis
- * Returns array of numbers and 'ellipsis' strings
+ * getVisiblePages returns a compact page list that keeps endpoints visible.
+ * Ellipsis tokens are represented with page set to null.
  */
 export function getVisiblePages(
   currentPage: number,
   totalPages: number,
   maxVisible = 7
-): (number | 'ellipsis')[] {
+): VisiblePage[] {
+  const pageToken = (page: number): VisiblePage => ({ id: `page-${page}`, page })
+
   if (totalPages <= maxVisible) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1)
+    return Array.from({ length: totalPages }, (_, i) => pageToken(i + 1))
   }
 
-  const pages: (number | 'ellipsis')[] = []
+  const pages: VisiblePage[] = []
   const sideCount = Math.floor((maxVisible - 3) / 2)
 
-  // Always include first page
-  pages.push(1)
+  pages.push(pageToken(1))
 
-  // Calculate range around current page
   let rangeStart = Math.max(2, currentPage - sideCount)
   let rangeEnd = Math.min(totalPages - 1, currentPage + sideCount)
 
-  // Adjust if at the start
   if (currentPage <= sideCount + 2) {
     rangeEnd = maxVisible - 2
     rangeStart = 2
   }
 
-  // Adjust if at the end
   if (currentPage >= totalPages - sideCount - 1) {
     rangeStart = totalPages - maxVisible + 3
     rangeEnd = totalPages - 1
   }
 
-  // Add ellipsis before range if needed
   if (rangeStart > 2) {
-    pages.push('ellipsis')
+    pages.push({ id: 'ellipsis-left', page: null })
   }
 
-  // Add range pages
   for (let i = rangeStart; i <= rangeEnd; i++) {
-    pages.push(i)
+    pages.push(pageToken(i))
   }
 
-  // Add ellipsis after range if needed
   if (rangeEnd < totalPages - 1) {
-    pages.push('ellipsis')
+    pages.push({ id: 'ellipsis-right', page: null })
   }
 
-  // Always include last page
-  pages.push(totalPages)
+  pages.push(pageToken(totalPages))
 
   return pages
 }

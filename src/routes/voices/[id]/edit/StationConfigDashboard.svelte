@@ -1,11 +1,12 @@
 <script lang="ts">
   import { getMediaUrl } from '$lib/api/client'
   import { Radio, Upload, Music, Play, Pause } from '$lib/components/icons'
-  import type { StationConfig } from '$lib/types'
+  import type { StationConfig } from './station-config'
 
   interface Props {
     configs: StationConfig[]
     disabled?: boolean
+    canEdit?: boolean
     onToggle: (index: number, e?: Event) => void
     onMixPointChange: (index: number, value: number) => void
     onMixPointSave: (index: number) => void
@@ -16,6 +17,7 @@
   let {
     configs,
     disabled = false,
+    canEdit = true,
     onToggle,
     onMixPointChange,
     onMixPointSave,
@@ -25,11 +27,14 @@
 
   let dragOver = $state<number | null>(null)
   let playingIndex = $state<number | null>(null)
-  let audioElements = $state<Record<number, HTMLAudioElement | null>>({})
+  // audioElements is populated by bind:this for imperative playback only.
+  let audioElements: Record<number, HTMLAudioElement | null> = {}
+  const effectiveDisabled = $derived(disabled || !canEdit)
 
   function handleDragOver(e: DragEvent, index: number) {
     e.preventDefault()
     e.stopPropagation()
+    if (effectiveDisabled) return
     dragOver = index
   }
 
@@ -42,6 +47,7 @@
     e.preventDefault()
     e.stopPropagation()
     dragOver = null
+    if (effectiveDisabled) return
 
     const files = e.dataTransfer?.files
     if (files && files.length > 0) {
@@ -53,6 +59,7 @@
   }
 
   function handleFileInput(e: Event, index: number) {
+    if (effectiveDisabled) return
     const input = e.target as HTMLInputElement
     const file = input.files?.[0]
     if (file) {
@@ -100,13 +107,15 @@
   <div class="space-y-4">
     {#each configs as config, index (config.station.id)}
       <div
-        class="card border shadow-sm {config.enabled
-          ? 'border-primary/20 bg-base-100'
-          : 'border-base-300 bg-base-100 opacity-60'}"
-        class:pointer-events-none={config.saving}
+        class={[
+          'card border shadow-sm',
+          config.enabled
+            ? 'border-primary/20 bg-base-100'
+            : 'border-base-300 bg-base-100 opacity-60',
+          config.saving && 'pointer-events-none',
+        ]}
       >
         <div class="card-body space-y-5 p-5">
-          <!-- Header -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div
@@ -140,13 +149,12 @@
                 class="toggle toggle-primary"
                 checked={config.enabled}
                 onchange={e => onToggle(index, e)}
-                disabled={disabled || config.saving}
+                disabled={effectiveDisabled || config.saving}
               />
             </div>
           </div>
 
           {#if config.enabled}
-            <!-- Mixpunt -->
             <div class="space-y-3">
               <div class="flex items-center justify-between">
                 <label
@@ -170,17 +178,15 @@
                 oninput={e =>
                   onMixPointChange(index, parseFloat((e.target as HTMLInputElement).value))}
                 onchange={() => onMixPointSave(index)}
-                disabled={disabled || config.saving}
+                disabled={effectiveDisabled || config.saving}
               />
               <p class="text-xs text-base-content/50">Wanneer de stem begint over de jingle</p>
             </div>
 
-            <!-- Jingle -->
             <div class="space-y-3">
               <span class="text-sm font-medium">Jingle</span>
 
               {#if config.hasAudio && config.audioUrl}
-                <!-- Audio player -->
                 <div class="flex items-center gap-3 rounded-xl bg-base-200 p-3">
                   <audio
                     bind:this={audioElements[index]}
@@ -214,7 +220,13 @@
                   </div>
                   <label
                     for="jingle-replace-{config.station.id}"
-                    class="btn cursor-pointer btn-ghost btn-sm"
+                    class={[
+                      'btn btn-ghost btn-sm',
+                      effectiveDisabled
+                        ? 'pointer-events-none cursor-not-allowed opacity-50'
+                        : 'cursor-pointer',
+                    ]}
+                    aria-disabled={effectiveDisabled}
                   >
                     Vervang
                   </label>
@@ -223,14 +235,13 @@
                     type="file"
                     accept="audio/wav,audio/*"
                     onchange={e => handleFileInput(e, index)}
-                    disabled={config.saving}
+                    disabled={effectiveDisabled || config.saving}
                     class="hidden"
                   />
                 </div>
               {/if}
 
               {#if config.jingleFile}
-                <!-- File selected, waiting for upload -->
                 <div
                   class="flex items-center gap-3 rounded-xl border-2 border-warning bg-warning/10 p-3"
                 >
@@ -245,7 +256,7 @@
                     type="button"
                     class="btn btn-sm btn-warning"
                     onclick={() => onJingleUpload(index)}
-                    disabled={config.saving}
+                    disabled={effectiveDisabled || config.saving}
                   >
                     {#if config.saving}
                       <span class="loading loading-xs loading-spinner"></span>
@@ -259,31 +270,27 @@
                   </button>
                 </div>
               {:else if !config.hasAudio}
-                <!-- Dropzone -->
-                <div
-                  class="cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition-colors {dragOver ===
-                  index
-                    ? 'border-primary bg-primary/10'
-                    : 'border-base-content/20 hover:border-primary hover:bg-primary/5'}"
-                  role="button"
-                  tabindex="0"
+                <input
+                  id="jingle-input-{config.station.id}"
+                  type="file"
+                  accept="audio/wav,audio/*"
+                  onchange={e => handleFileInput(e, index)}
+                  disabled={effectiveDisabled || config.saving}
+                  class="peer sr-only"
+                />
+                <label
+                  for="jingle-input-{config.station.id}"
+                  class={[
+                    'block rounded-xl border-2 border-dashed p-6 text-center transition-colors peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary',
+                    effectiveDisabled ? 'pointer-events-none cursor-not-allowed' : 'cursor-pointer',
+                    dragOver === index
+                      ? 'border-primary bg-primary/10'
+                      : 'border-base-content/20 hover:border-primary hover:bg-primary/5',
+                  ]}
                   ondragover={e => handleDragOver(e, index)}
                   ondragleave={handleDragLeave}
                   ondrop={e => handleDrop(e, index)}
-                  onkeydown={e =>
-                    e.key === 'Enter' &&
-                    document.getElementById(`jingle-input-${config.station.id}`)?.click()}
-                  onclick={() =>
-                    document.getElementById(`jingle-input-${config.station.id}`)?.click()}
                 >
-                  <input
-                    id="jingle-input-{config.station.id}"
-                    type="file"
-                    accept="audio/wav,audio/*"
-                    onchange={e => handleFileInput(e, index)}
-                    disabled={config.saving}
-                    class="hidden"
-                  />
                   <Upload
                     class="mx-auto mb-2 h-8 w-8 text-base-content/30"
                     aria-hidden="true"
@@ -291,7 +298,7 @@
                   <p class="text-sm text-base-content/50">
                     Sleep een audiobestand of klik om te selecteren
                   </p>
-                </div>
+                </label>
               {/if}
             </div>
           {/if}

@@ -1,15 +1,17 @@
 <script lang="ts">
-  import type { ComponentType, SvelteComponent } from 'svelte'
+  import type { Component } from 'svelte'
+  import { resolveInternalHref } from '$lib/utils/routes'
 
   interface Props {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    icon: ComponentType<SvelteComponent<any>>
+    icon: Component
     title: string
     description?: string
     action?: { href: string; label: string }
   }
 
   let { icon: Icon, title, description, action }: Props = $props()
+
+  const resolvedActionHref = $derived(action ? resolveInternalHref(action.href) : undefined)
 </script>
 
 <div class="card bg-base-100">
@@ -24,7 +26,7 @@
     {/if}
     {#if action}
       <a
-        href={action.href}
+        href={resolvedActionHref}
         class="btn mt-4 btn-primary">{action.label}</a
       >
     {/if}

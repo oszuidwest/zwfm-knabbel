@@ -1,9 +1,11 @@
 <script lang="ts">
   import { goto, invalidateAll } from '$app/navigation'
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import { storiesApi } from '$lib/api/stories'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
   import { deleteWithConfirm } from '$lib/utils/crud'
   import { formatDate } from '$lib/utils/format'
+  import { resolveInternalHref } from '$lib/utils/routes'
   import { statusLabels, statusColors, statusOptions } from '$lib/utils/labels'
   import {
     FileText,
@@ -19,25 +21,22 @@
   import type { Story } from '$lib/types'
 
   let { data } = $props()
+  const auth = getAuthContext()
   let showFilterModal = $state(false)
   let readModeStory = $state<Story | null>(null)
 
-  // Filter state from URL parameters
-  const statusFilter = $derived($page.url.searchParams.get('status') ?? '')
-  const dateFilter = $derived($page.url.searchParams.get('date') ?? '')
-  const audioFilter = $derived($page.url.searchParams.get('audio') ?? '')
-  const searchQuery = $derived($page.url.searchParams.get('q') ?? '')
+  const statusFilter = $derived(page.url.searchParams.get('status') ?? '')
+  const dateFilter = $derived(page.url.searchParams.get('date') ?? '')
+  const audioFilter = $derived(page.url.searchParams.get('audio') ?? '')
+  const searchQuery = $derived(page.url.searchParams.get('q') ?? '')
 
-  // Count hidden filters for mobile badge
   const hiddenFilterCount = $derived((statusFilter ? 1 : 0) + (searchQuery ? 1 : 0))
-
-  // Check if any filter is active
   const hasActiveFilters = $derived(!!(statusFilter || dateFilter || audioFilter || searchQuery))
+  const canWrite = $derived(auth.can('stories', 'write'))
 
-  // Update URL and trigger server-side reload
   function updateFilters(updates: Record<string, string>): void {
-    const url = new URL($page.url)
-    // Reset to page 1 when filters change
+    const url = new URL(page.url)
+    // New filters can make the current page number invalid.
     url.searchParams.delete('page')
     for (const [key, value] of Object.entries(updates)) {
       if (value) {
@@ -46,7 +45,7 @@
         url.searchParams.delete(key)
       }
     }
-    goto(url.toString(), { invalidateAll: true })
+    goto(resolveInternalHref(`${url.pathname}${url.search}${url.hash}`))
   }
 
   const handleDelete = (story: Story) =>
@@ -90,26 +89,26 @@
     subtitle="{data.pagination.totalItems} berichten"
     actionHref="/stories/new"
     actionLabel="Nieuw bericht"
+    canAction={canWrite}
   />
 
-  <!-- Date tabs + Audio filter -->
   <div class="flex flex-wrap items-center gap-2">
-    <div class="tabs-boxed tabs">
+    <div class="tabs tabs-box tabs-sm md:tabs-md">
       <button
-        class="tab-sm md:tab-md tab {dateFilter === '' ? 'tab-active' : ''}"
+        class={['tab', dateFilter === '' && 'tab-active']}
         onclick={() => updateFilters({ date: '', status: '' })}
       >
         Alle
       </button>
       <button
-        class="tab-sm md:tab-md tab {dateFilter === 'today' ? 'tab-active' : ''}"
+        class={['tab', dateFilter === 'today' && 'tab-active']}
         onclick={() => updateFilters({ date: 'today' })}
       >
         Vandaag
         <span class="ml-1 hidden text-xs opacity-60 sm:inline">({formatDateLabel('today')})</span>
       </button>
       <button
-        class="tab-sm md:tab-md tab {dateFilter === 'tomorrow' ? 'tab-active' : ''}"
+        class={['tab', dateFilter === 'tomorrow' && 'tab-active']}
         onclick={() => updateFilters({ date: 'tomorrow' })}
       >
         Morgen
@@ -119,7 +118,7 @@
     </div>
 
     <select
-      class="select-bordered select select-sm"
+      class="select select-sm"
       value={audioFilter}
       onchange={e => updateFilters({ audio: e.currentTarget.value })}
       aria-label="Filter op audio"
@@ -129,7 +128,6 @@
       <option value="with">Met audio</option>
     </select>
 
-    <!-- More filters button (mobile) -->
     <button
       class="btn btn-outline btn-sm md:hidden"
       onclick={() => (showFilterModal = true)}
@@ -144,10 +142,9 @@
       {/if}
     </button>
 
-    <!-- Desktop filters -->
     <div class="hidden items-center gap-2 md:flex">
       <select
-        class="select-bordered select select-sm"
+        class="select select-sm"
         value={statusFilter}
         onchange={e => updateFilters({ status: e.currentTarget.value })}
         aria-label="Filter op status"
@@ -166,7 +163,7 @@
         <input
           type="search"
           placeholder="Zoeken..."
-          class="input-bordered input input-sm pl-9"
+          class="input input-sm pl-9"
           value={searchQuery}
           onchange={e => updateFilters({ q: e.currentTarget.value })}
           aria-label="Zoeken in berichten"
@@ -181,15 +178,18 @@
       title="Geen berichten"
       description={hasActiveFilters
         ? 'Geen berichten gevonden met deze filters.'
-        : 'Maak je eerste bericht aan om te beginnen.'}
-      action={!hasActiveFilters ? { href: '/stories/new', label: 'Nieuw bericht' } : undefined}
+        : canWrite
+          ? 'Maak je eerste bericht aan om te beginnen.'
+          : 'Nog geen berichten aanwezig.'}
+      action={!hasActiveFilters && canWrite
+        ? { href: '/stories/new', label: 'Nieuw bericht' }
+        : undefined}
     />
   {:else}
-    <!-- Mobile: Cards view -->
     <div class="space-y-2 md:hidden">
       {#each data.stories as story (story.id)}
         <a
-          href="/stories/{story.id}/edit"
+          href={resolveInternalHref(`/stories/${story.id}/edit`)}
           class="card bg-base-100 transition-shadow hover:shadow-md active:bg-base-200"
         >
           <div class="card-body p-4">
@@ -254,7 +254,6 @@
       {/each}
     </div>
 
-    <!-- Desktop: Table view -->
     <div class="card hidden bg-base-100 md:block">
       <div class="overflow-x-auto">
         <table class="table">
@@ -329,6 +328,8 @@
                     <TableActions
                       editHref="/stories/{story.id}/edit"
                       onDelete={() => handleDelete(story)}
+                      canEdit={canWrite}
+                      canDelete={canWrite}
                     />
                   </div>
                 </td>
@@ -343,34 +344,29 @@
   {/if}
 </div>
 
-<!-- FAB: New story button (mobile only) -->
-<a
-  href="/stories/new"
-  class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
-  aria-label="Nieuw bericht"
->
-  <Plus
-    aria-hidden="true"
-    class="h-6 w-6"
-  />
-</a>
+{#if canWrite}
+  <a
+    href={resolveInternalHref('/stories/new')}
+    class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
+    aria-label="Nieuw bericht"
+  >
+    <Plus
+      aria-hidden="true"
+      class="h-6 w-6"
+    />
+  </a>
+{/if}
 
-<!-- Filter modal (mobile) -->
 <FilterModal
   bind:open={showFilterModal}
   hasActiveFilters={hiddenFilterCount > 0}
   onClear={clearHiddenFilters}
 >
-  <div class="form-control">
-    <label
-      class="label"
-      for="modal-status"
-    >
-      <span class="label-text">Status</span>
-    </label>
+  <fieldset class="fieldset">
+    <legend class="fieldset-legend">Status</legend>
     <select
       id="modal-status"
-      class="select-bordered select w-full"
+      class="select w-full"
       value={statusFilter}
       onchange={e => updateFilters({ status: e.currentTarget.value })}
     >
@@ -379,27 +375,21 @@
         <option value={option.value}>{option.label}</option>
       {/each}
     </select>
-  </div>
+  </fieldset>
 
-  <div class="form-control">
-    <label
-      class="label"
-      for="modal-search"
-    >
-      <span class="label-text">Zoeken</span>
-    </label>
+  <fieldset class="fieldset">
+    <legend class="fieldset-legend">Zoeken</legend>
     <input
       id="modal-search"
       type="search"
       placeholder="Zoek in titel of tekst..."
-      class="input-bordered input w-full"
+      class="input w-full"
       value={searchQuery}
       onchange={e => updateFilters({ q: e.currentTarget.value })}
     />
-  </div>
+  </fieldset>
 </FilterModal>
 
-<!-- Leesmodus overlay -->
 {#if readModeStory}
   <ReadMode
     text={readModeStory.text}

@@ -1,4 +1,5 @@
 import { PUBLIC_API_URL } from '$env/static/public'
+import { toast } from '$lib/stores/toast'
 
 const API_BASE = `${PUBLIC_API_URL}/api/v1`
 
@@ -16,7 +17,24 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
   fetch?: FetchFn
 }
 
+export interface ProblemFieldError {
+  field?: string
+  message?: string
+}
+
+export interface ProblemDetails {
+  code?: string
+  type?: string
+  title?: string
+  status?: number
+  detail?: string
+  hint?: string
+  errors?: ProblemFieldError[]
+}
+
 class ApiError extends Error {
+  notified = false
+
   constructor(
     public status: number,
     message: string,
@@ -27,13 +45,39 @@ class ApiError extends Error {
   }
 }
 
+function isOptionalString(value: unknown): value is string | undefined {
+  return value === undefined || typeof value === 'string'
+}
+
+function isProblemFieldError(value: unknown): value is ProblemFieldError {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as Record<string, unknown>
+  return isOptionalString(candidate.field) && isOptionalString(candidate.message)
+}
+
+function isProblemDetails(value: unknown): value is ProblemDetails {
+  if (typeof value !== 'object' || value === null) return false
+
+  const candidate = value as Record<string, unknown>
+  return (
+    isOptionalString(candidate.code) &&
+    isOptionalString(candidate.type) &&
+    isOptionalString(candidate.title) &&
+    (candidate.status === undefined || typeof candidate.status === 'number') &&
+    isOptionalString(candidate.detail) &&
+    isOptionalString(candidate.hint) &&
+    (candidate.errors === undefined ||
+      (Array.isArray(candidate.errors) && candidate.errors.every(isProblemFieldError)))
+  )
+}
+
 async function parseErrorResponse(
   response: Response,
   fallbackMessage: string
 ): Promise<{ message: string; details?: unknown }> {
   try {
     const errorData = await response.json()
-    // Support both standard error formats and RFC 7807 problem details
+    // Babbel returns both legacy error envelopes and RFC 7807 problem details.
     const message =
       errorData.detail || errorData.message || errorData.title || errorData.error || fallbackMessage
     return { message, details: errorData }
@@ -52,6 +96,9 @@ function handleFetchError(err: unknown, timeoutMessage: string): never {
   if (err instanceof ApiError) throw err
   if (err instanceof Error && err.name === 'AbortError') {
     throw new ApiError(0, timeoutMessage)
+  }
+  if (err instanceof TypeError) {
+    throw new ApiError(0, 'Network error')
   }
   throw err
 }
@@ -75,33 +122,41 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     }
   }
 
+  const requestBody = body !== undefined ? JSON.stringify(body) : undefined
+  const headers = new Headers(fetchOptions.headers)
+  if (requestBody !== undefined && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 30000)
 
+  let response: Response
   try {
-    const response = await fetchFn(url, {
+    response = await fetchFn(url, {
       ...fetchOptions,
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...fetchOptions.headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
+      headers,
+      body: requestBody,
       signal: controller.signal,
     })
-
-    clearTimeout(timeoutId)
-
-    if (!response.ok) {
-      const { message, details } = await parseErrorResponse(response, 'Request failed')
-      throw new ApiError(response.status, message, details)
-    }
-
-    return parseResponseBody<T>(response)
   } catch (err) {
     clearTimeout(timeoutId)
     handleFetchError(err, 'Request timeout')
   }
+
+  clearTimeout(timeoutId)
+
+  if (!response.ok) {
+    const { message, details } = await parseErrorResponse(response, 'Request failed')
+    const err = new ApiError(response.status, message, details)
+    if (response.status === 403 && (fetchOptions.method ?? 'GET') !== 'GET') {
+      toast.error('Geen rechten voor deze actie')
+      err.notified = true
+    }
+    throw err
+  }
+
+  return parseResponseBody<T>(response)
 }
 
 async function upload<T>(
@@ -117,35 +172,41 @@ async function upload<T>(
   formData.append(fieldName, file)
 
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout for uploads
+  const timeoutId = setTimeout(() => controller.abort(), 120000)
 
+  let response: Response
   try {
-    const response = await fetchFn(url, {
+    response = await fetchFn(url, {
       method: 'POST',
       credentials: 'include',
-      // Don't set Content-Type - browser will set it with boundary for multipart/form-data
+      // Let the browser include the multipart boundary in Content-Type.
       body: formData,
       signal: controller.signal,
     })
-
-    clearTimeout(timeoutId)
-
-    if (!response.ok) {
-      const { message, details } = await parseErrorResponse(response, 'Upload failed')
-      throw new ApiError(response.status, message, details)
-    }
-
-    return parseResponseBody<T>(response)
   } catch (err) {
     clearTimeout(timeoutId)
     handleFetchError(err, 'Upload timeout')
   }
+
+  clearTimeout(timeoutId)
+
+  if (!response.ok) {
+    const { message, details } = await parseErrorResponse(response, 'Upload failed')
+    const err = new ApiError(response.status, message, details)
+    if (response.status === 403) {
+      toast.error('Geen rechten voor deze actie')
+      err.notified = true
+    }
+    throw err
+  }
+
+  return parseResponseBody<T>(response)
 }
 
 export function getMediaUrl(path: string | undefined | null): string | undefined {
   if (!path) return undefined
   if (path.startsWith('http://') || path.startsWith('https://')) return path
-  // Remove /api/v1 prefix if present, then prepend full API base
+  // API media fields may be root-relative or already include /api/v1.
   const cleanPath = path.startsWith('/api/v1')
     ? path
     : `/api/v1${path.startsWith('/') ? '' : '/'}${path}`
@@ -171,5 +232,15 @@ export const api = {
   upload,
 }
 
-export { ApiError }
+export function notifyMutationError(err: unknown, fallbackMessage: string): void {
+  if (err instanceof ApiError && err.notified) return
+  if (err instanceof ApiError) {
+    const details = isProblemDetails(err.details) ? err.details : undefined
+    toast.error(details?.detail ?? fallbackMessage)
+    return
+  }
+  toast.error(fallbackMessage)
+}
+
+export { ApiError, isProblemDetails }
 export type { FetchFn, PaginationFilters }

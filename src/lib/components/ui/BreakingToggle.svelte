@@ -3,9 +3,15 @@
 
   interface Props {
     checked: boolean
+    disabled?: boolean
   }
 
-  let { checked = $bindable() }: Props = $props()
+  let { checked = $bindable(), disabled = false }: Props = $props()
+
+  function toggle(): void {
+    if (disabled) return
+    checked = !checked
+  }
 </script>
 
 <div
@@ -15,7 +21,8 @@
   <button
     type="button"
     class="btn join-item {checked ? 'btn-primary' : 'btn-soft'}"
-    onclick={() => (checked = !checked)}
+    onclick={toggle}
+    {disabled}
     aria-label="Schakel breaking nieuws in/uit"
   >
     <Zap

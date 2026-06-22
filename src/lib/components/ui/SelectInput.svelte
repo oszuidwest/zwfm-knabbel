@@ -1,10 +1,9 @@
 <script lang="ts">
   /**
-   * Select input component with strict string typing.
+   * SelectInput keeps HTML select values explicitly typed as strings.
    *
-   * HTML <select> elements always return string values, so this component
-   * enforces string types for both value and options. Use the form helpers
-   * from $lib/utils/form.ts for number ↔ string conversion.
+   * Use the form helpers from $lib/utils/form.ts for number ↔ string conversion
+   * at API boundaries.
    */
 
   import FormField from './FormField.svelte'
@@ -17,9 +16,9 @@
   interface Props {
     id: string
     label: string
-    /** Value is always a string (HTML select behavior). Use toStringOrEmpty/toNumberOrNull for conversion. */
+    /** value stays string-compatible because HTML select values are strings. */
     value: string | null | undefined
-    options: Option[]
+    options: readonly Option[]
     error?: string
     /**
      * Disabled placeholder option shown when no value is selected.
@@ -59,8 +58,7 @@
   <select
     {id}
     bind:value
-    class="select-bordered select w-full"
-    class:select-error={error}
+    class={['select w-full', error && 'select-error']}
     {disabled}
   >
     {#if placeholder}

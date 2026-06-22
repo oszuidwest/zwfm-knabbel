@@ -37,4 +37,7 @@ export const bulletinsApi = {
 
   getStories: (id: number, customFetch?: FetchFn) =>
     api.get<BulletinStoriesResponse>(`/bulletins/${id}/stories`, undefined, customFetch),
+
+  getByStory: (storyId: number, params?: PaginationFilters, customFetch?: FetchFn) =>
+    api.get<BulletinsResponse>(`/stories/${storyId}/bulletins`, params, customFetch),
 }

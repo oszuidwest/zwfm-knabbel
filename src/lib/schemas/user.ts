@@ -11,7 +11,7 @@ export const userSchema = z
     password: z.string().optional(),
     confirmPassword: z.string().optional(),
     role: z.enum(['admin', 'editor', 'viewer'], {
-      required_error: 'Rol is verplicht',
+      error: 'Rol is verplicht',
     }),
   })
   .refine(

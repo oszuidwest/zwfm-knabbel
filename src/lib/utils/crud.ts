@@ -1,3 +1,4 @@
+import { notifyMutationError } from '$lib/api/client'
 import { toast } from '$lib/stores/toast'
 
 interface DeleteOptions {
@@ -9,7 +10,7 @@ interface DeleteOptions {
 }
 
 /**
- * Handles delete operation with confirmation and toast notifications
+ * deleteWithConfirm centralizes destructive-action confirmation and toast handling.
  */
 export async function deleteWithConfirm({
   name,
@@ -24,7 +25,7 @@ export async function deleteWithConfirm({
     await deleteFn()
     toast.success(successMessage)
     await onSuccess?.()
-  } catch {
-    toast.error(errorMessage)
+  } catch (err) {
+    notifyMutationError(err, errorMessage)
   }
 }

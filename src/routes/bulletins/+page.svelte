@@ -1,26 +1,28 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
   import { formatDateTime, formatDuration } from '$lib/utils/format'
+  import { resolveInternalHref } from '$lib/utils/routes'
   import { Eye, Plus, Podcast } from '$lib/components/icons'
   import { PageHeader, EmptyState, Pagination } from '$lib/components/ui'
 
   let { data } = $props()
+  const auth = getAuthContext()
 
-  // Get selected station from URL (single source of truth)
-  const selectedStation = $derived($page.url.searchParams.get('station') ?? '')
+  const selectedStation = $derived(page.url.searchParams.get('station') ?? '')
+  const canGenerate = $derived(auth.can('bulletins', 'generate'))
 
-  // Update station filter via URL
   function updateStationFilter(stationId: string): void {
-    const url = new URL($page.url)
-    // Reset to page 1 when filter changes
+    const url = new URL(page.url)
+    // New filters can make the current page number invalid.
     url.searchParams.delete('page')
     if (stationId) {
       url.searchParams.set('station', stationId)
     } else {
       url.searchParams.delete('station')
     }
-    goto(url.toString(), { invalidateAll: true })
+    goto(resolveInternalHref(`${url.pathname}${url.search}${url.hash}`))
   }
 </script>
 
@@ -30,12 +32,12 @@
     subtitle="{data.pagination.totalItems} bulletins"
     actionHref="/bulletins/new"
     actionLabel="Genereren"
+    canAction={canGenerate}
   />
 
-  <!-- Controls -->
   <div class="flex flex-wrap gap-2">
     <select
-      class="select-bordered select flex-1 select-sm sm:flex-none"
+      class="select flex-1 select-sm sm:flex-none"
       value={selectedStation}
       onchange={e => updateStationFilter(e.currentTarget.value)}
       aria-label="Filter op zender"
@@ -51,19 +53,17 @@
     <EmptyState
       icon={Podcast}
       title="Geen bulletins"
-      description="Genereer je eerste nieuwsbulletin."
-      action={{ href: '/bulletins/new', label: 'Genereren' }}
+      description={canGenerate
+        ? 'Genereer je eerste nieuwsbulletin.'
+        : 'Nog geen bulletins aanwezig.'}
+      action={canGenerate ? { href: '/bulletins/new', label: 'Genereren' } : undefined}
     />
   {:else}
-    <!-- Mobile: Cards view -->
     <div class="space-y-2 md:hidden">
       {#each data.bulletins as bulletin (bulletin.id)}
-        <div
-          role="button"
-          tabindex="0"
-          class="card cursor-pointer bg-base-100 transition-shadow hover:shadow-md active:bg-base-200"
-          onclick={() => goto(`/bulletins/${bulletin.id}`)}
-          onkeydown={e => e.key === 'Enter' && goto(`/bulletins/${bulletin.id}`)}
+        <a
+          href={resolveInternalHref(`/bulletins/${bulletin.id}`)}
+          class="card bg-base-100 transition-shadow hover:shadow-md active:bg-base-200"
         >
           <div class="card-body p-4">
             <div class="flex items-center justify-between gap-3">
@@ -99,11 +99,10 @@
               </span>
             </div>
           </div>
-        </div>
+        </a>
       {/each}
     </div>
 
-    <!-- Desktop: Table view -->
     <div class="card hidden bg-base-100 md:block">
       <div class="overflow-x-auto">
         <table class="table">
@@ -127,7 +126,7 @@
                 <td>{bulletin.voice_name ?? '-'}</td>
                 <td>
                   <a
-                    href="/bulletins/{bulletin.id}"
+                    href={resolveInternalHref(`/bulletins/${bulletin.id}`)}
                     class="btn btn-ghost btn-sm"
                     aria-label="Details"
                   >
@@ -148,14 +147,15 @@
   {/if}
 </div>
 
-<!-- FAB: Generate bulletin link (mobile only) -->
-<a
-  href="/bulletins/new"
-  class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
-  aria-label="Genereer bulletin"
->
-  <Plus
-    aria-hidden="true"
-    class="h-6 w-6"
-  />
-</a>
+{#if canGenerate}
+  <a
+    href={resolveInternalHref('/bulletins/new')}
+    class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
+    aria-label="Genereer bulletin"
+  >
+    <Plus
+      aria-hidden="true"
+      class="h-6 w-6"
+    />
+  </a>
+{/if}

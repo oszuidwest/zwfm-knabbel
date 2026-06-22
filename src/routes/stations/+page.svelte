@@ -1,12 +1,16 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation'
   import { stationsApi } from '$lib/api/stations'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
   import { deleteWithConfirm } from '$lib/utils/crud'
   import { Radio } from '$lib/components/icons'
   import { ListPage, TableActions } from '$lib/components/ui'
   import type { Station } from '$lib/types'
 
   let { data } = $props()
+  const auth = getAuthContext()
+
+  const canWrite = $derived(auth.can('stations', 'write'))
 
   function handleDelete(station: Station): void {
     deleteWithConfirm({
@@ -27,9 +31,14 @@
   newLabel="Nieuwe zender"
   editHref={station => `/stations/${station.id}/edit`}
   emptyTitle="Geen zenders"
-  emptyDescription="Maak je eerste zender aan om te beginnen."
+  emptyDescription={canWrite
+    ? 'Maak je eerste zender aan om te beginnen.'
+    : 'Nog geen zenders aanwezig.'}
   pagination={data.pagination}
   onDelete={handleDelete}
+  canCreate={canWrite}
+  canEdit={canWrite}
+  canDelete={canWrite}
 >
   {#snippet cardContent(station)}
     <h3 class="font-medium">{station.name}</h3>
@@ -55,6 +64,8 @@
       <TableActions
         editHref="/stations/{station.id}/edit"
         onDelete={() => handleDelete(station)}
+        canEdit={canWrite}
+        canDelete={canWrite}
       />
     </td>
   {/snippet}

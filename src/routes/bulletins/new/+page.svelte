@@ -1,20 +1,26 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
+  import { notifyMutationError } from '$lib/api/client'
   import { bulletinsApi } from '$lib/api/bulletins'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
-  import { RefreshCw, X } from '$lib/components/icons'
-  import { PageHeader, SelectInput } from '$lib/components/ui'
+  import { resolveInternalHref } from '$lib/utils/routes'
+  import { RefreshCw } from '$lib/components/icons'
+  import { FormActions, PageHeader, SelectInput } from '$lib/components/ui'
   import { toSelectOptions } from '$lib/utils/form'
 
   let { data } = $props()
+  const auth = getAuthContext()
 
   let selectedStation = $state('')
   let generating = $state(false)
 
   const stationOptions = $derived(toSelectOptions(data.stations))
+  const canGenerate = $derived(auth.can('bulletins', 'generate'))
 
   async function handleGenerate(e: Event): Promise<void> {
     e.preventDefault()
+    if (!canGenerate) return
 
     if (!selectedStation) {
       toast.error('Selecteer eerst een zender')
@@ -25,10 +31,9 @@
     try {
       const bulletin = await bulletinsApi.generate(Number(selectedStation))
       toast.success('Bulletin gegenereerd')
-      goto(`/bulletins/${bulletin.id}`)
+      goto(resolveInternalHref(`/bulletins/${bulletin.id}`))
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Genereren mislukt'
-      toast.error(message)
+      notifyMutationError(err, 'Genereren mislukt')
     } finally {
       generating = false
     }
@@ -53,6 +58,7 @@
           bind:value={selectedStation}
           options={stationOptions}
           placeholder="Selecteer een zender"
+          disabled={!canGenerate}
         />
 
         <div class="rounded-lg bg-base-200 p-4">
@@ -64,30 +70,14 @@
           </ul>
         </div>
 
-        <div class="flex justify-end gap-2 pt-4">
-          <a
-            href="/bulletins"
-            class="btn btn-ghost"
-          >
-            <X class="h-5 w-5" />
-            Annuleren
-          </a>
-          <button
-            type="submit"
-            class="btn btn-primary"
-            disabled={generating || !selectedStation}
-          >
-            {#if generating}
-              <span class="loading loading-sm loading-spinner"></span>
-            {:else}
-              <RefreshCw
-                aria-hidden="true"
-                class="h-5 w-5"
-              />
-            {/if}
-            Genereren
-          </button>
-        </div>
+        <FormActions
+          cancelHref="/bulletins"
+          submitting={generating}
+          submitLabel="Genereren"
+          submitIcon={RefreshCw}
+          canSubmit={canGenerate && !!selectedStation}
+          forbidTooltip={canGenerate ? 'Selecteer eerst een zender' : 'Geen rechten'}
+        />
       </form>
     </div>
   </div>

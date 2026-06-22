@@ -1,6 +1,6 @@
 /**
- * Get local date as YYYY-MM-DD string (for API calls, form defaults)
- * Avoids timezone issues with toISOString() which converts to UTC
+ * toLocalDateString returns a local YYYY-MM-DD date for API filters and form defaults.
+ * It avoids toISOString(), which converts the date to UTC before formatting.
  */
 export function toLocalDateString(date: Date = new Date()): string {
   const year = date.getFullYear()
@@ -9,25 +9,19 @@ export function toLocalDateString(date: Date = new Date()): string {
   return `${year}-${month}-${day}`
 }
 
-/**
- * Format a date string to Dutch locale date (for display)
- */
+/** formatDate renders an API date string for Dutch UI copy. */
 export function formatDate(dateString: string | undefined): string {
   if (!dateString) return '-'
   return new Date(dateString).toLocaleDateString('nl-NL')
 }
 
-/**
- * Format a date string to Dutch locale date and time
- */
+/** formatDateTime renders an API date-time string for Dutch UI copy. */
 export function formatDateTime(dateString: string | undefined): string {
   if (!dateString) return '-'
   return new Date(dateString).toLocaleString('nl-NL')
 }
 
-/**
- * Format seconds to mm:ss duration
- */
+/** formatDuration renders seconds as an mm:ss duration label. */
 export function formatDuration(seconds: number | undefined | null): string {
   if (seconds == null) return '-'
   const mins = Math.floor(seconds / 60)
@@ -35,9 +29,7 @@ export function formatDuration(seconds: number | undefined | null): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
-/**
- * Format file size in bytes to human-readable string
- */
+/** formatFileSize renders byte counts with binary KB/MB units for compact UI labels. */
 export function formatFileSize(bytes: number | undefined): string {
   if (!bytes) return '-'
   if (bytes < 1024) return `${bytes} B`

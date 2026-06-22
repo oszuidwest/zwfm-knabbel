@@ -1,10 +1,15 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
+  import { notifyMutationError } from '$lib/api/client'
   import { stationSchema, type StationFormData } from '$lib/schemas/station'
   import { stationsApi } from '$lib/api/stations'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
+  import { resolveInternalHref } from '$lib/utils/routes'
   import { TextInput, NumberInput, FormActions, PageHeader } from '$lib/components/ui'
+
+  const auth = getAuthContext()
 
   let form = $state<StationFormData>({
     name: '',
@@ -14,9 +19,11 @@
 
   let errors = $state<Record<string, string>>({})
   let submitting = $state(false)
+  const canWrite = $derived(auth.can('stations', 'write'))
 
   async function handleSubmit(e: Event): Promise<void> {
     e.preventDefault()
+    if (!canWrite) return
 
     const result = validateForm(stationSchema, form)
     if (!result.success) {
@@ -29,9 +36,9 @@
     try {
       await stationsApi.create(form)
       toast.success('Zender aangemaakt')
-      goto('/stations')
-    } catch {
-      toast.error('Aanmaken mislukt')
+      goto(resolveInternalHref('/stations'))
+    } catch (err) {
+      notifyMutationError(err, 'Aanmaken mislukt')
     } finally {
       submitting = false
     }
@@ -56,6 +63,7 @@
           bind:value={form.name}
           error={errors.name}
           placeholder="Bijvoorbeeld: ZuidWest FM"
+          disabled={!canWrite}
         />
 
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -67,6 +75,7 @@
             min={1}
             max={20}
             hint="Hoeveel berichten maximaal in een bulletin"
+            disabled={!canWrite}
           />
 
           <NumberInput
@@ -78,12 +87,14 @@
             max={10}
             step={0.5}
             hint="Stilte tussen de berichten in het bulletin"
+            disabled={!canWrite}
           />
         </div>
 
         <FormActions
           cancelHref="/stations"
           {submitting}
+          canSubmit={canWrite}
         />
       </form>
     </div>

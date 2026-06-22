@@ -2,6 +2,7 @@
   import { getMediaUrl } from '$lib/api/client'
   import { toast } from '$lib/stores/toast'
   import { formatDateTime, formatDuration, formatFileSize } from '$lib/utils/format'
+  import { resolveInternalHref } from '$lib/utils/routes'
   import { ArchiveX, Download, FileText, Zap } from '$lib/components/icons'
   import { PageHeader } from '$lib/components/ui'
 
@@ -44,7 +45,6 @@
   />
 
   <div class="grid gap-6 md:grid-cols-2">
-    <!-- Info Card -->
     <div class="card bg-base-100">
       <div class="card-body">
         <h2 class="card-title">Informatie</h2>
@@ -81,7 +81,6 @@
       </div>
     </div>
 
-    <!-- Audio Card -->
     <div class="card bg-base-100">
       <div class="card-body">
         <h2 class="card-title">Audio</h2>
@@ -127,7 +126,6 @@
     </div>
   </div>
 
-  <!-- Stories Card -->
   {#if data.stories.length > 0}
     <div class="card bg-base-100">
       <div class="card-body">
@@ -142,7 +140,7 @@
               </span>
               <div class="min-w-0 flex-1">
                 <a
-                  href="/stories/{story.id}/edit"
+                  href={resolveInternalHref(`/stories/${story.id}/edit`)}
                   class="inline-flex items-center gap-1.5 font-medium hover:text-primary hover:underline"
                 >
                   {story.title}
@@ -177,10 +175,9 @@
     </div>
   {/if}
 
-  <!-- Actions -->
   <div class="flex gap-2">
     <a
-      href="/bulletins"
+      href={resolveInternalHref('/bulletins')}
       class="btn btn-ghost">Terug naar overzicht</a
     >
   </div>

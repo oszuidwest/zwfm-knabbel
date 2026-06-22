@@ -1,4 +1,4 @@
-import { api } from './client'
+import { api, type FetchFn } from './client'
 import { PUBLIC_API_URL } from '$env/static/public'
 import type { User } from '$lib/types'
 
@@ -19,11 +19,11 @@ export const authApi = {
 
   logout: () => api.delete<{ message: string }>('/sessions/current'),
 
-  getMe: () => api.get<User>('/sessions/current'),
+  getMe: (customFetch?: FetchFn) => api.get<User>('/sessions/current', undefined, customFetch),
 
   /**
-   * Initiate OIDC login by redirecting to the OAuth endpoint
-   * The backend will redirect to the OIDC provider
+   * oauthLogin starts OIDC by redirecting through the API.
+   * The backend owns provider selection and callback state.
    */
   oauthLogin: (): void => {
     const frontendUrl = window.location.origin
@@ -31,9 +31,7 @@ export const authApi = {
     window.location.href = oauthUrl
   },
 
-  /**
-   * Complete OIDC login by exchanging code for session
-   */
+  /** oauthCallback completes OIDC by exchanging the provider code for a session. */
   oauthCallback: (code: string, state: string) =>
     api.get<LoginResponse>('/auth/oauth/callback', { code, state }),
 }

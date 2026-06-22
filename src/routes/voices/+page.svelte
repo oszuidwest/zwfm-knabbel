@@ -1,12 +1,16 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation'
   import { voicesApi } from '$lib/api/voices'
+  import { getAuthContext } from '$lib/stores/auth.svelte'
   import { deleteWithConfirm } from '$lib/utils/crud'
   import { Mic } from '$lib/components/icons'
   import { ListPage, TableActions } from '$lib/components/ui'
   import type { Voice } from '$lib/types'
 
   let { data } = $props()
+  const auth = getAuthContext()
+
+  const canWrite = $derived(auth.can('voices', 'write'))
 
   function handleDelete(voice: Voice): void {
     deleteWithConfirm({
@@ -27,9 +31,14 @@
   newLabel="Nieuwe stem"
   editHref={voice => `/voices/${voice.id}/edit`}
   emptyTitle="Geen stemmen"
-  emptyDescription="Voeg je eerste stem toe om te beginnen."
+  emptyDescription={canWrite
+    ? 'Voeg je eerste stem toe om te beginnen.'
+    : 'Nog geen stemmen aanwezig.'}
   pagination={data.pagination}
   onDelete={handleDelete}
+  canCreate={canWrite}
+  canEdit={canWrite}
+  canDelete={canWrite}
 >
   {#snippet cardContent(voice)}
     <h3 class="font-medium">{voice.name}</h3>
@@ -46,6 +55,8 @@
       <TableActions
         editHref="/voices/{voice.id}/edit"
         onDelete={() => handleDelete(voice)}
+        canEdit={canWrite}
+        canDelete={canWrite}
       />
     </td>
   {/snippet}
