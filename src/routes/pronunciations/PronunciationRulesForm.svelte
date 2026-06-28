@@ -474,7 +474,11 @@
                       disabled={!editable}
                     />
                     {#if errs?.string_to_replace}
-                      <p class="label text-error">{errs.string_to_replace}</p>
+                      <p
+                        class="label max-w-full whitespace-normal text-sm leading-relaxed text-error"
+                      >
+                        {errs.string_to_replace}
+                      </p>
                     {/if}
                   </td>
                   <td class="align-top">
@@ -489,7 +493,11 @@
                       disabled={!editable}
                     />
                     {#if errs?.ipa}
-                      <p class="label text-error">{errs.ipa}</p>
+                      <p
+                        class="label max-w-full whitespace-normal text-sm leading-relaxed text-error"
+                      >
+                        {errs.ipa}
+                      </p>
                     {/if}
                   </td>
                   <td class="text-center align-top">
@@ -558,9 +566,15 @@
                   disabled={!editable}
                 />
                 {#if errs?.string_to_replace}
-                  <p class="label text-error">{errs.string_to_replace}</p>
+                  <p class="label max-w-full whitespace-normal text-sm leading-relaxed text-error">
+                    {errs.string_to_replace}
+                  </p>
                 {:else}
-                  <p class="label">Exacte tekst die in de story voorkomt.</p>
+                  <p
+                    class="label max-w-full whitespace-normal text-sm leading-relaxed text-base-content/70"
+                  >
+                    Exacte tekst die in de story voorkomt.
+                  </p>
                 {/if}
               </fieldset>
 
@@ -582,9 +596,15 @@
                   disabled={!editable}
                 />
                 {#if errs?.ipa}
-                  <p class="label text-error">{errs.ipa}</p>
+                  <p class="label max-w-full whitespace-normal text-sm leading-relaxed text-error">
+                    {errs.ipa}
+                  </p>
                 {:else}
-                  <p class="label">{inlineIpaHint}</p>
+                  <p
+                    class="label max-w-full whitespace-normal text-sm leading-relaxed text-base-content/70"
+                  >
+                    {inlineIpaHint}
+                  </p>
                 {/if}
               </fieldset>
 
