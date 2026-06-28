@@ -366,6 +366,29 @@
     {/snippet}
   </PageHeader>
 
+  {#if rows.length > 0}
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="relative">
+        <Search
+          aria-hidden="true"
+          class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-base-content/40"
+        />
+        <input
+          type="search"
+          placeholder="Zoek in tekst of IPA…"
+          class="input input-sm pl-9"
+          aria-label="Zoek in uitspraakregels"
+          bind:value={search}
+        />
+      </div>
+      {#if search.trim()}
+        <span class="text-sm text-base-content/60">
+          {filteredRows.length} van {rows.length} getoond
+        </span>
+      {/if}
+    </div>
+  {/if}
+
   {#if globalError}
     <div
       class="alert alert-error"
@@ -395,26 +418,6 @@
           <span class="font-mono">ˈɑlbərt ˈɦɛin</span>. Vul de IPA in zonder schuine strepen — de
           app zet de <span class="font-mono">/…/</span> er automatisch omheen.
         </p>
-      </div>
-
-      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <label class="input max-w-md">
-          <Search
-            aria-hidden="true"
-            class="h-4 w-4 opacity-60"
-          />
-          <input
-            type="text"
-            placeholder="Zoek in tekst of IPA…"
-            aria-label="Zoek in uitspraakregels"
-            bind:value={search}
-          />
-        </label>
-        {#if search.trim()}
-          <span class="text-sm text-base-content/60">
-            {filteredRows.length} van {rows.length} getoond
-          </span>
-        {/if}
       </div>
 
       {#if rows.length === 0}
