@@ -547,7 +547,7 @@
         <div class="space-y-3 md:hidden">
           {#each filteredRows as row, index (row._key)}
             {@const errs = rowErrors[row._key]}
-            <div class="rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm">
+            <div class="rounded-lg border border-primary/20 bg-base-100 p-4 shadow-sm">
               <fieldset class="fieldset">
                 <label
                   for="m-row-{row._key}-word"
