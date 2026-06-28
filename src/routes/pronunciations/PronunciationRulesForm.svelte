@@ -10,7 +10,7 @@
   } from '$lib/schemas/pronunciations'
   import { toast } from '$lib/stores/toast'
   import { formatDateTime } from '$lib/utils/format'
-  import { EmptyState, MaybeTooltip } from '$lib/components/ui'
+  import { EmptyState, MaybeTooltip, PageHeader } from '$lib/components/ui'
   import {
     BookOpen,
     Check,
@@ -20,7 +20,6 @@
     Search,
     Trash2,
     TriangleAlert,
-    X,
   } from '$lib/components/icons'
   import {
     type PronunciationRule,
@@ -108,7 +107,7 @@
 
   const isDirty = $derived(!draftsEqual(rows, snapshot))
   const saveDisabled = $derived(!editable || !isDirty || submitting)
-  const cancelDisabled = $derived(!editable || !isDirty || submitting)
+  const reloadLabel = $derived(isDirty ? 'Wijzigingen verwerpen' : 'Herladen')
 
   const filteredRows = $derived.by(() => {
     const q = search.trim().toLowerCase()
@@ -312,14 +311,9 @@
     notifyMutationError(err, 'Opslaan mislukt')
   }
 
-  function handleCancel(): void {
-    if (!isDirty) return
-    if (!confirm('Weet je zeker dat je je wijzigingen wilt annuleren?')) return
-    resetToSnapshot()
-  }
-
-  async function handleReload(): Promise<void> {
-    if (isDirty && !confirm('Je hebt niet-opgeslagen wijzigingen. Herladen?')) return
+  async function reloadOrDiscard(): Promise<void> {
+    if (isDirty && !confirm('Onopgeslagen wijzigingen verwerpen en opnieuw laden?')) return
+    if (isDirty) resetToSnapshot()
     try {
       await invalidateAll()
       await tick()
@@ -345,7 +339,33 @@
 
 <svelte:window onbeforeunload={handleBeforeUnload} />
 
-<div class="space-y-4">
+<div class="space-y-4 pb-20 md:pb-0">
+  <PageHeader
+    title="Uitspraakregels"
+    subtitle={countLabel}
+  >
+    {#snippet actions()}
+      <MaybeTooltip
+        when={!editable}
+        tip={disabledTooltip}
+        wrapperClass="max-md:hidden"
+      >
+        <button
+          type="button"
+          class={['btn btn-primary', !editable && 'btn-disabled']}
+          onclick={handleAddRow}
+          disabled={!editable}
+        >
+          <Plus
+            aria-hidden="true"
+            class="h-5 w-5"
+          />
+          Nieuwe regel
+        </button>
+      </MaybeTooltip>
+    {/snippet}
+  </PageHeader>
+
   {#if globalError}
     <div
       class="alert alert-error"
@@ -369,22 +389,15 @@
           aria-hidden="true"
           class="mt-0.5 h-5 w-5 shrink-0"
         />
-        <div class="space-y-1 text-sm leading-relaxed">
-          <h2 class="font-semibold">Wanneer gebruik je uitspraakregels?</h2>
-          <p>
-            Een regel koppelt een woord of tekstfragment uit de story aan IPA-klanken voor
-            ElevenLabs v3. Zo corrigeer je namen, plaatsen, merken en afkortingen zonder de
-            storytekst zelf aan te passen.
-          </p>
-          <p class="text-base-content/70">
-            IPA is het Internationaal Fonetisch Alfabet: een klankschrift voor uitspraak.
-            Bijvoorbeeld: <span class="font-mono">Albert Heijn</span> ->
-            <span class="font-mono">ˈɑlbərt ˈɦɛin</span>. {inlineIpaHint}
-          </p>
-        </div>
+        <p class="text-sm leading-relaxed">
+          Koppel een woord of tekst aan IPA-klanken, bijvoorbeeld
+          <span class="font-mono">Albert Heijn</span> →
+          <span class="font-mono">ˈɑlbərt ˈɦɛin</span>. Vul de IPA in zonder schuine strepen — de
+          app zet de <span class="font-mono">/…/</span> er automatisch omheen.
+        </p>
       </div>
 
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <label class="input max-w-md">
           <Search
             aria-hidden="true"
@@ -397,49 +410,11 @@
             bind:value={search}
           />
         </label>
-        <div class="flex flex-wrap items-center gap-3 text-sm text-base-content/60">
-          <span>
-            {#if search.trim()}
-              {filteredRows.length} van {rows.length} getoond
-            {:else}
-              {countLabel}
-            {/if}
+        {#if search.trim()}
+          <span class="text-sm text-base-content/60">
+            {filteredRows.length} van {rows.length} getoond
           </span>
-          {#if savedAtLabel}
-            <span class="hidden sm:inline">·</span>
-            <span>{savedAtLabel}</span>
-          {/if}
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm"
-            onclick={handleReload}
-            aria-label="Herlaad uitspraakregels"
-          >
-            <RefreshCw
-              aria-hidden="true"
-              class="h-4 w-4"
-            />
-            Herlaad
-          </button>
-          <MaybeTooltip
-            when={!editable}
-            tip={disabledTooltip}
-            placement="tooltip-left"
-          >
-            <button
-              type="button"
-              class="btn btn-primary btn-sm"
-              onclick={handleAddRow}
-              disabled={!editable}
-            >
-              <Plus
-                aria-hidden="true"
-                class="h-4 w-4"
-              />
-              Nieuwe regel
-            </button>
-          </MaybeTooltip>
-        </div>
+        {/if}
       </div>
 
       {#if rows.length === 0}
@@ -667,51 +642,62 @@
         </div>
       {/if}
 
-      <div class="flex justify-end gap-2 pt-2">
-        <MaybeTooltip
-          when={!editable}
-          tip={disabledTooltip}
-          placement="tooltip-left"
-        >
+      <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+        <span class="text-sm text-base-content/60">{savedAtLabel ?? ''}</span>
+        <div class="flex justify-end gap-2">
           <button
             type="button"
             class="btn btn-ghost"
-            onclick={handleCancel}
-            disabled={cancelDisabled}
+            onclick={reloadOrDiscard}
+            disabled={submitting}
           >
-            <X
+            <RefreshCw
               aria-hidden="true"
               class="h-5 w-5"
             />
-            Annuleren
+            {reloadLabel}
           </button>
-        </MaybeTooltip>
-        <MaybeTooltip
-          when={!editable}
-          tip={disabledTooltip}
-          placement="tooltip-left"
-        >
-          <button
-            type="button"
-            class="btn btn-primary"
-            onclick={handleSave}
-            disabled={saveDisabled}
+          <MaybeTooltip
+            when={!editable}
+            tip={disabledTooltip}
+            placement="tooltip-left"
           >
-            {#if submitting}
-              <span
-                class="loading loading-sm loading-spinner"
-                aria-hidden="true"
-              ></span>
-            {:else}
-              <Check
-                aria-hidden="true"
-                class="h-5 w-5"
-              />
-            {/if}
-            Opslaan
-          </button>
-        </MaybeTooltip>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick={handleSave}
+              disabled={saveDisabled}
+            >
+              {#if submitting}
+                <span
+                  class="loading loading-sm loading-spinner"
+                  aria-hidden="true"
+                ></span>
+              {:else}
+                <Check
+                  aria-hidden="true"
+                  class="h-5 w-5"
+                />
+              {/if}
+              Opslaan
+            </button>
+          </MaybeTooltip>
+        </div>
       </div>
     </div>
   </div>
 </div>
+
+{#if editable}
+  <button
+    type="button"
+    class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
+    onclick={handleAddRow}
+    aria-label="Nieuwe regel"
+  >
+    <Plus
+      aria-hidden="true"
+      class="h-6 w-6"
+    />
+  </button>
+{/if}

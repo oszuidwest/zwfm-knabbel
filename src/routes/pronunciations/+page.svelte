@@ -10,7 +10,6 @@
   let { data }: PageProps = $props()
   const auth = getAuthContext()
 
-  const subtitle = 'Stuur hoe ElevenLabs v3 namen, plaatsen en lastige woorden uitspreekt.'
   const formKey = $derived(
     [data.initial.updated_at, data.initial.rules.length].filter(Boolean).join('|')
   )
@@ -26,12 +25,12 @@
 </script>
 
 <div class="space-y-6">
-  <PageHeader
-    title="Uitspraakregels"
-    {subtitle}
-  />
-
   {#if data.loadError}
+    <PageHeader
+      title="Uitspraakregels"
+      subtitle="Uitspraak voor ElevenLabs v3"
+    />
+
     <div
       class="alert alert-warning"
       role="alert"
@@ -65,9 +64,7 @@
         Opnieuw laden
       </button>
     </div>
-  {/if}
-
-  {#if !data.loadError}
+  {:else}
     {#key formKey}
       <PronunciationRulesForm
         initial={data.initial}
