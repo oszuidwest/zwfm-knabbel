@@ -365,19 +365,18 @@
           {filteredRows.length} van {rows.length} getoond
         </span>
       {/if}
-      <div class="relative">
+      <label class="input input-sm">
         <Search
           aria-hidden="true"
-          class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-base-content/40"
+          class="h-4 w-4 text-base-content/40"
         />
         <input
           type="search"
           placeholder="Zoek in tekst of IPA…"
-          class="input input-sm pl-9"
           aria-label="Zoek in uitspraakregels"
           bind:value={search}
         />
-      </div>
+      </label>
     </div>
   {/if}
 

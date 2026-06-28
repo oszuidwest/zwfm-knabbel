@@ -155,20 +155,19 @@
         {/each}
       </select>
 
-      <div class="relative">
+      <label class="input input-sm">
         <Search
           aria-hidden="true"
-          class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-base-content/40"
+          class="h-4 w-4 text-base-content/40"
         />
         <input
           type="search"
           placeholder="Zoeken..."
-          class="input input-sm pl-9"
           value={searchQuery}
           onchange={e => updateFilters({ q: e.currentTarget.value })}
           aria-label="Zoeken in berichten"
         />
-      </div>
+      </label>
     </div>
   </div>
 
