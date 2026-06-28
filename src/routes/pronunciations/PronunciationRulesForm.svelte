@@ -9,7 +9,6 @@
     type PronunciationRuleField,
   } from '$lib/schemas/pronunciations'
   import { toast } from '$lib/stores/toast'
-  import { formatDateTime } from '$lib/utils/format'
   import { EmptyState, MaybeTooltip, PageHeader } from '$lib/components/ui'
   import {
     BookOpen,
@@ -66,14 +65,12 @@
   function initialDraftState(): {
     snapshot: DraftRow[]
     rows: DraftRow[]
-    updatedAt: string | null
   } {
     const initialSnapshot = initial.rules.map(makeDraft)
 
     return {
       snapshot: initialSnapshot,
       rows: structuredClone(initialSnapshot),
-      updatedAt: initial.updated_at,
     }
   }
 
@@ -94,7 +91,6 @@
   const draftState = initialDraftState()
   let snapshot = $state.raw<DraftRow[]>(draftState.snapshot)
   let rows = $state<DraftRow[]>(draftState.rows)
-  let updatedAt = $state<string | null>(draftState.updatedAt)
   let rowErrors = $state<RowErrors>({})
   let globalError = $state<string | null>(null)
   let submitting = $state(false)
@@ -118,9 +114,6 @@
   })
 
   const countLabel = $derived(`${rows.length} ${rows.length === 1 ? 'regel' : 'regels'}`)
-  const savedAtLabel = $derived(
-    updatedAt ? `Laatst opgeslagen: ${formatDateTime(updatedAt)}` : null
-  )
 
   function focusRowWordInput(key: number): void {
     const inputs = [`row-${key}-word`, `m-row-${key}-word`]
@@ -134,7 +127,6 @@
   function applyRulesList(list: PronunciationRulesList): void {
     snapshot = list.rules.map(makeDraft)
     rows = structuredClone(snapshot)
-    updatedAt = list.updated_at
     rowErrors = {}
     globalError = null
     search = ''
@@ -645,47 +637,44 @@
         </div>
       {/if}
 
-      <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-        <span class="text-sm text-base-content/60">{savedAtLabel ?? ''}</span>
-        <div class="flex justify-end gap-2">
+      <div class="flex justify-end gap-2 pt-2">
+        <button
+          type="button"
+          class="btn btn-ghost"
+          onclick={reloadOrDiscard}
+          disabled={submitting}
+        >
+          <RefreshCw
+            aria-hidden="true"
+            class="h-5 w-5"
+          />
+          {reloadLabel}
+        </button>
+        <MaybeTooltip
+          when={!editable}
+          tip={disabledTooltip}
+          placement="tooltip-left"
+        >
           <button
             type="button"
-            class="btn btn-ghost"
-            onclick={reloadOrDiscard}
-            disabled={submitting}
+            class="btn btn-primary"
+            onclick={handleSave}
+            disabled={saveDisabled}
           >
-            <RefreshCw
-              aria-hidden="true"
-              class="h-5 w-5"
-            />
-            {reloadLabel}
+            {#if submitting}
+              <span
+                class="loading loading-sm loading-spinner"
+                aria-hidden="true"
+              ></span>
+            {:else}
+              <Check
+                aria-hidden="true"
+                class="h-5 w-5"
+              />
+            {/if}
+            Opslaan
           </button>
-          <MaybeTooltip
-            when={!editable}
-            tip={disabledTooltip}
-            placement="tooltip-left"
-          >
-            <button
-              type="button"
-              class="btn btn-primary"
-              onclick={handleSave}
-              disabled={saveDisabled}
-            >
-              {#if submitting}
-                <span
-                  class="loading loading-sm loading-spinner"
-                  aria-hidden="true"
-                ></span>
-              {:else}
-                <Check
-                  aria-hidden="true"
-                  class="h-5 w-5"
-                />
-              {/if}
-              Opslaan
-            </button>
-          </MaybeTooltip>
-        </div>
+        </MaybeTooltip>
       </div>
     </div>
   </div>
