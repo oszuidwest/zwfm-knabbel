@@ -11,7 +11,6 @@
   } from '$lib/schemas/tts-settings'
   import { Check, RefreshCw, Sparkles } from '$lib/components/icons'
   import { toast } from '$lib/stores/toast'
-  import { formatDateTime } from '$lib/utils/format'
   import { validateForm } from '$lib/utils/validation'
   import { MaybeTooltip, SelectInput, TextareaInput, TextInput } from '$lib/components/ui'
   import type { components, TTSSettings } from '$lib/types'
@@ -165,7 +164,7 @@
   }
 </script>
 
-<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
   <div class="rounded-lg border border-base-300 bg-base-100 p-4">
     <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">API-sleutel</div>
     <div class="mt-2">
@@ -177,10 +176,6 @@
   <div class="rounded-lg border border-base-300 bg-base-100 p-4">
     <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">Engine</div>
     <div class="mt-2 font-semibold">Eleven v3</div>
-  </div>
-  <div class="rounded-lg border border-base-300 bg-base-100 p-4">
-    <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">Bijgewerkt</div>
-    <div class="mt-2 font-semibold">{formatDateTime(settings.updated_at)}</div>
   </div>
 </div>
 
