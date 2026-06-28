@@ -21,9 +21,12 @@
   />
 
   {#if data.loadError}
-    <div class="alert border-warning/30 bg-warning/10 text-base-content">
+    <div
+      class="alert alert-warning"
+      role="alert"
+    >
       <TriangleAlert
-        class="h-5 w-5 text-warning"
+        class="h-5 w-5"
         aria-hidden="true"
       />
       <div>
