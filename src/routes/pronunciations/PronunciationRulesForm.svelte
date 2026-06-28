@@ -359,7 +359,12 @@
   </PageHeader>
 
   {#if rows.length > 0}
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      {#if search.trim()}
+        <span class="text-sm text-base-content/60">
+          {filteredRows.length} van {rows.length} getoond
+        </span>
+      {/if}
       <div class="relative">
         <Search
           aria-hidden="true"
@@ -373,11 +378,6 @@
           bind:value={search}
         />
       </div>
-      {#if search.trim()}
-        <span class="text-sm text-base-content/60">
-          {filteredRows.length} van {rows.length} getoond
-        </span>
-      {/if}
     </div>
   {/if}
 
