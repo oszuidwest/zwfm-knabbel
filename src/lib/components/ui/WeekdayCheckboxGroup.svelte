@@ -15,7 +15,7 @@
   <legend class="fieldset-legend">{label}</legend>
   <div class="flex flex-wrap gap-2">
     {#each Object.entries(weekdayLabels) as [key, dayLabel] (key)}
-      <label class="label cursor-pointer gap-2">
+      <label class="fieldset-label cursor-pointer gap-2">
         <input
           type="checkbox"
           bind:checked={value[key as keyof Weekdays]}
