@@ -10,7 +10,7 @@
   import { roleOptions } from '$lib/utils/labels'
   import { resolveInternalHref } from '$lib/utils/routes'
   import { TextInput, SelectInput, FormActions, PageHeader } from '$lib/components/ui'
-  import type { UserInput } from '$lib/types'
+  import type { UserUpdate } from '$lib/types'
   import type { PageData } from './$types'
 
   interface Props {
@@ -49,10 +49,10 @@
 
     submitting = true
     try {
-      const updateData: Partial<UserInput> = {
+      const updateData: UserUpdate = {
         username: form.username,
         full_name: form.full_name,
-        email: form.email || null,
+        email: form.email,
         role: form.role,
         ...(form.password ? { password: form.password } : {}),
       }

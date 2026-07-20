@@ -64,8 +64,11 @@
     return date.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' })
   }
 
-  function formatCompactDateRange(startDate?: string, endDate?: string): string {
-    const formatCompact = (dateStr?: string) => {
+  function formatCompactDateRange(
+    startDate: string | undefined,
+    endDate: string | undefined
+  ): string {
+    const formatCompact = (dateStr: string | undefined) => {
       if (!dateStr) return ''
       const date = new Date(dateStr)
       return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })

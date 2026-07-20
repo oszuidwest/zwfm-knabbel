@@ -1,5 +1,5 @@
 import { api, type FetchFn, type PaginationFilters } from './client'
-import type { User, UserInput } from '$lib/types'
+import type { User, UserInput, UserUpdate } from '$lib/types'
 
 interface UsersResponse {
   data: User[]
@@ -15,7 +15,7 @@ export const usersApi = {
 
   create: (data: UserInput) => api.post<User>('/users', data),
 
-  update: (id: number, data: Partial<UserInput>) => api.put<User>(`/users/${id}`, data),
+  update: (id: number, data: UserUpdate) => api.put<User>(`/users/${id}`, data),
 
   delete: (id: number) => api.delete<{ message: string }>(`/users/${id}`),
 }
