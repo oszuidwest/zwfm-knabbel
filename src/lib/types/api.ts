@@ -11,7 +11,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Health check endpoint */
+    /**
+     * Health check endpoint
+     * @description This endpoint does a check of the API process and the database connection.
+     */
     get: operations['getHealth']
     put?: never
     post?: never
@@ -244,12 +247,15 @@ export interface paths {
      *     Available filter fields:
      *     - `id` - Voice ID
      *     - `name` - Voice name (supports like operator for substring matching)
+     *     - `elevenlabs_voice_id` - ElevenLabs voice identifier
      *     - `created_at` - Creation timestamp
+     *     - `updated_at` - Last update timestamp
      *
      *     ## Sort Fields
      *     Available sort fields:
      *     - `id` - Voice ID
      *     - `name` - Voice name (default: ascending)
+     *     - `elevenlabs_voice_id` - ElevenLabs voice identifier
      *     - `created_at` - Creation timestamp
      *     - `updated_at` - Last update timestamp
      *
@@ -361,7 +367,13 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Download story audio file */
+    /**
+     * Download story audio file
+     * @description Streams the processed story WAV file. The file is served with byte-range
+     *     support: `Range` requests return 206 Partial Content, unsatisfiable
+     *     ranges return 416, and conditional requests (e.g. `If-Modified-Since`)
+     *     can return 304 Not Modified.
+     */
     get: operations['getStoriesIdAudio']
     put?: never
     /**
@@ -766,6 +778,8 @@ export interface paths {
      *     - `Accept: audio/wav` - Return WAV file directly instead of JSON response
      *     - `Cache-Control: no-cache` - Force new generation ignoring cache
      *     - `Cache-Control: max-age=N` - Reuse existing bulletin if created within N seconds
+     *     - `Range` - Byte-range requests apply to the `audio/wav` response variant:
+     *       a satisfiable range returns 206 Partial Content, an unsatisfiable range 416
      *
      *     ## Response Headers
      *     - `X-Cache: HIT|MISS` - Indicates if bulletin was served from cache or freshly generated
@@ -788,7 +802,13 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Download bulletin audio file */
+    /**
+     * Download bulletin audio file
+     * @description Streams the generated bulletin WAV file. The file is served with
+     *     byte-range support: `Range` requests return 206 Partial Content,
+     *     unsatisfiable ranges return 416, and conditional requests (e.g.
+     *     `If-Modified-Since`) can return 304 Not Modified.
+     */
     get: operations['getBulletinsIdAudio']
     put?: never
     post?: never
@@ -887,7 +907,13 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Download station-voice jingle file */
+    /**
+     * Download station-voice jingle file
+     * @description Streams the processed jingle WAV file. The file is served with
+     *     byte-range support: `Range` requests return 206 Partial Content,
+     *     unsatisfiable ranges return 416, and conditional requests (e.g.
+     *     `If-Modified-Since`) can return 304 Not Modified.
+     */
     get: operations['getStationVoicesIdAudio']
     put?: never
     /**
@@ -934,20 +960,19 @@ export interface components {
        * Format: int64
        * @description Station ID
        */
-      id?: number
+      id: number
       /** @description Unique station name (must be unique across all stations) */
-      name?: string
-      max_stories_per_block?: number
+      name: string
+      max_stories_per_block: number
       /**
        * Format: float
        * @description Pause time in seconds between messages in bulletin
-       * @default 2
        */
       pause_seconds: number
       /** Format: date-time */
-      created_at?: string
+      created_at: string
       /** Format: date-time */
-      updated_at?: string
+      updated_at: string
     }
     StationInput: {
       /** @description Unique station name (must be unique across all stations) */
@@ -955,7 +980,9 @@ export interface components {
       max_stories_per_block: number
       /**
        * Format: float
-       * @description Pause time in seconds between messages in bulletin
+       * @description Pause time in seconds between messages in bulletin. Omitting the
+       *     field applies the default of 2 seconds; an explicit 0 disables the
+       *     pause.
        * @default 2
        */
       pause_seconds: number
@@ -965,14 +992,14 @@ export interface components {
        * Format: int64
        * @description Voice ID
        */
-      id?: number
-      name?: string
-      /** @description ElevenLabs voice identifier for TTS generation (null if not configured) */
-      elevenlabs_voice_id?: string | null
+      id: number
+      name: string
+      /** @description ElevenLabs voice identifier for TTS generation. Omitted from the response when not configured. */
+      elevenlabs_voice_id?: string
       /** Format: date-time */
-      created_at?: string
+      created_at: string
       /** Format: date-time */
-      updated_at?: string
+      updated_at: string
     }
     /** @description Global singleton ElevenLabs text-to-speech settings. */
     TTSSettings: {
@@ -1052,30 +1079,30 @@ export interface components {
        * Format: int64
        * @description StationVoice relationship ID
        */
-      id?: number
+      id: number
       /**
        * Format: int64
        * @description Station ID
        */
-      station_id?: number
+      station_id: number
       /**
        * Format: int64
        * @description Voice ID
        */
-      voice_id?: number
+      voice_id: number
       /** @description Filename of jingle audio file (empty string if no audio uploaded) */
-      audio_file?: string
+      audio_file: string
       /** @description API URL to download the jingle audio file (always present, may return 404 if no file exists) */
-      audio_url?: string
+      audio_url: string
       /**
        * Format: float
        * @description Time in seconds when voice should start over the jingle
        */
-      mix_point?: number
+      mix_point: number
       /** Format: date-time */
-      created_at?: string
+      created_at: string
       /** Format: date-time */
-      updated_at?: string
+      updated_at: string
       /** @description Name of the station (populated by joins) */
       station_name?: string
       /** @description Name of the voice (populated by joins) */
@@ -1100,7 +1127,8 @@ export interface components {
     /**
      * @description Station-voice relationship update schema for JSON API.
      *     All fields are optional - only provided fields will be updated. Null is treated as omit.
-     *     At least one non-null field must be provided.
+     *     At least one non-null field must be provided; an object containing only
+     *     null values is rejected.
      *     Jingle audio file must be uploaded separately via POST /station-voices/{id}/audio.
      */
     StationVoiceUpdate: {
@@ -1119,54 +1147,54 @@ export interface components {
        * Format: int64
        * @description Story ID
        */
-      id?: number
-      title?: string
-      text?: string
+      id: number
+      title: string
+      text: string
       /**
        * Format: int64
        * @description Voice ID if assigned, null if no voice is assigned
        */
-      voice_id?: number | null
+      voice_id: number | null
       /** @description Name of the assigned voice (from JOIN query) */
       voice_name?: string
       /** @description Filename of audio file (empty string if no audio uploaded) */
-      audio_file?: string
+      audio_file: string
       /** @description API URL to download the audio file (always present, may return 404 if no file exists) */
-      audio_url?: string
+      audio_url: string
       /** Format: float */
-      duration_seconds?: number | null
+      duration_seconds: number | null
       /** @enum {string} */
-      status?: 'draft' | 'active' | 'expired'
+      status: 'draft' | 'active' | 'expired'
       /**
        * Format: date-time
        * @description Start date and time in RFC3339 format
        */
-      start_date?: string
+      start_date: string
       /**
        * Format: date-time
        * @description End date and time in RFC3339 format
        */
-      end_date?: string
+      end_date: string
       /**
        * @description Bitmask for scheduling stories on specific days of the week.
        *     Each day is a power of 2: Sunday=1, Monday=2, Tuesday=4, Wednesday=8, Thursday=16, Friday=32, Saturday=64.
        *     Common values: 127 (all days), 62 (Mon-Fri weekdays), 65 (Sat+Sun weekend), 0 (no days).
        */
-      weekdays?: number
+      weekdays: number
       /** @description Breaking news flag. Breaking stories are prioritized for selection in bulletins. Normal eligibility rules (date range, weekday schedule, active status, audio required) still apply. */
-      is_breaking?: boolean
+      is_breaking: boolean
       metadata?: {
         [key: string]: unknown
       }
       /** Format: date-time */
-      created_at?: string
+      created_at: string
       /** Format: date-time */
-      updated_at?: string
+      updated_at: string
       /**
        * Format: date-time
        * @description Timestamp when the story was soft-deleted
        */
-      deleted_at?: string | null
+      deleted_at: string | null
     }
     /**
      * @description Story creation schema for JSON API.
@@ -1198,7 +1226,10 @@ export interface components {
       /**
        * @description Bitmask for scheduling stories on specific days of the week.
        *     Each day is a power of 2: Sunday=1, Monday=2, Tuesday=4, Wednesday=8, Thursday=16, Friday=32, Saturday=64.
-       *     Common values: 127 (all days), 62 (Mon-Fri weekdays), 65 (Sat+Sun weekend), 0 (no days).
+       *     Common values: 127 (all days), 62 (Mon-Fri weekdays), 65 (Sat+Sun weekend).
+       *     A value of 0 (or omitting the field) is normalized by the server to 127 (all days)
+       *     at creation time. To schedule no days, update the story to 0 afterwards via
+       *     PUT /stories/{id}.
        * @default 127
        */
       weekdays: number
@@ -1222,7 +1253,8 @@ export interface components {
     /**
      * @description Story update schema for JSON API.
      *     All fields are optional - only provided fields will be updated. Null is treated as omit.
-     *     At least one non-null field must be provided.
+     *     At least one non-null field must be provided; an object containing only
+     *     null values is rejected.
      *     Audio file must be uploaded separately via POST /stories/{id}/audio.
      */
     StoryUpdate: {
@@ -1271,11 +1303,11 @@ export interface components {
        * Format: int64
        * @description User ID
        */
-      id?: number
-      username?: string
-      full_name?: string
+      id: number
+      username: string
+      full_name: string
       /** Format: email */
-      email?: string | null
+      email: string | null
       /**
        * @description User roles:
        *     - admin: Full access to all resources
@@ -1283,15 +1315,15 @@ export interface components {
        *     - viewer: Read-only access
        * @enum {string}
        */
-      role?: 'admin' | 'editor' | 'viewer'
+      role: 'admin' | 'editor' | 'viewer'
       /**
        * Format: date-time
        * @description Timestamp when the user was suspended
        */
       suspended_at?: string | null
       /** Format: date-time */
-      last_login_at?: string | null
-      login_count?: number
+      last_login_at: string | null
+      login_count: number
       /**
        * Format: date-time
        * @description Timestamp until when the account is locked due to failed login attempts
@@ -1304,14 +1336,14 @@ export interface components {
         [key: string]: unknown
       }
       /** Format: date-time */
-      created_at?: string
+      created_at: string
       /** Format: date-time */
-      updated_at?: string
+      updated_at: string
       /**
        * Format: date-time
-       * @description Soft delete timestamp (present when querying with ?trashed=only or ?trashed=with)
+       * @description Soft delete timestamp (null for active users)
        */
-      deleted_at?: string | null
+      deleted_at: string | null
     }
     UserInput: {
       /** @description Unique username (alphanumeric only) */
@@ -1337,17 +1369,29 @@ export interface components {
         [key: string]: unknown
       }
     }
-    /** @description All fields are optional - only provided fields will be updated. Null is treated as omit. At least one non-null field must be provided. */
+    /**
+     * @description All fields are optional - only provided fields will be updated. Null is
+     *     treated as omit. At least one non-null field must be provided; an
+     *     object containing only null values is rejected.
+     */
     UserUpdate: {
-      /** @description Unique username (alphanumeric only) */
-      username?: string
-      full_name?: string
-      /** @description New password. Must satisfy the configured local password policy. */
-      password?: string
-      /** Format: email */
-      email?: string | null
-      /** @enum {string} */
-      role?: 'admin' | 'editor' | 'viewer'
+      /** @description Unique username (alphanumeric only). Null is treated as omit. */
+      username?: string | null
+      /** @description Null is treated as omit. */
+      full_name?: string | null
+      /** @description New password. Must satisfy the configured local password policy. Null is treated as omit. */
+      password?: string | null
+      /**
+       * @description New email address. Set to an empty string ("") to clear the stored
+       *     email address. Null (or omitting the field) leaves the email
+       *     unchanged.
+       */
+      email?: string | '' | null
+      /**
+       * @description Null is treated as omit.
+       * @enum {string|null}
+       */
+      role?: 'admin' | 'editor' | 'viewer' | null
       metadata?: {
         [key: string]: unknown
       } | null
@@ -1360,32 +1404,32 @@ export interface components {
        * Format: int64
        * @description Bulletin ID
        */
-      id?: number
+      id: number
       /**
        * Format: int64
        * @description Station ID
        */
-      station_id?: number
-      /** @description Name of the station */
+      station_id: number
+      /** @description Name of the station (omitted when not populated) */
       station_name?: string
-      /** @description URL to download the audio file */
+      /** @description URL to download the audio file (omitted when the audio file has been purged) */
       audio_url?: string
       /** @description Filename of the bulletin audio file */
-      filename?: string
+      filename: string
       /** Format: date-time */
-      created_at?: string
+      created_at: string
       /**
        * Format: float
        * @description Duration of the bulletin in seconds
        */
-      duration_seconds?: number
+      duration_seconds: number
       /**
        * Format: int64
        * @description Size of the audio file in bytes
        */
-      file_size?: number
+      file_size: number
       /** @description Number of stories included in the bulletin */
-      story_count?: number
+      story_count: number
       /**
        * Format: date-time
        * @description When the audio file was cleaned up (null means file still exists)
@@ -1398,12 +1442,12 @@ export interface components {
      *     ## Problem Types
      *
      *     Generic problem type URIs (fixed):
-     *     - `https://babbel.api/problems/validation-error` - 422 request body validation errors
+     *     - `https://babbel.api/problems/validation-error` - 422 request body or query parameter validation errors
      *     - `https://babbel.api/problems/resource-not-found` - 404 resource not found (generic)
      *     - `https://babbel.api/problems/bad-request` - 400 malformed request
+     *     - `https://babbel.api/problems/payload-too-large` - 413 request body exceeds the API limit
      *     - `https://babbel.api/problems/authentication-required` - 401 authentication required
      *     - `https://babbel.api/problems/insufficient-permissions` - 403 insufficient permissions
-     *     - `https://babbel.api/problems/admin-constraint` - 409 cannot delete last admin user
      *     - `https://babbel.api/problems/internal-server-error` - 500 internal server error
      *
      *     Resource-specific problem type URIs follow the pattern
@@ -1412,11 +1456,11 @@ export interface components {
      *     - `{resource}.not_found` - 404 typed resource not found
      *     - `{resource}.duplicate` - 409 unique constraint violation
      *     - `{resource}.has_dependencies` - 409 cannot delete, has dependent resources
-     *     - `{resource}.validation_failed` - 400 field-level validation error
+     *     - `{resource}.validation_failed` - 400 field-level validation error (also used for the "cannot delete last admin" constraint)
      *     - `bulletin.no_stories` - 422 no active stories for bulletin generation
      *     - `audio.processing_failed` - 500 FFmpeg processing error
      *     - `internal.database_error` - 500 unexpected database error
-     *     - `internal.timeout` - 500 operation timed out
+     *     - `internal.timeout` - 504 operation timed out
      */
     ProblemDetails: {
       /**
@@ -1462,11 +1506,6 @@ export interface components {
        * @example Check the resource ID and try again
        */
       hint?: string
-      /**
-       * @description Optional trace ID for debugging
-       * @example abc123def456
-       */
-      trace_id?: string
       /** @description Field-level errors for validation or strict request-parsing responses (400 and 422) */
       errors?: {
         /**
@@ -1490,89 +1529,109 @@ export interface components {
       status?: unknown
     }
     ConflictError: components['schemas']['ProblemDetails'] & {
-      /** @example https://babbel.api/problems/duplicate */
+      /** @example https://babbel.api/problems/station.duplicate */
       type?: unknown
-      /** @example Resource Conflict */
+      /** @example Conflict */
       title?: unknown
       /** @example 409 */
       status?: unknown
     }
     /** @description Paginated response for stations list endpoint */
     StationsListResponse: {
-      data?: components['schemas']['Station'][]
+      data: components['schemas']['Station'][]
       /** @description Total number of stations matching the query */
-      total?: number
+      total: number
       /** @description Maximum number of items per page */
-      limit?: number
+      limit: number
       /** @description Number of items skipped for pagination */
-      offset?: number
+      offset: number
     }
     /** @description Paginated response for voices list endpoint */
     VoicesListResponse: {
-      data?: components['schemas']['Voice'][]
+      data: components['schemas']['Voice'][]
       /** @description Total number of voices matching the query */
-      total?: number
+      total: number
       /** @description Maximum number of items per page */
-      limit?: number
+      limit: number
       /** @description Number of items skipped for pagination */
-      offset?: number
+      offset: number
     }
     /** @description Paginated response for station-voices list endpoint */
     StationVoicesListResponse: {
-      data?: components['schemas']['StationVoice'][]
+      data: components['schemas']['StationVoice'][]
       /** @description Total number of station-voice relationships matching the query */
-      total?: number
+      total: number
       /** @description Maximum number of items per page */
-      limit?: number
+      limit: number
       /** @description Number of items skipped for pagination */
-      offset?: number
+      offset: number
     }
     /** @description Paginated response for bulletins list endpoints */
     BulletinsListResponse: {
-      data?: components['schemas']['BulletinResponse'][]
+      data: components['schemas']['BulletinResponse'][]
       /** @description Total number of bulletins matching the query */
-      total?: number
+      total: number
       /** @description Maximum number of items per page */
-      limit?: number
+      limit: number
       /** @description Number of items skipped for pagination */
-      offset?: number
+      offset: number
     }
     /**
      * @description Paginated response for the bulletin stories list endpoint.
      *     The API returns the basic bulletin-story relationship fields.
      */
     BulletinStoriesListResponse: {
-      data?: {
+      data: {
         /** @description Bulletin-story relationship ID */
-        id?: number
+        id: number
         /** @description Bulletin ID */
-        bulletin_id?: number
+        bulletin_id: number
         /** @description Story ID */
-        story_id?: number
+        story_id: number
         /** @description Order of story in bulletin */
-        story_order?: number
+        story_order: number
         /**
          * Format: date-time
          * @description When story was added to bulletin
          */
-        created_at?: string
+        created_at: string
       }[]
       /** @description Total number of story-bulletin relationships matching the query */
-      total?: number
+      total: number
       /** @description Maximum number of items per page */
-      limit?: number
+      limit: number
       /** @description Number of items skipped for pagination */
-      offset?: number
+      offset: number
     }
     /** @description Paginated response for story bulletins history endpoint. */
     StoryBulletinsListResponse: {
-      data?: components['schemas']['BulletinResponse'][]
+      data: components['schemas']['BulletinResponse'][]
       /** @description Total number of bulletins that included this story */
-      total?: number
+      total: number
       /** @description Maximum number of items per page */
-      limit?: number
+      limit: number
       /** @description Number of items skipped for pagination */
-      offset?: number
+      offset: number
+    }
+    /** @description Paginated response for stories list endpoint */
+    StoriesListResponse: {
+      data: components['schemas']['Story'][]
+      /** @description Total number of stories matching the query */
+      total: number
+      /** @description Maximum number of items per page */
+      limit: number
+      /** @description Number of items skipped for pagination */
+      offset: number
+    }
+    /** @description Paginated response for users list endpoint */
+    UsersListResponse: {
+      data: components['schemas']['User'][]
+      /** @description Total number of users matching the query */
+      total: number
+      /** @description Maximum number of items per page */
+      limit: number
+      /** @description Number of items skipped for pagination */
+      offset: number
     }
   }
   responses: {
@@ -1616,10 +1675,11 @@ export interface components {
     /**
      * @description Resource conflict (duplicate, constraint violation).
      *
-     *     Common problem types for 409 responses:
-     *     - `https://babbel.api/problems/duplicate` - Duplicate resource (e.g., station name already exists)
-     *     - `https://babbel.api/problems/dependency-constraint` - Resource has dependencies that prevent deletion
-     *     - `https://babbel.api/problems/admin-constraint` - Cannot delete last admin user
+     *     409 responses use resource-specific problem types in the pattern
+     *     `https://babbel.api/problems/{resource}.{error_type}`:
+     *     - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
+     *     - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
+     *     - `{resource}.conflict` - Other resource-state conflicts
      */
     Conflict: {
       headers: {
@@ -1707,13 +1767,96 @@ export interface components {
         'application/problem+json': components['schemas']['ProblemDetails']
       }
     }
+    /** @description The operation exceeded the server-side timeout */
+    GatewayTimeout: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        /**
+         * @example {
+         *       "type": "https://babbel.api/problems/internal.timeout",
+         *       "title": "Gateway Timeout",
+         *       "status": 504,
+         *       "detail": "Bulletin operation timed out",
+         *       "instance": "/api/v1/stations/1/bulletins",
+         *       "code": "internal.timeout",
+         *       "hint": "The request took too long. Please try again."
+         *     }
+         */
+        'application/problem+json': components['schemas']['ProblemDetails']
+      }
+    }
+    /**
+     * @description Partial audio content for a satisfiable byte-range request. A
+     *     single-range request returns `audio/wav` with a `Content-Range`
+     *     header; a request with multiple ranges returns a
+     *     `multipart/byteranges` body in which each part carries its own
+     *     Content-Range.
+     */
+    AudioPartialContent: {
+      headers: {
+        'Content-Range': components['headers']['ContentRange']
+        'Accept-Ranges': components['headers']['AcceptRanges']
+        [name: string]: unknown
+      }
+      content: {
+        'audio/wav': string
+        'multipart/byteranges': unknown
+      }
+    }
+    /**
+     * @description Not Modified. Returned for conditional requests (e.g. `If-Modified-Since`)
+     *     when the audio file has not changed. The response has no body.
+     */
+    AudioNotModified: {
+      headers: {
+        [name: string]: unknown
+      }
+      content?: never
+    }
+    /** @description The requested byte range cannot be satisfied. The plain-text body describes the error. */
+    RangeNotSatisfiable: {
+      headers: {
+        /** @description The full file size in the form `bytes *\/{size}` */
+        'Content-Range': string
+        [name: string]: unknown
+      }
+      content: {
+        'text/plain': unknown
+      }
+    }
   }
   parameters: {
-    /** @description Resource ID */
+    /**
+     * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+     *     ID is rejected with 400 Bad Request.
+     */
     id: number
-    /** @description Maximum number of items to return */
+    /**
+     * @description Byte-range request (e.g. `bytes=0-1023`). Audio file responses support
+     *     byte ranges; a satisfiable range returns 206 Partial Content and an
+     *     unsatisfiable range returns 416 Range Not Satisfiable.
+     * @example bytes=0-1023
+     */
+    rangeHeader: string
+    /**
+     * @description Conditional request based on the file modification time (HTTP-date).
+     *     When the audio file has not changed since the given time, the server
+     *     responds 304 Not Modified. `If-None-Match` is not supported because
+     *     audio responses carry no ETag.
+     * @example Mon, 20 Jul 2026 10:00:00 GMT
+     */
+    ifModifiedSinceHeader: string
+    /**
+     * @description Maximum number of items to return. Values below 1, above 100, or
+     *     non-integer values are rejected with 422 Unprocessable Entity.
+     */
     limit: number
-    /** @description Number of items to skip */
+    /**
+     * @description Number of items to skip. Negative or non-integer values are rejected
+     *     with 422 Unprocessable Entity.
+     */
     offset: number
     /**
      * @description Sort order. Use field:direction format or prefix notation:
@@ -1723,8 +1866,14 @@ export interface components {
      */
     sort: string
     /**
-     * @description Comma-separated list of fields to include in response.
-     *     Use dot notation for nested fields.
+     * @description Comma-separated list of top-level JSON field names to include in the
+     *     response (sparse fieldsets). Field names match the JSON response
+     *     properties exactly (e.g. `id,name,created_at`). Nested or dot
+     *     notation (e.g. `station.name`) is not supported. When this parameter
+     *     is used, response objects contain only the requested fields; all
+     *     other documented fields (including required ones) are omitted, so a
+     *     sparse response is a subset projection that intentionally does not
+     *     conform to the full resource schema.
      */
     fields: string
     /**
@@ -1797,6 +1946,14 @@ export interface components {
     Location: string
     /** @description Authentication challenge for session-based endpoints */
     WWWAuthenticate: string
+    /** @description Indicates that the server supports byte-range requests for this resource */
+    AcceptRanges: string
+    /**
+     * @description The byte range returned in a 206 response. Present for single-range
+     *     requests only; a multi-range request returns a `multipart/byteranges`
+     *     body in which each part carries its own Content-Range.
+     */
+    ContentRange: string
   }
   pathItems: never
 }
@@ -1825,6 +1982,20 @@ export interface operations {
           }
         }
       }
+      /** @description The service is unhealthy because it cannot connect to the database */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** @enum {string} */
+            status: 'unhealthy'
+            /** @example babbel-api */
+            service: string
+          }
+        }
+      }
     }
   }
   getPublicBulletin: {
@@ -1843,7 +2014,23 @@ export interface operations {
          */
         max_age: number
       }
-      header?: never
+      header?: {
+        /**
+         * @description Byte-range request (e.g. `bytes=0-1023`). Audio file responses support
+         *     byte ranges; a satisfiable range returns 206 Partial Content and an
+         *     unsatisfiable range returns 416 Range Not Satisfiable.
+         * @example bytes=0-1023
+         */
+        Range?: components['parameters']['rangeHeader']
+        /**
+         * @description Conditional request based on the file modification time (HTTP-date).
+         *     When the audio file has not changed since the given time, the server
+         *     responds 304 Not Modified. `If-None-Match` is not supported because
+         *     audio responses carry no ETag.
+         * @example Mon, 20 Jul 2026 10:00:00 GMT
+         */
+        'If-Modified-Since'?: components['parameters']['ifModifiedSinceHeader']
+      }
       path: {
         /**
          * @description Station ID
@@ -1859,16 +2046,19 @@ export interface operations {
       200: {
         headers: {
           'Content-Type'?: string
-          'Content-Disposition'?: string
-          'Cache-Control'?: string
-          'X-Bulletin-Id'?: number
-          'X-Bulletin-Cached'?: 'true' | 'false'
+          'Content-Disposition': string
+          'Cache-Control': string
+          'Accept-Ranges': components['headers']['AcceptRanges']
+          'X-Bulletin-Id': number
+          'X-Bulletin-Cached': 'true' | 'false'
           [name: string]: unknown
         }
         content: {
           'audio/wav': string
         }
       }
+      206: components['responses']['AudioPartialContent']
+      304: components['responses']['AudioNotModified']
       /** @description Invalid or missing API key */
       401: {
         headers: {
@@ -1896,6 +2086,7 @@ export interface operations {
           'application/problem+json': components['schemas']['ProblemDetails']
         }
       }
+      416: components['responses']['RangeNotSatisfiable']
       /** @description Invalid parameters */
       422: {
         headers: {
@@ -1905,7 +2096,7 @@ export interface operations {
           'application/problem+json': components['schemas']['ProblemDetails']
         }
       }
-      /** @description Bulletin generation failed or timed out */
+      /** @description Bulletin generation failed */
       500: {
         headers: {
           [name: string]: unknown
@@ -1914,6 +2105,7 @@ export interface operations {
           'application/problem+json': components['schemas']['ProblemDetails']
         }
       }
+      504: components['responses']['GatewayTimeout']
     }
   }
   getAuthConfig: {
@@ -1971,7 +2163,7 @@ export interface operations {
       /** @description Session created successfully */
       201: {
         headers: {
-          'Set-Cookie'?: string
+          'Set-Cookie': string
           [name: string]: unknown
         }
         content: {
@@ -2004,22 +2196,38 @@ export interface operations {
       /** @description Temporary redirect to OAuth provider */
       307: {
         headers: {
-          Location?: string
+          Location: string
           [name: string]: unknown
         }
         content?: never
       }
       400: components['responses']['BadRequest']
+      /** @description Session storage failed before the redirect */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails']
+        }
+      }
     }
   }
   getAuthOauthCallback: {
     parameters: {
-      query: {
-        /** @description Authorization code from OAuth provider */
-        code: string
-        /** @description CSRF protection state */
-        state: string
-        /** @description Error from OAuth provider (if authentication failed) */
+      query?: {
+        /**
+         * @description Authorization code from the OAuth provider. Present on successful
+         *     authentication; absent when the provider reports an error via the
+         *     `error` parameter.
+         */
+        code?: string
+        /** @description CSRF protection state, echoed back by the OAuth provider */
+        state?: string
+        /**
+         * @description Error code from the OAuth provider. An error callback contains
+         *     `error` (and usually `state`) without a `code`.
+         */
         error?: string
       }
       header?: never
@@ -2031,7 +2239,7 @@ export interface operations {
       /** @description Redirect to frontend application */
       303: {
         headers: {
-          Location?: string
+          Location: string
           [name: string]: unknown
         }
         content?: never
@@ -2058,6 +2266,7 @@ export interface operations {
         }
       }
       401: components['responses']['Unauthorized']
+      500: components['responses']['InternalServerError']
     }
   }
   deleteSessionsCurrent: {
@@ -2083,9 +2292,15 @@ export interface operations {
   getStations: {
     parameters: {
       query?: {
-        /** @description Maximum number of items to return */
+        /**
+         * @description Maximum number of items to return. Values below 1, above 100, or
+         *     non-integer values are rejected with 422 Unprocessable Entity.
+         */
         limit?: components['parameters']['limit']
-        /** @description Number of items to skip */
+        /**
+         * @description Number of items to skip. Negative or non-integer values are rejected
+         *     with 422 Unprocessable Entity.
+         */
         offset?: components['parameters']['offset']
         /**
          * @description Sort order. Use field:direction format or prefix notation:
@@ -2095,8 +2310,14 @@ export interface operations {
          */
         sort?: components['parameters']['sort']
         /**
-         * @description Comma-separated list of fields to include in response.
-         *     Use dot notation for nested fields.
+         * @description Comma-separated list of top-level JSON field names to include in the
+         *     response (sparse fieldsets). Field names match the JSON response
+         *     properties exactly (e.g. `id,name,created_at`). Nested or dot
+         *     notation (e.g. `station.name`) is not supported. When this parameter
+         *     is used, response objects contain only the requested fields; all
+         *     other documented fields (including required ones) are omitted, so a
+         *     sparse response is a subset projection that intentionally does not
+         *     conform to the full resource schema.
          */
         fields?: components['parameters']['fields']
         /**
@@ -2144,6 +2365,7 @@ export interface operations {
       }
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+      422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
   }
@@ -2188,7 +2410,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -2204,6 +2429,7 @@ export interface operations {
           'application/json': components['schemas']['Station']
         }
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
@@ -2215,7 +2441,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -2250,7 +2479,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -2264,18 +2496,26 @@ export interface operations {
         }
         content?: never
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      409: components['responses']['Conflict']
       500: components['responses']['InternalServerError']
     }
   }
   getVoices: {
     parameters: {
       query?: {
-        /** @description Maximum number of items to return */
+        /**
+         * @description Maximum number of items to return. Values below 1, above 100, or
+         *     non-integer values are rejected with 422 Unprocessable Entity.
+         */
         limit?: components['parameters']['limit']
-        /** @description Number of items to skip */
+        /**
+         * @description Number of items to skip. Negative or non-integer values are rejected
+         *     with 422 Unprocessable Entity.
+         */
         offset?: components['parameters']['offset']
         /**
          * @description Sort order. Use field:direction format or prefix notation:
@@ -2285,8 +2525,14 @@ export interface operations {
          */
         sort?: components['parameters']['sort']
         /**
-         * @description Comma-separated list of fields to include in response.
-         *     Use dot notation for nested fields.
+         * @description Comma-separated list of top-level JSON field names to include in the
+         *     response (sparse fieldsets). Field names match the JSON response
+         *     properties exactly (e.g. `id,name,created_at`). Nested or dot
+         *     notation (e.g. `station.name`) is not supported. When this parameter
+         *     is used, response objects contain only the requested fields; all
+         *     other documented fields (including required ones) are omitted, so a
+         *     sparse response is a subset projection that intentionally does not
+         *     conform to the full resource schema.
          */
         fields?: components['parameters']['fields']
         /**
@@ -2334,6 +2580,7 @@ export interface operations {
       }
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+      422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
   }
@@ -2382,7 +2629,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -2398,6 +2648,7 @@ export interface operations {
           'application/json': components['schemas']['Voice']
         }
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
@@ -2409,7 +2660,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -2448,7 +2702,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -2462,6 +2719,7 @@ export interface operations {
         }
         content?: never
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
@@ -2472,9 +2730,15 @@ export interface operations {
   getStories: {
     parameters: {
       query?: {
-        /** @description Maximum number of items to return */
+        /**
+         * @description Maximum number of items to return. Values below 1, above 100, or
+         *     non-integer values are rejected with 422 Unprocessable Entity.
+         */
         limit?: components['parameters']['limit']
-        /** @description Number of items to skip */
+        /**
+         * @description Number of items to skip. Negative or non-integer values are rejected
+         *     with 422 Unprocessable Entity.
+         */
         offset?: components['parameters']['offset']
         /**
          * @description Sort order. Use field:direction format or prefix notation:
@@ -2484,8 +2748,14 @@ export interface operations {
          */
         sort?: components['parameters']['sort']
         /**
-         * @description Comma-separated list of fields to include in response.
-         *     Use dot notation for nested fields.
+         * @description Comma-separated list of top-level JSON field names to include in the
+         *     response (sparse fieldsets). Field names match the JSON response
+         *     properties exactly (e.g. `id,name,created_at`). Nested or dot
+         *     notation (e.g. `station.name`) is not supported. When this parameter
+         *     is used, response objects contain only the requested fields; all
+         *     other documented fields (including required ones) are omitted, so a
+         *     sparse response is a subset projection that intentionally does not
+         *     conform to the full resource schema.
          */
         fields?: components['parameters']['fields']
         /**
@@ -2535,16 +2805,13 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': {
-            data?: components['schemas']['Story'][]
-            total?: number
-            limit?: number
-            offset?: number
-          }
+          'application/json': components['schemas']['StoriesListResponse']
         }
       }
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
     }
   }
   postStories: {
@@ -2593,6 +2860,15 @@ export interface operations {
       400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+      /** @description The referenced voice does not exist */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails']
+        }
+      }
       413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
@@ -2601,9 +2877,28 @@ export interface operations {
   getStoriesIdAudio: {
     parameters: {
       query?: never
-      header?: never
+      header?: {
+        /**
+         * @description Byte-range request (e.g. `bytes=0-1023`). Audio file responses support
+         *     byte ranges; a satisfiable range returns 206 Partial Content and an
+         *     unsatisfiable range returns 416 Range Not Satisfiable.
+         * @example bytes=0-1023
+         */
+        Range?: components['parameters']['rangeHeader']
+        /**
+         * @description Conditional request based on the file modification time (HTTP-date).
+         *     When the audio file has not changed since the given time, the server
+         *     responds 304 Not Modified. `If-None-Match` is not supported because
+         *     audio responses carry no ETag.
+         * @example Mon, 20 Jul 2026 10:00:00 GMT
+         */
+        'If-Modified-Since'?: components['parameters']['ifModifiedSinceHeader']
+      }
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -2613,15 +2908,21 @@ export interface operations {
       /** @description Audio file */
       200: {
         headers: {
+          'Accept-Ranges': components['headers']['AcceptRanges']
           [name: string]: unknown
         }
         content: {
           'audio/wav': string
         }
       }
+      206: components['responses']['AudioPartialContent']
+      304: components['responses']['AudioNotModified']
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      416: components['responses']['RangeNotSatisfiable']
+      500: components['responses']['InternalServerError']
     }
   }
   postStoriesIdAudio: {
@@ -2629,7 +2930,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -2639,7 +2943,9 @@ export interface operations {
         'multipart/form-data': {
           /**
            * Format: binary
-           * @description Audio file (WAV, MP3, or other supported formats)
+           * @description Audio file (WAV, MP3, M4A, AAC, OGG, FLAC, or Opus).
+           *     Maximum file size is 100 MB; larger uploads are rejected
+           *     with 422 Unprocessable Entity.
            */
           audio: string
         }
@@ -2674,7 +2980,10 @@ export interface operations {
       }
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -2735,6 +3044,7 @@ export interface operations {
       }
       502: components['responses']['BadGateway']
       503: components['responses']['ServiceUnavailable']
+      504: components['responses']['GatewayTimeout']
     }
   }
   getSettingsTts: {
@@ -2870,7 +3180,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -2886,6 +3199,7 @@ export interface operations {
           'application/json': components['schemas']['Story']
         }
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
@@ -2897,7 +3211,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -2944,7 +3261,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -2958,9 +3278,11 @@ export interface operations {
         }
         content?: never
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      500: components['responses']['InternalServerError']
     }
   }
   patchStoriesId: {
@@ -2968,7 +3290,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3008,14 +3333,21 @@ export interface operations {
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
       413: components['responses']['PayloadTooLarge']
+      500: components['responses']['InternalServerError']
     }
   }
   getStoriesIdBulletins: {
     parameters: {
       query?: {
-        /** @description Maximum number of items to return */
+        /**
+         * @description Maximum number of items to return. Values below 1, above 100, or
+         *     non-integer values are rejected with 422 Unprocessable Entity.
+         */
         limit?: components['parameters']['limit']
-        /** @description Number of items to skip */
+        /**
+         * @description Number of items to skip. Negative or non-integer values are rejected
+         *     with 422 Unprocessable Entity.
+         */
         offset?: components['parameters']['offset']
         /**
          * @description Sort order. Use field:direction format or prefix notation:
@@ -3025,8 +3357,14 @@ export interface operations {
          */
         sort?: components['parameters']['sort']
         /**
-         * @description Comma-separated list of fields to include in response.
-         *     Use dot notation for nested fields.
+         * @description Comma-separated list of top-level JSON field names to include in the
+         *     response (sparse fieldsets). Field names match the JSON response
+         *     properties exactly (e.g. `id,name,created_at`). Nested or dot
+         *     notation (e.g. `station.name`) is not supported. When this parameter
+         *     is used, response objects contain only the requested fields; all
+         *     other documented fields (including required ones) are omitted, so a
+         *     sparse response is a subset projection that intentionally does not
+         *     conform to the full resource schema.
          */
         fields?: components['parameters']['fields']
         /**
@@ -3059,7 +3397,10 @@ export interface operations {
       }
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3075,18 +3416,26 @@ export interface operations {
           'application/json': components['schemas']['StoryBulletinsListResponse']
         }
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
   }
   getUsers: {
     parameters: {
       query?: {
-        /** @description Maximum number of items to return */
+        /**
+         * @description Maximum number of items to return. Values below 1, above 100, or
+         *     non-integer values are rejected with 422 Unprocessable Entity.
+         */
         limit?: components['parameters']['limit']
-        /** @description Number of items to skip */
+        /**
+         * @description Number of items to skip. Negative or non-integer values are rejected
+         *     with 422 Unprocessable Entity.
+         */
         offset?: components['parameters']['offset']
         /**
          * @description Sort order. Use field:direction format or prefix notation:
@@ -3096,8 +3445,14 @@ export interface operations {
          */
         sort?: components['parameters']['sort']
         /**
-         * @description Comma-separated list of fields to include in response.
-         *     Use dot notation for nested fields.
+         * @description Comma-separated list of top-level JSON field names to include in the
+         *     response (sparse fieldsets). Field names match the JSON response
+         *     properties exactly (e.g. `id,name,created_at`). Nested or dot
+         *     notation (e.g. `station.name`) is not supported. When this parameter
+         *     is used, response objects contain only the requested fields; all
+         *     other documented fields (including required ones) are omitted, so a
+         *     sparse response is a subset projection that intentionally does not
+         *     conform to the full resource schema.
          */
         fields?: components['parameters']['fields']
         /**
@@ -3147,16 +3502,13 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': {
-            data?: components['schemas']['User'][]
-            total?: number
-            limit?: number
-            offset?: number
-          }
+          'application/json': components['schemas']['UsersListResponse']
         }
       }
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+      422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
     }
   }
   postUsers: {
@@ -3200,7 +3552,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3216,9 +3571,11 @@ export interface operations {
           'application/json': components['schemas']['User']
         }
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      500: components['responses']['InternalServerError']
     }
   }
   putUsersId: {
@@ -3226,7 +3583,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3261,7 +3621,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3288,7 +3651,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3319,14 +3685,21 @@ export interface operations {
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
       413: components['responses']['PayloadTooLarge']
+      500: components['responses']['InternalServerError']
     }
   }
   getBulletins: {
     parameters: {
       query?: {
-        /** @description Maximum number of items to return */
+        /**
+         * @description Maximum number of items to return. Values below 1, above 100, or
+         *     non-integer values are rejected with 422 Unprocessable Entity.
+         */
         limit?: components['parameters']['limit']
-        /** @description Number of items to skip */
+        /**
+         * @description Number of items to skip. Negative or non-integer values are rejected
+         *     with 422 Unprocessable Entity.
+         */
         offset?: components['parameters']['offset']
         /**
          * @description Sort order. Use field:direction format or prefix notation:
@@ -3336,8 +3709,14 @@ export interface operations {
          */
         sort?: components['parameters']['sort']
         /**
-         * @description Comma-separated list of fields to include in response.
-         *     Use dot notation for nested fields.
+         * @description Comma-separated list of top-level JSON field names to include in the
+         *     response (sparse fieldsets). Field names match the JSON response
+         *     properties exactly (e.g. `id,name,created_at`). Nested or dot
+         *     notation (e.g. `station.name`) is not supported. When this parameter
+         *     is used, response objects contain only the requested fields; all
+         *     other documented fields (including required ones) are omitted, so a
+         *     sparse response is a subset projection that intentionally does not
+         *     conform to the full resource schema.
          */
         fields?: components['parameters']['fields']
         /**
@@ -3385,6 +3764,7 @@ export interface operations {
       }
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+      422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
   }
@@ -3393,7 +3773,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3422,6 +3805,7 @@ export interface operations {
           'application/json': components['schemas']['BulletinResponse']
         }
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
@@ -3431,9 +3815,15 @@ export interface operations {
   getStationsIdBulletins: {
     parameters: {
       query?: {
-        /** @description Maximum number of items to return */
+        /**
+         * @description Maximum number of items to return. Values below 1, above 100, or
+         *     non-integer values are rejected with 422 Unprocessable Entity.
+         */
         limit?: components['parameters']['limit']
-        /** @description Number of items to skip */
+        /**
+         * @description Number of items to skip. Negative or non-integer values are rejected
+         *     with 422 Unprocessable Entity.
+         */
         offset?: components['parameters']['offset']
         /**
          * @description Sort order. Use field:direction format or prefix notation:
@@ -3443,8 +3833,14 @@ export interface operations {
          */
         sort?: components['parameters']['sort']
         /**
-         * @description Comma-separated list of fields to include in response.
-         *     Use dot notation for nested fields.
+         * @description Comma-separated list of top-level JSON field names to include in the
+         *     response (sparse fieldsets). Field names match the JSON response
+         *     properties exactly (e.g. `id,name,created_at`). Nested or dot
+         *     notation (e.g. `station.name`) is not supported. When this parameter
+         *     is used, response objects contain only the requested fields; all
+         *     other documented fields (including required ones) are omitted, so a
+         *     sparse response is a subset projection that intentionally does not
+         *     conform to the full resource schema.
          */
         fields?: components['parameters']['fields']
         /**
@@ -3479,7 +3875,10 @@ export interface operations {
       }
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3500,9 +3899,11 @@ export interface operations {
             | components['schemas']['BulletinResponse']
         }
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
   }
@@ -3513,6 +3914,13 @@ export interface operations {
         /** @description Response format - use 'audio/wav' to download file directly */
         Accept?: 'application/json' | 'audio/wav'
         /**
+         * @description Byte-range request (e.g. `bytes=0-1023`). Audio file responses support
+         *     byte ranges; a satisfiable range returns 206 Partial Content and an
+         *     unsatisfiable range returns 416 Range Not Satisfiable.
+         * @example bytes=0-1023
+         */
+        Range?: components['parameters']['rangeHeader']
+        /**
          * @description Cache control directives:
          *     - `no-cache` - Force new generation ignoring existing bulletins
          *     - `max-age=N` - Reuse bulletin if created within N seconds
@@ -3520,7 +3928,10 @@ export interface operations {
         'Cache-Control'?: string
       }
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3545,9 +3956,9 @@ export interface operations {
            *     - `HIT` - Bulletin served from cache (existing bulletin reused)
            *     - `MISS` - Bulletin freshly generated
            */
-          'X-Cache'?: 'HIT' | 'MISS'
+          'X-Cache': 'HIT' | 'MISS'
           /** @description Age of the bulletin in seconds (0 for freshly generated bulletins) */
-          Age?: number
+          Age: number
           [name: string]: unknown
         }
         content: {
@@ -3556,50 +3967,73 @@ export interface operations {
              * Format: int64
              * @description Bulletin ID (if saved to database)
              */
-            id?: number
+            id: number
             /** @description Station ID */
-            station_id?: number
+            station_id: number
             /** @description Station name */
             station_name?: string
             /** @description URL to download the audio file */
             audio_url?: string
             /** @description Bulletin filename */
-            filename?: string
+            filename: string
             /**
              * Format: date-time
              * @description When the bulletin was created
              */
-            created_at?: string
+            created_at: string
             /**
              * Format: float
              * @description Duration in seconds
              */
-            duration_seconds?: number
+            duration_seconds: number
             /**
              * Format: int64
              * @description File size in bytes
              */
-            file_size?: number
+            file_size: number
             /** @description Number of stories in the bulletin */
-            story_count?: number
+            story_count: number
           }
           'audio/wav': string
         }
       }
+      206: components['responses']['AudioPartialContent']
       400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
       413: components['responses']['PayloadTooLarge']
+      416: components['responses']['RangeNotSatisfiable']
       422: components['responses']['UnprocessableEntity']
+      500: components['responses']['InternalServerError']
+      504: components['responses']['GatewayTimeout']
     }
   }
   getBulletinsIdAudio: {
     parameters: {
       query?: never
-      header?: never
+      header?: {
+        /**
+         * @description Byte-range request (e.g. `bytes=0-1023`). Audio file responses support
+         *     byte ranges; a satisfiable range returns 206 Partial Content and an
+         *     unsatisfiable range returns 416 Range Not Satisfiable.
+         * @example bytes=0-1023
+         */
+        Range?: components['parameters']['rangeHeader']
+        /**
+         * @description Conditional request based on the file modification time (HTTP-date).
+         *     When the audio file has not changed since the given time, the server
+         *     responds 304 Not Modified. `If-None-Match` is not supported because
+         *     audio responses carry no ETag.
+         * @example Mon, 20 Jul 2026 10:00:00 GMT
+         */
+        'If-Modified-Since'?: components['parameters']['ifModifiedSinceHeader']
+      }
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3609,28 +4043,43 @@ export interface operations {
       /** @description Audio file */
       200: {
         headers: {
+          'Accept-Ranges': components['headers']['AcceptRanges']
           [name: string]: unknown
         }
         content: {
           'audio/wav': string
         }
       }
+      206: components['responses']['AudioPartialContent']
+      304: components['responses']['AudioNotModified']
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      416: components['responses']['RangeNotSatisfiable']
+      500: components['responses']['InternalServerError']
     }
   }
   getBulletinsIdStories: {
     parameters: {
       query?: {
-        /** @description Maximum number of items to return */
+        /**
+         * @description Maximum number of items to return. Values below 1, above 100, or
+         *     non-integer values are rejected with 422 Unprocessable Entity.
+         */
         limit?: components['parameters']['limit']
-        /** @description Number of items to skip */
+        /**
+         * @description Number of items to skip. Negative or non-integer values are rejected
+         *     with 422 Unprocessable Entity.
+         */
         offset?: components['parameters']['offset']
       }
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3646,18 +4095,26 @@ export interface operations {
           'application/json': components['schemas']['BulletinStoriesListResponse']
         }
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
   }
   getStationVoices: {
     parameters: {
       query?: {
-        /** @description Maximum number of items to return */
+        /**
+         * @description Maximum number of items to return. Values below 1, above 100, or
+         *     non-integer values are rejected with 422 Unprocessable Entity.
+         */
         limit?: components['parameters']['limit']
-        /** @description Number of items to skip */
+        /**
+         * @description Number of items to skip. Negative or non-integer values are rejected
+         *     with 422 Unprocessable Entity.
+         */
         offset?: components['parameters']['offset']
         /**
          * @description Sort order. Use field:direction format or prefix notation:
@@ -3667,8 +4124,14 @@ export interface operations {
          */
         sort?: components['parameters']['sort']
         /**
-         * @description Comma-separated list of fields to include in response.
-         *     Use dot notation for nested fields.
+         * @description Comma-separated list of top-level JSON field names to include in the
+         *     response (sparse fieldsets). Field names match the JSON response
+         *     properties exactly (e.g. `id,name,created_at`). Nested or dot
+         *     notation (e.g. `station.name`) is not supported. When this parameter
+         *     is used, response objects contain only the requested fields; all
+         *     other documented fields (including required ones) are omitted, so a
+         *     sparse response is a subset projection that intentionally does not
+         *     conform to the full resource schema.
          */
         fields?: components['parameters']['fields']
         /**
@@ -3710,6 +4173,7 @@ export interface operations {
       }
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+      422: components['responses']['UnprocessableEntity']
       500: components['responses']['InternalServerError']
     }
   }
@@ -3750,6 +4214,15 @@ export interface operations {
       400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+      /** @description The referenced station or voice does not exist */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails']
+        }
+      }
       409: components['responses']['Conflict']
       413: components['responses']['PayloadTooLarge']
       422: components['responses']['UnprocessableEntity']
@@ -3759,9 +4232,28 @@ export interface operations {
   getStationVoicesIdAudio: {
     parameters: {
       query?: never
-      header?: never
+      header?: {
+        /**
+         * @description Byte-range request (e.g. `bytes=0-1023`). Audio file responses support
+         *     byte ranges; a satisfiable range returns 206 Partial Content and an
+         *     unsatisfiable range returns 416 Range Not Satisfiable.
+         * @example bytes=0-1023
+         */
+        Range?: components['parameters']['rangeHeader']
+        /**
+         * @description Conditional request based on the file modification time (HTTP-date).
+         *     When the audio file has not changed since the given time, the server
+         *     responds 304 Not Modified. `If-None-Match` is not supported because
+         *     audio responses carry no ETag.
+         * @example Mon, 20 Jul 2026 10:00:00 GMT
+         */
+        'If-Modified-Since'?: components['parameters']['ifModifiedSinceHeader']
+      }
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3771,15 +4263,21 @@ export interface operations {
       /** @description Jingle audio file */
       200: {
         headers: {
+          'Accept-Ranges': components['headers']['AcceptRanges']
           [name: string]: unknown
         }
         content: {
           'audio/wav': string
         }
       }
+      206: components['responses']['AudioPartialContent']
+      304: components['responses']['AudioNotModified']
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      416: components['responses']['RangeNotSatisfiable']
+      500: components['responses']['InternalServerError']
     }
   }
   postStationVoicesIdAudio: {
@@ -3787,7 +4285,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3797,7 +4298,9 @@ export interface operations {
         'multipart/form-data': {
           /**
            * Format: binary
-           * @description Jingle audio file
+           * @description Jingle audio file (WAV, MP3, M4A, AAC, OGG, FLAC, or Opus).
+           *     Maximum file size is 100 MB; larger uploads are rejected
+           *     with 422 Unprocessable Entity.
            */
           jingle: string
         }
@@ -3829,7 +4332,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3845,9 +4351,11 @@ export interface operations {
           'application/json': components['schemas']['StationVoice']
         }
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      500: components['responses']['InternalServerError']
     }
   }
   putStationVoicesId: {
@@ -3855,7 +4363,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3897,7 +4408,10 @@ export interface operations {
       query?: never
       header?: never
       path: {
-        /** @description Resource ID */
+        /**
+         * @description Resource ID. Must be a positive integer; a malformed, zero, or negative
+         *     ID is rejected with 400 Bad Request.
+         */
         id: components['parameters']['id']
       }
       cookie?: never
@@ -3911,6 +4425,7 @@ export interface operations {
         }
         content?: never
       }
+      400: components['responses']['BadRequest']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']

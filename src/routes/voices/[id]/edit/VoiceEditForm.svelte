@@ -100,7 +100,7 @@
     )
   }
 
-  async function toggleStation(index: number, e?: Event): Promise<void> {
+  async function toggleStation(index: number, e: Event | undefined = undefined): Promise<void> {
     e?.preventDefault()
     e?.stopPropagation()
 
