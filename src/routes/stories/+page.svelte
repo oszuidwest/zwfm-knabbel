@@ -65,10 +65,10 @@
   }
 
   function formatCompactDateRange(
-    startDate: string | undefined = undefined,
-    endDate: string | undefined = undefined
+    startDate: string | undefined,
+    endDate: string | undefined
   ): string {
-    const formatCompact = (dateStr: string | undefined = undefined) => {
+    const formatCompact = (dateStr: string | undefined) => {
       if (!dateStr) return ''
       const date = new Date(dateStr)
       return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })

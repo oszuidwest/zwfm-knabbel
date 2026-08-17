@@ -4,6 +4,7 @@ import type { components } from './api'
 
 export type User = components['schemas']['User']
 export type UserInput = components['schemas']['UserInput']
+export type UserUpdate = components['schemas']['UserUpdate']
 export type Story = components['schemas']['Story']
 export type Voice = components['schemas']['Voice']
 export interface VoiceInput {
