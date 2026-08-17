@@ -30,7 +30,7 @@
 
       {#if sessionExpired}
         <div
-          class="alert mb-4 alert-warning"
+          class="mb-4 alert alert-warning"
           role="status"
         >
           <TriangleAlert

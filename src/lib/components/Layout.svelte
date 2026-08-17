@@ -66,7 +66,7 @@
       <div class="flex-none">
         <label
           for="drawer-toggle"
-          class="drawer-button btn btn-square btn-ghost"
+          class="btn btn-square btn-ghost drawer-button"
           aria-label="Open menu"
         >
           <Menu
@@ -78,7 +78,7 @@
       <div class="flex-1">
         <a
           href={resolveInternalHref('/')}
-          class="btn gap-2 text-xl font-bold normal-case btn-ghost"
+          class="btn gap-2 btn-ghost text-xl font-bold normal-case"
         >
           <div
             class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80"
