@@ -59,14 +59,14 @@ npm run format           # Prettier (write)
 npm run format:check     # Prettier (check only)
 npm run check-all        # Run all checks (types + lint + format + API types)
 
-# API Types
-npm run types:generate   # Regenerate types from Babbel OpenAPI spec
-npm run types:check      # Verify local types match remote spec
+# API client
+npm run types:generate   # Regenerate client, SDK and types from Babbel OpenAPI spec
+npm run types:check      # Verify generated API code matches the remote spec
 ```
 
-## Type Generation
+## API Generation
 
-TypeScript types are generated with Hey API from the [Babbel API OpenAPI specification](https://github.com/oszuidwest/zwfm-babbel/blob/main/openapi.yaml) into `src/lib/types/generated/`. These files should never be edited manually; application-facing aliases live in `src/lib/types/index.ts`.
+The Fetch client, typed SDK functions, and TypeScript types are generated with Hey API from the [Babbel API OpenAPI specification](https://github.com/oszuidwest/zwfm-babbel/blob/main/openapi.yaml) into `src/lib/api/generated/`. These files should never be edited manually. Application-facing type aliases live in `src/lib/types/index.ts`, while `src/lib/api/client.ts` adds Knabbel-specific error handling and timeouts.
 
 After a Babbel API update:
 
@@ -74,7 +74,7 @@ After a Babbel API update:
 npm run types:generate
 ```
 
-The `types:check` command verifies that local types are in sync with the remote specification and can be used in CI pipelines.
+The `types:check` command verifies that all generated API code is in sync with the remote specification and can be used in CI pipelines.
 
 ## Deployment
 
@@ -86,16 +86,16 @@ This outputs static files to `build/`. You'll need to configure your web server 
 
 ## Tech Stack
 
-| Technology                                    | Purpose                                                   |
-| --------------------------------------------- | --------------------------------------------------------- |
-| [SvelteKit](https://svelte.dev/docs/kit)      | Application framework (SPA mode with `adapter-static`)    |
-| [Svelte 5](https://svelte.dev/)               | UI framework with runes (`$state`, `$derived`, `$effect`) |
-| [TypeScript](https://www.typescriptlang.org/) | Strict type checking                                      |
-| [Tailwind CSS 4](https://tailwindcss.com/)    | Utility-first CSS                                         |
-| [daisyUI 5](https://daisyui.com/)             | Component library (corporate + business themes)           |
-| [Zod](https://zod.dev/)                       | Form validation schemas                                   |
-| [Lucide](https://lucide.dev/)                 | Icon library                                              |
-| [openapi-typescript](https://openapi-ts.dev/) | API type generation from OpenAPI spec                     |
+| Technology                                    | Purpose                                                    |
+| --------------------------------------------- | ---------------------------------------------------------- |
+| [SvelteKit](https://svelte.dev/docs/kit)      | Application framework (SPA mode with `adapter-static`)     |
+| [Svelte 5](https://svelte.dev/)               | UI framework with runes (`$state`, `$derived`, `$effect`)  |
+| [TypeScript](https://www.typescriptlang.org/) | Strict type checking                                       |
+| [Tailwind CSS 4](https://tailwindcss.com/)    | Utility-first CSS                                          |
+| [daisyUI 5](https://daisyui.com/)             | Component library (corporate + business themes)            |
+| [Zod](https://zod.dev/)                       | Form validation schemas                                    |
+| [Lucide](https://lucide.dev/)                 | Icon library                                               |
+| [Hey API](https://heyapi.dev/)                | Fetch client, SDK and types from the OpenAPI specification |
 
 ## License
 

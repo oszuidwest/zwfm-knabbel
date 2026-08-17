@@ -28,13 +28,15 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
 
   const { page, limit, offset } = getPaginationParams(url.searchParams)
 
+  const filter: NonNullable<StoryFilters['filter']> = {}
   const params: StoryFilters = {
     limit,
     offset,
+    filter,
   }
 
   if (statusFilter) {
-    params['filter[status]'] = statusFilter
+    filter.status = statusFilter
   }
 
   if (searchQuery) {
@@ -43,15 +45,15 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
 
   const dateInfo = getDateAndWeekdayBit(dateFilter)
   if (dateInfo) {
-    params['filter[start_date][lte]'] = dateInfo.date
-    params['filter[end_date][gte]'] = dateInfo.date
-    params['filter[weekdays][band]'] = dateInfo.weekdayBit
+    filter.start_date = { lte: dateInfo.date }
+    filter.end_date = { gte: dateInfo.date }
+    filter.weekdays = { band: dateInfo.weekdayBit }
   }
 
   if (audioFilter === 'with') {
-    params['filter[audio_url][ne]'] = ''
+    filter.audio_url = { ne: '' }
   } else if (audioFilter === 'without') {
-    params['filter[audio_url]'] = ''
+    filter.audio_url = ''
   }
 
   const responseResult = settleLoad(storiesApi.getAll(params, fetch))

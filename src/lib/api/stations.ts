@@ -1,21 +1,26 @@
-import { api, type FetchFn, type PaginationFilters } from './client'
-import type { Station, StationInput } from '$lib/types'
+import { apiCall, type FetchFn } from './client'
+import {
+  deleteStationsId,
+  getStations,
+  getStationsId,
+  postStations,
+  putStationsId,
+} from './generated/sdk.gen'
+import type { GetStationsData, StationInput } from './generated/types.gen'
 
-interface StationsResponse {
-  data: Station[]
-  total: number
-}
+type StationFilters = GetStationsData['query']
 
 export const stationsApi = {
-  getAll: (params?: PaginationFilters, customFetch?: FetchFn) =>
-    api.get<StationsResponse>('/stations', params, customFetch),
+  getAll: (params?: StationFilters, customFetch?: FetchFn) =>
+    apiCall(signal => getStations({ query: params, fetch: customFetch, signal })),
 
   getById: (id: number, customFetch?: FetchFn) =>
-    api.get<Station>(`/stations/${id}`, undefined, customFetch),
+    apiCall(signal => getStationsId({ path: { id }, fetch: customFetch, signal })),
 
-  create: (data: StationInput) => api.post<Station>('/stations', data),
+  create: (data: StationInput) => apiCall(signal => postStations({ body: data, signal })),
 
-  update: (id: number, data: StationInput) => api.put<Station>(`/stations/${id}`, data),
+  update: (id: number, data: StationInput) =>
+    apiCall(signal => putStationsId({ body: data, path: { id }, signal })),
 
-  delete: (id: number) => api.delete<{ message: string }>(`/stations/${id}`),
+  delete: (id: number) => apiCall(signal => deleteStationsId({ path: { id }, signal })),
 }

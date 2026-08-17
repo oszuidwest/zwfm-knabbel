@@ -1,21 +1,27 @@
-import { api, type FetchFn, type PaginationFilters } from './client'
-import type { Voice, VoiceInput } from '$lib/types'
+import { apiCall, type FetchFn } from './client'
+import {
+  deleteVoicesId,
+  getVoices,
+  getVoicesId,
+  postVoices,
+  putVoicesId,
+} from './generated/sdk.gen'
+import type { GetVoicesData } from './generated/types.gen'
+import type { VoiceInput } from '$lib/types'
 
-interface VoicesResponse {
-  data: Voice[]
-  total: number
-}
+type VoiceFilters = GetVoicesData['query']
 
 export const voicesApi = {
-  getAll: (params?: PaginationFilters, customFetch?: FetchFn) =>
-    api.get<VoicesResponse>('/voices', params, customFetch),
+  getAll: (params?: VoiceFilters, customFetch?: FetchFn) =>
+    apiCall(signal => getVoices({ query: params, fetch: customFetch, signal })),
 
   getById: (id: number, customFetch?: FetchFn) =>
-    api.get<Voice>(`/voices/${id}`, undefined, customFetch),
+    apiCall(signal => getVoicesId({ path: { id }, fetch: customFetch, signal })),
 
-  create: (data: VoiceInput) => api.post<Voice>('/voices', data),
+  create: (data: VoiceInput) => apiCall(signal => postVoices({ body: data, signal })),
 
-  update: (id: number, data: VoiceInput) => api.put<Voice>(`/voices/${id}`, data),
+  update: (id: number, data: VoiceInput) =>
+    apiCall(signal => putVoicesId({ body: data, path: { id }, signal })),
 
-  delete: (id: number) => api.delete<{ message: string }>(`/voices/${id}`),
+  delete: (id: number) => apiCall(signal => deleteVoicesId({ path: { id }, signal })),
 }

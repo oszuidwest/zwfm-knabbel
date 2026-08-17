@@ -1,5 +1,4 @@
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -7,7 +6,7 @@ import { createClient } from '@hey-api/openapi-ts'
 import { format, resolveConfig } from 'prettier'
 
 const projectRoot = dirname(dirname(fileURLToPath(import.meta.url)))
-const generatedDirectory = join(projectRoot, 'src/lib/types/generated')
+const generatedDirectory = join(projectRoot, 'src/lib/api/generated')
 const schemaUrl = 'https://raw.githubusercontent.com/oszuidwest/zwfm-babbel/main/openapi.yaml'
 
 async function listFiles(directory) {
@@ -45,6 +44,17 @@ async function generateTypes(directory) {
         name: '@hey-api/typescript',
         definitions: { case: 'preserve' },
       },
+      {
+        name: '@hey-api/client-fetch',
+        runtimeConfigPath: './src/lib/api/client-config.ts',
+        throwOnError: true,
+      },
+      {
+        name: '@hey-api/sdk',
+        auth: false,
+        paramsStructure: 'grouped',
+        responseStyle: 'data',
+      },
     ],
   })
   await formatGeneratedFiles(directory)
@@ -59,14 +69,14 @@ async function assertDirectoriesMatch(expectedDirectory, actualDirectory) {
   )
 
   if (expectedFiles.join('\n') !== actualFiles.join('\n')) {
-    throw new Error('Generated API type file list is out of sync. Run: npm run types:generate')
+    throw new Error('Generated API file list is out of sync. Run: npm run types:generate')
   }
 
   for (const file of expectedFiles) {
     const expected = await readFile(join(expectedDirectory, file), 'utf8')
     const actual = await readFile(join(actualDirectory, file), 'utf8')
     if (expected !== actual) {
-      throw new Error(`Generated API types are out of sync in ${file}. Run: npm run types:generate`)
+      throw new Error(`Generated API code is out of sync in ${file}. Run: npm run types:generate`)
     }
   }
 }
@@ -76,7 +86,9 @@ const command = process.argv[2]
 if (command === 'generate') {
   await generateTypes(generatedDirectory)
 } else if (command === 'check') {
-  const temporaryDirectory = await mkdtemp(join(tmpdir(), 'zwfm-api-types-'))
+  // Keep the temporary output beside the real output so generated imports to
+  // client-config.ts have the same relative path in both directories.
+  const temporaryDirectory = await mkdtemp(join(dirname(generatedDirectory), '.api-check-'))
   try {
     await generateTypes(temporaryDirectory)
     await assertDirectoriesMatch(generatedDirectory, temporaryDirectory)

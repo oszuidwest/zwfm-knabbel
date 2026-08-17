@@ -1,20 +1,22 @@
-import { api, type FetchFn } from './client'
-import type {
-  PronunciationRulesList,
-  PronunciationRulesUpdate,
-  TTSSettings,
-  TTSSettingsUpdate,
-} from '$lib/types'
+import { apiCall, type FetchFn } from './client'
+import {
+  getSettingsTts,
+  getSettingsTtsPronunciations,
+  patchSettingsTts,
+  putSettingsTtsPronunciations,
+} from './generated/sdk.gen'
+import type { PronunciationRulesUpdate, TTSSettingsUpdate } from '$lib/types'
 
 export const settingsApi = {
-  getTts: (customFetch?: FetchFn) => api.get<TTSSettings>('/settings/tts', undefined, customFetch),
+  getTts: (customFetch?: FetchFn) =>
+    apiCall(signal => getSettingsTts({ fetch: customFetch, signal })),
 
   updateTts: (data: TTSSettingsUpdate, customFetch?: FetchFn) =>
-    api.patch<TTSSettings>('/settings/tts', data, customFetch),
+    apiCall(signal => patchSettingsTts({ body: data, fetch: customFetch, signal })),
 
   getTtsPronunciations: (customFetch?: FetchFn) =>
-    api.get<PronunciationRulesList>('/settings/tts/pronunciations', undefined, customFetch),
+    apiCall(signal => getSettingsTtsPronunciations({ fetch: customFetch, signal })),
 
   updateTtsPronunciations: (data: PronunciationRulesUpdate, customFetch?: FetchFn) =>
-    api.put<PronunciationRulesList>('/settings/tts/pronunciations', data, customFetch),
+    apiCall(signal => putSettingsTtsPronunciations({ body: data, fetch: customFetch, signal })),
 }

@@ -17,7 +17,7 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
     Promise.all([
       voicesApi.getById(voiceId, fetch),
       stationsApi.getAll(undefined, fetch),
-      stationVoicesApi.getAll({ voice_id: voiceId }, fetch),
+      stationVoicesApi.getAll({ filter: { voice_id: String(voiceId) } }, fetch),
     ])
   )
 

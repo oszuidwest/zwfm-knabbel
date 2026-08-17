@@ -20,7 +20,7 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
 
   const params: BulletinFilters = { limit, offset }
   if (stationId) {
-    params.station_id = stationId
+    params.filter = { station_id: String(stationId) }
   }
 
   const responseResult = settleLoad(

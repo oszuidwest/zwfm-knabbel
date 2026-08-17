@@ -1,21 +1,21 @@
-import { api, type FetchFn, type PaginationFilters } from './client'
-import type { User, UserInput, UserUpdate } from '$lib/types'
+import { apiCall, type FetchFn } from './client'
+import { deleteUsersId, getUsers, getUsersId, postUsers, putUsersId } from './generated/sdk.gen'
+import type { GetUsersData } from './generated/types.gen'
+import type { UserInput, UserUpdate } from '$lib/types'
 
-interface UsersResponse {
-  data: User[]
-  total: number
-}
+type UserFilters = GetUsersData['query']
 
 export const usersApi = {
-  getAll: (params?: PaginationFilters, customFetch?: FetchFn) =>
-    api.get<UsersResponse>('/users', params, customFetch),
+  getAll: (params?: UserFilters, customFetch?: FetchFn) =>
+    apiCall(signal => getUsers({ query: params, fetch: customFetch, signal })),
 
   getById: (id: number, customFetch?: FetchFn) =>
-    api.get<User>(`/users/${id}`, undefined, customFetch),
+    apiCall(signal => getUsersId({ path: { id }, fetch: customFetch, signal })),
 
-  create: (data: UserInput) => api.post<User>('/users', data),
+  create: (data: UserInput) => apiCall(signal => postUsers({ body: data, signal })),
 
-  update: (id: number, data: UserUpdate) => api.put<User>(`/users/${id}`, data),
+  update: (id: number, data: UserUpdate) =>
+    apiCall(signal => putUsersId({ body: data, path: { id }, signal })),
 
-  delete: (id: number) => api.delete<{ message: string }>(`/users/${id}`),
+  delete: (id: number) => apiCall(signal => deleteUsersId({ path: { id }, signal })),
 }

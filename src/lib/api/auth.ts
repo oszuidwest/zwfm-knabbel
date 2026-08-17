@@ -1,25 +1,26 @@
-import { api, type FetchFn } from './client'
 import { PUBLIC_API_URL } from '$env/static/public'
-import type { User } from '$lib/types'
+import { apiCall, type FetchFn } from './client'
+import {
+  deleteSessionsCurrent,
+  getAuthConfig,
+  getAuthOauthCallback,
+  getSessionsCurrent,
+  postSessions,
+} from './generated/sdk.gen'
+import type { GetAuthConfigResponse } from './generated/types.gen'
 
-export interface AuthConfig {
-  methods: Array<'local' | 'oidc'>
-  oauth_url?: string
-}
-
-interface LoginResponse {
-  message: string
-}
+export type AuthConfig = GetAuthConfigResponse
 
 export const authApi = {
-  getConfig: () => api.get<AuthConfig>('/auth/config'),
+  getConfig: () => apiCall(signal => getAuthConfig({ signal })),
 
   login: (username: string, password: string) =>
-    api.post<LoginResponse>('/sessions', { username, password }),
+    apiCall(signal => postSessions({ body: { username, password }, signal })),
 
-  logout: () => api.delete<{ message: string }>('/sessions/current'),
+  logout: () => apiCall(signal => deleteSessionsCurrent({ signal })),
 
-  getMe: (customFetch?: FetchFn) => api.get<User>('/sessions/current', undefined, customFetch),
+  getMe: (customFetch?: FetchFn) =>
+    apiCall(signal => getSessionsCurrent({ fetch: customFetch, signal })),
 
   /**
    * oauthLogin starts OIDC by redirecting through the API.
@@ -33,5 +34,5 @@ export const authApi = {
 
   /** oauthCallback completes OIDC by exchanging the provider code for a session. */
   oauthCallback: (code: string, state: string) =>
-    api.get<LoginResponse>('/auth/oauth/callback', { code, state }),
+    apiCall(signal => getAuthOauthCallback({ query: { code, state }, signal })),
 }

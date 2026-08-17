@@ -1,48 +1,37 @@
-import { api, type FetchFn, type PaginationFilters } from './client'
-import type { Story } from '$lib/types'
+import { apiCall, type FetchFn } from './client'
+import {
+  deleteStoriesId,
+  getStories,
+  getStoriesId,
+  postStories,
+  postStoriesIdAudio,
+  putStoriesId,
+} from './generated/sdk.gen'
+import type { GetStoriesData, PostStoriesData, PutStoriesIdData } from './generated/types.gen'
 import { weekdaysToMask, type Weekdays } from '$lib/types'
 import { toNumberOrNull } from '$lib/utils/form'
 
-interface StoriesResponse {
-  data: Story[]
-  total: number
-}
-
-export interface StoryFilters extends PaginationFilters {
-  search?: string
-  'filter[status]'?: string
-  'filter[start_date][lte]'?: string
-  'filter[end_date][gte]'?: string
-  'filter[weekdays][band]'?: number
-  'filter[audio_url][ne]'?: string
-  'filter[audio_url]'?: string
-}
-
-export interface StoryCreateInput {
-  title: string
-  text: string
-  voice_id?: number | null
-  status: 'draft' | 'active' | 'expired'
-  start_date: string
-  end_date: string
-  weekdays: number
-  is_breaking: boolean
-}
+export type StoryFilters = NonNullable<GetStoriesData['query']>
+export type StoryCreateInput = PostStoriesData['body']
 
 export const storiesApi = {
   getAll: (params?: StoryFilters, customFetch?: FetchFn) =>
-    api.get<StoriesResponse>('/stories', params, customFetch),
+    apiCall(signal => getStories({ query: params, fetch: customFetch, signal })),
 
   getById: (id: number, customFetch?: FetchFn) =>
-    api.get<Story>(`/stories/${id}`, undefined, customFetch),
+    apiCall(signal => getStoriesId({ path: { id }, fetch: customFetch, signal })),
 
-  create: (data: StoryCreateInput) => api.post<Story>('/stories', data),
+  create: (data: StoryCreateInput) => apiCall(signal => postStories({ body: data, signal })),
 
-  update: (id: number, data: Partial<StoryCreateInput>) => api.put<Story>(`/stories/${id}`, data),
+  update: (id: number, data: PutStoriesIdData['body']) =>
+    apiCall(signal => putStoriesId({ body: data, path: { id }, signal })),
 
-  delete: (id: number) => api.delete<{ message: string }>(`/stories/${id}`),
+  delete: (id: number) => apiCall(signal => deleteStoriesId({ path: { id }, signal })),
 
-  uploadAudio: (id: number, file: File) => api.upload<Story>(`/stories/${id}/audio`, file),
+  uploadAudio: (id: number, file: File) =>
+    apiCall(signal => postStoriesIdAudio({ body: { audio: file }, path: { id }, signal }), {
+      upload: true,
+    }),
 
   // toApiFormat keeps select-string and weekday-object UI state at the API boundary.
   toApiFormat: (data: {

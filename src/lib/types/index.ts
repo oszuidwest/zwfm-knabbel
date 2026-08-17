@@ -14,7 +14,7 @@ import type {
   UserUpdateWritable,
   ValidationError,
   Voice,
-} from './generated/types.gen'
+} from '$lib/api/generated/types.gen'
 
 export type {
   PronunciationRule,
