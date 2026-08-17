@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation'
   import { notifyMutationError } from '$lib/api/client'
   import { userSchema, type UserFormData } from '$lib/schemas/user'
-  import { usersApi } from '$lib/api/users'
+  import { putUsersId } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { AUTH_DEPENDENCY } from '$lib/auth/session'
   import { toast } from '$lib/stores/toast'
@@ -59,7 +59,7 @@
       const isSelfRoleChange =
         !!auth.user && data.user.id === auth.user.id && form.role !== auth.user.role
 
-      await usersApi.update(data.user.id!, updateData)
+      await putUsersId({ path: { id: data.user.id! }, body: updateData })
       if (isSelfRoleChange) {
         const refreshed = await auth.checkAuth({ force: true })
         if (!refreshed) {

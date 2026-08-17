@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation'
   import { ApiError, isProblemDetails, notifyMutationError } from '$lib/api/client'
-  import { usersApi } from '$lib/api/users'
+  import { deleteUsersId } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { getRoleLabel } from '$lib/utils/labels'
@@ -20,7 +20,7 @@
     }
 
     try {
-      await usersApi.delete(user.id!)
+      await deleteUsersId({ path: { id: user.id! } })
       toast.success('Gebruiker verwijderd')
       await invalidateAll()
     } catch (err) {

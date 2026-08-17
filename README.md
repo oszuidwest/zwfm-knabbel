@@ -66,7 +66,7 @@ npm run types:check      # Verify generated API code matches the remote spec
 
 ## API Generation
 
-The Fetch client, typed SDK functions, and TypeScript types are generated with Hey API from the [Babbel API OpenAPI specification](https://github.com/oszuidwest/zwfm-babbel/blob/main/openapi.yaml) into `src/lib/api/generated/`. These files should never be edited manually. Application-facing type aliases live in `src/lib/types/index.ts`, while `src/lib/api/client.ts` adds Knabbel-specific error handling and timeouts.
+The Fetch client, typed SDK functions, and TypeScript types are generated with Hey API from the [Babbel API OpenAPI specification](https://github.com/oszuidwest/zwfm-babbel/blob/main/openapi.yaml) into `src/lib/api/generated/`. These files should never be edited manually. Application-facing type aliases live in `src/lib/types/index.ts`, while `src/lib/api/client.ts` adds Knabbel-specific error handling and timeouts through client interceptors.
 
 After a Babbel API update:
 

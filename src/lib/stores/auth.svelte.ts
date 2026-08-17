@@ -1,6 +1,6 @@
 import { createContext } from 'svelte'
 import { ApiError } from '$lib/api/client'
-import { authApi } from '$lib/api/auth'
+import { deleteSessionsCurrent, getSessionsCurrent, postSessions } from '$lib/api/generated/sdk.gen'
 import { can as policyCan, type Action, type Resource, type Role } from '$lib/auth/policy'
 import type { User } from '$lib/types'
 
@@ -55,7 +55,7 @@ export class AuthStore {
     this.loading = true
 
     try {
-      const user = await authApi.getMe()
+      const user = await getSessionsCurrent()
       this.user = user
       return true
     } catch (err) {
@@ -71,13 +71,13 @@ export class AuthStore {
   }
 
   async login(username: string, password: string): Promise<void> {
-    await authApi.login(username, password)
+    await postSessions({ body: { username, password } })
     await this.checkAuth()
   }
 
   async logout(): Promise<void> {
     try {
-      await authApi.logout()
+      await deleteSessionsCurrent()
     } catch (err) {
       console.warn('[auth] logout failed', err)
     }

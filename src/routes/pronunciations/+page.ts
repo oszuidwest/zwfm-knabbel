@@ -1,5 +1,5 @@
 import { ApiError, isProblemDetails } from '$lib/api/client'
-import { settingsApi } from '$lib/api/settings'
+import { getSettingsTtsPronunciations } from '$lib/api/generated/sdk.gen'
 import { requirePermission } from '$lib/auth/guard'
 import { redirectToLogin, settleLoad } from '$lib/utils/load-error'
 import type { PronunciationRulesList } from '$lib/types'
@@ -34,7 +34,7 @@ function toLoadError(err: ApiError): PronunciationsLoadError {
 }
 
 export const load: PageLoad = async ({ fetch, parent }) => {
-  const initialResult = settleLoad(settingsApi.getTtsPronunciations(fetch))
+  const initialResult = settleLoad(getSettingsTtsPronunciations({ fetch }))
 
   const { user } = await parent()
   requirePermission(user, 'pronunciation_rules', 'read')

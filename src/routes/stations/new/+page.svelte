@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation'
   import { notifyMutationError } from '$lib/api/client'
   import { stationSchema, type StationFormData } from '$lib/schemas/station'
-  import { stationsApi } from '$lib/api/stations'
+  import { postStations } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
@@ -34,7 +34,7 @@
 
     submitting = true
     try {
-      await stationsApi.create(form)
+      await postStations({ body: form })
       toast.success('Zender aangemaakt')
       goto(resolveInternalHref('/stations'))
     } catch (err) {

@@ -4,7 +4,7 @@
   import { onMount } from 'svelte'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { AUTH_DEPENDENCY } from '$lib/auth/session'
-  import { authApi } from '$lib/api/auth'
+  import { getAuthOauthCallback } from '$lib/api/generated/sdk.gen'
   import { toast } from '$lib/stores/toast'
   import { resolveInternalHref } from '$lib/utils/routes'
 
@@ -40,7 +40,7 @@
       }
 
       try {
-        await authApi.oauthCallback(code, state)
+        await getAuthOauthCallback({ query: { code, state } })
         const authenticated = await auth.checkAuth({ force: true })
 
         if (authenticated) {

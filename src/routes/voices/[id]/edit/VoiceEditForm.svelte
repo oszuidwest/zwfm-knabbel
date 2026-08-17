@@ -2,8 +2,14 @@
   import { goto } from '$app/navigation'
   import { notifyMutationError } from '$lib/api/client'
   import { voiceSchema, type VoiceFormData } from '$lib/schemas/voice'
-  import { voicesApi } from '$lib/api/voices'
-  import { stationVoicesApi } from '$lib/api/station-voices'
+  import {
+    deleteStationVoicesId,
+    getStationVoicesId,
+    postStationVoicesIdAudio,
+    putStationVoicesId,
+    putVoicesId,
+  } from '$lib/api/generated/sdk.gen'
+  import { createStationVoice } from '$lib/api/station-voices'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
@@ -84,7 +90,7 @@
     submitting = true
 
     try {
-      await voicesApi.update(data.voice.id!, form)
+      await putVoicesId({ path: { id: data.voice.id! }, body: form })
       toast.success('Stem bijgewerkt')
       goto(resolveInternalHref('/voices'))
     } catch (err) {
@@ -117,7 +123,7 @@
 
     try {
       if (wasEnabled && stationVoiceId) {
-        await stationVoicesApi.delete(stationVoiceId)
+        await deleteStationVoicesId({ path: { id: stationVoiceId } })
         updateConfig(index, {
           enabled: false,
           stationVoiceId: null,
@@ -130,7 +136,7 @@
         })
         toast.success(`${stationName} ontkoppeld`)
       } else if (!wasEnabled) {
-        const result = await stationVoicesApi.create({
+        const result = await createStationVoice({
           station_id: stationId,
           voice_id: data.voice.id!,
           mix_point: 0,
@@ -166,8 +172,9 @@
     updateConfig(index, { saving: true })
 
     try {
-      await stationVoicesApi.update(config.stationVoiceId, {
-        mix_point: mixPoint,
+      await putStationVoicesId({
+        path: { id: config.stationVoiceId },
+        body: { mix_point: mixPoint },
       })
       updateConfig(index, { savedMixPoint: mixPoint, saving: false })
     } catch (err) {
@@ -192,13 +199,16 @@
     updateConfig(index, { saving: true })
 
     try {
-      await stationVoicesApi.uploadJingle(stationVoiceId, fileToUpload)
+      await postStationVoicesIdAudio({
+        path: { id: stationVoiceId },
+        body: { jingle: fileToUpload },
+      })
 
       let audioUrl: string | null = null
       let hasAudio = false
       let refreshFailed = false
       try {
-        const updated = await stationVoicesApi.getById(stationVoiceId)
+        const updated = await getStationVoicesId({ path: { id: stationVoiceId } })
         hasAudio = !!updated.audio_file
         audioUrl = hasAudio ? (updated.audio_url ?? null) : null
       } catch (err) {

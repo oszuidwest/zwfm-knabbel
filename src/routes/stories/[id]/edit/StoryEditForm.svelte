@@ -2,8 +2,12 @@
   import { goto } from '$app/navigation'
   import { ApiError, getMediaUrl, notifyMutationError } from '$lib/api/client'
   import { storySchema, type StoryFormData } from '$lib/schemas/story'
-  import { storiesApi } from '$lib/api/stories'
-  import { bulletinsApi } from '$lib/api/bulletins'
+  import {
+    getStoriesIdBulletins,
+    postStoriesIdAudio,
+    putStoriesId,
+  } from '$lib/api/generated/sdk.gen'
+  import { toStoryApiFormat } from '$lib/api/stories'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
@@ -74,9 +78,9 @@
     if (loadingMore || !data.story.id) return
     loadingMore = true
     try {
-      const res = await bulletinsApi.getByStory(data.story.id, {
-        limit: data.bulletinsPageSize,
-        offset: bulletins.length,
+      const res = await getStoriesIdBulletins({
+        path: { id: data.story.id },
+        query: { limit: data.bulletinsPageSize, offset: bulletins.length },
       })
       bulletins = [...bulletins, ...res.data]
       bulletinsTotal = res.total
@@ -101,11 +105,11 @@
 
     submitting = true
     try {
-      await storiesApi.update(data.story.id!, storiesApi.toApiFormat(form))
+      await putStoriesId({ path: { id: data.story.id! }, body: toStoryApiFormat(form) })
 
       if (audioFile) {
         try {
-          await storiesApi.uploadAudio(data.story.id!, audioFile)
+          await postStoriesIdAudio({ path: { id: data.story.id! }, body: { audio: audioFile } })
         } catch (err) {
           if (!(err instanceof ApiError && err.notified)) {
             toast.warning('Bericht bijgewerkt, maar audio upload mislukt')

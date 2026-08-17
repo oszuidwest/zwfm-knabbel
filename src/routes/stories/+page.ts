@@ -1,6 +1,7 @@
 import type { PageLoad } from './$types'
 import { requirePermission } from '$lib/auth/guard'
-import { storiesApi, type StoryFilters } from '$lib/api/stories'
+import { getStories } from '$lib/api/generated/sdk.gen'
+import type { StoryFilters } from '$lib/api/stories'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
 import { toLocalDateString } from '$lib/utils/format'
 import { getPaginationParams, getPaginationInfo } from '$lib/utils/pagination'
@@ -56,7 +57,7 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
     filter.audio_url = ''
   }
 
-  const responseResult = settleLoad(storiesApi.getAll(params, fetch))
+  const responseResult = settleLoad(getStories({ query: params, fetch }))
 
   const { user } = await parent()
   requirePermission(user, 'stories', 'read')

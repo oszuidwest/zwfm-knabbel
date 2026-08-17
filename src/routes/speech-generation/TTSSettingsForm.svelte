@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation'
   import { ApiError, notifyMutationError } from '$lib/api/client'
-  import { settingsApi } from '$lib/api/settings'
+  import { patchSettingsTts } from '$lib/api/generated/sdk.gen'
   import {
     textNormalizationOptions,
     toTTSSettingsFormData,
@@ -129,7 +129,7 @@
     submitting = true
     try {
       try {
-        await settingsApi.updateTts(toTTSSettingsUpdate(result.data))
+        await patchSettingsTts({ body: toTTSSettingsUpdate(result.data) })
       } catch (err) {
         if (err instanceof ApiError && (err.status === 400 || err.status === 422)) {
           const validationErrors = validationErrorsFromDetails(err.details)

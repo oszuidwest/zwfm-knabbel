@@ -5,8 +5,6 @@ import { toast } from '$lib/stores/toast'
 const REQUEST_TIMEOUT_MS = 30_000
 const UPLOAD_TIMEOUT_MS = 120_000
 
-type FetchFn = typeof fetch
-
 export interface ProblemFieldError {
   field?: string
   message?: string
@@ -73,8 +71,31 @@ function getErrorMessage(error: unknown, fallbackMessage: string): string {
   return fallbackMessage
 }
 
+function isUpload(request: Request | undefined): boolean {
+  return request?.headers.get('content-type')?.startsWith('multipart/form-data') ?? false
+}
+
+// Timeouts live on the client so no SDK call site can forget them.
+client.interceptors.request.use(
+  request =>
+    new Request(request, {
+      signal: AbortSignal.any([
+        request.signal,
+        AbortSignal.timeout(isUpload(request) ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS),
+      ]),
+    })
+)
+
 client.interceptors.error.use((error, response, request) => {
-  if (error instanceof ApiError || !response) return error
+  if (error instanceof ApiError) return error
+
+  if (!response) {
+    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+      return new ApiError(0, isUpload(request) ? 'Upload timeout' : 'Request timeout')
+    }
+    if (error instanceof TypeError) return new ApiError(0, 'Network error')
+    return error
+  }
 
   const apiError = new ApiError(response.status, getErrorMessage(error, 'Request failed'), error)
   if (response.status === 403 && request?.method !== 'GET') {
@@ -84,29 +105,6 @@ client.interceptors.error.use((error, response, request) => {
 
   return apiError
 })
-
-function handleFetchError(error: unknown, timeoutMessage: string): never {
-  if (error instanceof ApiError) throw error
-  if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
-    throw new ApiError(0, timeoutMessage)
-  }
-  if (error instanceof TypeError) {
-    throw new ApiError(0, 'Network error')
-  }
-  throw error
-}
-
-export async function apiCall<T>(
-  request: (signal: AbortSignal) => Promise<T>,
-  options: { upload?: boolean } = {}
-): Promise<T> {
-  const upload = options.upload === true
-  try {
-    return await request(AbortSignal.timeout(upload ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS))
-  } catch (error) {
-    handleFetchError(error, upload ? 'Upload timeout' : 'Request timeout')
-  }
-}
 
 export function getMediaUrl(path: string | undefined | null): string | undefined {
   if (!path) return undefined
@@ -129,4 +127,3 @@ export function notifyMutationError(error: unknown, fallbackMessage: string): vo
 }
 
 export { ApiError, isProblemDetails }
-export type { FetchFn }

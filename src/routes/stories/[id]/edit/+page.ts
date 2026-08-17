@@ -1,7 +1,5 @@
 import type { PageLoad } from './$types'
-import { storiesApi } from '$lib/api/stories'
-import { voicesApi } from '$lib/api/voices'
-import { bulletinsApi } from '$lib/api/bulletins'
+import { getStoriesId, getStoriesIdBulletins, getVoices } from '$lib/api/generated/sdk.gen'
 import { requirePermission } from '$lib/auth/guard'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
 import { error } from '@sveltejs/kit'
@@ -17,9 +15,13 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
 
   const responseResult = settleLoad(
     Promise.all([
-      storiesApi.getById(storyId, fetch),
-      voicesApi.getAll(undefined, fetch),
-      bulletinsApi.getByStory(storyId, { limit: BULLETINS_PAGE_SIZE }, fetch),
+      getStoriesId({ path: { id: storyId }, fetch }),
+      getVoices({ fetch }),
+      getStoriesIdBulletins({
+        path: { id: storyId },
+        query: { limit: BULLETINS_PAGE_SIZE },
+        fetch,
+      }),
     ])
   )
 

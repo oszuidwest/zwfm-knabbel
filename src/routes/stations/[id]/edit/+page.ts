@@ -1,5 +1,5 @@
 import type { PageLoad } from './$types'
-import { stationsApi } from '$lib/api/stations'
+import { getStationsId } from '$lib/api/generated/sdk.gen'
 import { requirePermission } from '$lib/auth/guard'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
 import { error } from '@sveltejs/kit'
@@ -11,7 +11,7 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
     error(400, 'Ongeldige zender ID')
   }
 
-  const stationResult = settleLoad(stationsApi.getById(stationId, fetch))
+  const stationResult = settleLoad(getStationsId({ path: { id: stationId }, fetch }))
 
   const { user } = await parent()
   requirePermission(user, 'stations', 'read')

@@ -2,7 +2,8 @@
   import { goto } from '$app/navigation'
   import { ApiError, notifyMutationError } from '$lib/api/client'
   import { storySchema, type StoryFormData } from '$lib/schemas/story'
-  import { storiesApi } from '$lib/api/stories'
+  import { postStories, postStoriesIdAudio } from '$lib/api/generated/sdk.gen'
+  import { toStoryApiFormat } from '$lib/api/stories'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
@@ -60,11 +61,11 @@
 
     submitting = true
     try {
-      const story = await storiesApi.create(storiesApi.toApiFormat(form))
+      const story = await postStories({ body: toStoryApiFormat(form) })
 
       if (audioFile && story.id) {
         try {
-          await storiesApi.uploadAudio(story.id, audioFile)
+          await postStoriesIdAudio({ path: { id: story.id }, body: { audio: audioFile } })
         } catch (err) {
           if (!(err instanceof ApiError && err.notified)) {
             toast.warning('Bericht aangemaakt, maar audio upload mislukt')

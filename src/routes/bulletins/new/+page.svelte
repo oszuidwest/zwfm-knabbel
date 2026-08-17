@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { notifyMutationError } from '$lib/api/client'
-  import { bulletinsApi } from '$lib/api/bulletins'
+  import { generateBulletin } from '$lib/api/bulletins'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { resolveInternalHref } from '$lib/utils/routes'
@@ -29,7 +29,7 @@
 
     generating = true
     try {
-      const bulletin = await bulletinsApi.generate(Number(selectedStation))
+      const bulletin = await generateBulletin(Number(selectedStation))
       toast.success('Bulletin gegenereerd')
       goto(resolveInternalHref(`/bulletins/${bulletin.id}`))
     } catch (err) {

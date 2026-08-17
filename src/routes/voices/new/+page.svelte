@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation'
   import { notifyMutationError } from '$lib/api/client'
   import { voiceSchema, type VoiceFormData } from '$lib/schemas/voice'
-  import { voicesApi } from '$lib/api/voices'
+  import { postVoices } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
@@ -32,7 +32,7 @@
 
     submitting = true
     try {
-      await voicesApi.create(form)
+      await postVoices({ body: form })
       toast.success('Stem aangemaakt')
       goto(resolveInternalHref('/voices'))
     } catch (err) {

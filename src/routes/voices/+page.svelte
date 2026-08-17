@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation'
-  import { voicesApi } from '$lib/api/voices'
+  import { deleteVoicesId } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { deleteWithConfirm } from '$lib/utils/crud'
   import { Mic } from '$lib/components/icons'
@@ -15,7 +15,7 @@
   function handleDelete(voice: Voice): void {
     deleteWithConfirm({
       name: voice.name ?? 'deze stem',
-      deleteFn: () => voicesApi.delete(voice.id!),
+      deleteFn: () => deleteVoicesId({ path: { id: voice.id! } }),
       onSuccess: () => invalidateAll(),
       successMessage: 'Stem verwijderd',
     })

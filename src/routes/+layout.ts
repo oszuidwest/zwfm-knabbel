@@ -1,5 +1,5 @@
 import { ApiError } from '$lib/api/client'
-import { authApi } from '$lib/api/auth'
+import { getSessionsCurrent } from '$lib/api/generated/sdk.gen'
 import { AUTH_DEPENDENCY } from '$lib/auth/session'
 import type { User } from '$lib/types'
 import type { LayoutLoad } from './$types'
@@ -13,7 +13,7 @@ export const load: LayoutLoad = async ({ fetch, depends }) => {
 
   let user: User | null = null
   try {
-    user = await authApi.getMe(fetch)
+    user = await getSessionsCurrent({ fetch })
   } catch (err) {
     // Only 401 means anonymous; network errors, timeouts, and 5xx stay load errors.
     if (!(err instanceof ApiError) || err.status !== 401) {
