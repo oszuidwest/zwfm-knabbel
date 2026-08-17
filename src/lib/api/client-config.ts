@@ -18,10 +18,8 @@ function appendQueryValue(params: URLSearchParams, key: string, value: unknown):
   params.append(key, String(value))
 }
 
-function querySerializer(query: unknown): string {
+function querySerializer(query: Record<string, unknown>): string {
   const params = new URLSearchParams()
-  if (typeof query !== 'object' || query === null) return ''
-
   for (const [key, value] of Object.entries(query)) {
     appendQueryValue(params, key, value)
   }

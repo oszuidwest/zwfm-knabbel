@@ -7,9 +7,6 @@ import {
   getSessionsCurrent,
   postSessions,
 } from './generated/sdk.gen'
-import type { GetAuthConfigResponse } from './generated/types.gen'
-
-export type AuthConfig = GetAuthConfigResponse
 
 export const authApi = {
   getConfig: () => apiCall(signal => getAuthConfig({ signal })),

@@ -22,8 +22,6 @@
     canEdit: boolean
   }
 
-  type ValidationErrorDetails = ValidationError
-
   let { settings, canEdit }: Props = $props()
 
   const numericSettings: {
@@ -90,7 +88,7 @@
   const reloadLabel = $derived(isDirty ? 'Wijzigingen verwerpen' : 'Herladen')
   const formDisabled = $derived(submitting || !canEdit)
 
-  function isValidationErrorDetails(value: unknown): value is ValidationErrorDetails {
+  function isValidationErrorDetails(value: unknown): value is ValidationError {
     return typeof value === 'object' && value !== null && 'errors' in value
   }
 

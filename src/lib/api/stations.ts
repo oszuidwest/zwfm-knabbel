@@ -6,7 +6,8 @@ import {
   postStations,
   putStationsId,
 } from './generated/sdk.gen'
-import type { GetStationsData, StationInput } from './generated/types.gen'
+import type { GetStationsData } from './generated/types.gen'
+import type { StationInput } from '$lib/types'
 
 type StationFilters = GetStationsData['query']
 

@@ -87,14 +87,11 @@ client.interceptors.error.use((error, response, request) => {
 
 function handleFetchError(error: unknown, timeoutMessage: string): never {
   if (error instanceof ApiError) throw error
-  if (error instanceof Error && error.name === 'AbortError') {
+  if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
     throw new ApiError(0, timeoutMessage)
   }
   if (error instanceof TypeError) {
     throw new ApiError(0, 'Network error')
-  }
-  if (isProblemDetails(error) && typeof error.status === 'number') {
-    throw new ApiError(error.status, getErrorMessage(error, 'Request failed'), error)
   }
   throw error
 }
@@ -103,19 +100,11 @@ export async function apiCall<T>(
   request: (signal: AbortSignal) => Promise<T>,
   options: { upload?: boolean } = {}
 ): Promise<T> {
-  const controller = new AbortController()
   const upload = options.upload === true
-  const timeoutId = setTimeout(
-    () => controller.abort(),
-    upload ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS
-  )
-
   try {
-    return await request(controller.signal)
+    return await request(AbortSignal.timeout(upload ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS))
   } catch (error) {
     handleFetchError(error, upload ? 'Upload timeout' : 'Request timeout')
-  } finally {
-    clearTimeout(timeoutId)
   }
 }
 

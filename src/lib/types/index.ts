@@ -1,5 +1,5 @@
-import type {
-  BulletinResponse,
+export type {
+  BulletinResponse as Bulletin,
   PronunciationRule,
   PronunciationRulesList,
   PronunciationRulesUpdate,
@@ -10,32 +10,15 @@ import type {
   TTSSettings,
   TTSSettingsUpdate,
   User,
-  UserInputWritable,
-  UserUpdateWritable,
+  UserInputWritable as UserInput,
+  UserUpdateWritable as UserUpdate,
   ValidationError,
   Voice,
 } from '$lib/api/generated/types.gen'
 
-export type {
-  PronunciationRule,
-  PronunciationRulesList,
-  PronunciationRulesUpdate,
-  Station,
-  StationInput,
-  StationVoice,
-  Story,
-  TTSSettings,
-  TTSSettingsUpdate,
-  User,
-  ValidationError,
-  Voice,
-}
-export type UserInput = UserInputWritable
-export type UserUpdate = UserUpdateWritable
 export interface VoiceInput {
   name: string
 }
-export type Bulletin = BulletinResponse
 
 /** Weekdays stores schedule state in the shape forms can bind directly. */
 export interface Weekdays {

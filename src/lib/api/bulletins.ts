@@ -3,17 +3,11 @@ import {
   getBulletins,
   getBulletinsId,
   getBulletinsIdStories,
-  getStationsIdBulletins,
   getStoriesIdBulletins,
   postStationsIdBulletins,
 } from './generated/sdk.gen'
-import type {
-  BulletinStoriesListResponse,
-  GetBulletinsData,
-  GetStoriesIdBulletinsData,
-} from './generated/types.gen'
+import type { GetBulletinsData, GetStoriesIdBulletinsData } from './generated/types.gen'
 
-export type BulletinStory = BulletinStoriesListResponse['data'][number]
 export type BulletinFilters = NonNullable<GetBulletinsData['query']>
 
 export const bulletinsApi = {
@@ -22,24 +16,6 @@ export const bulletinsApi = {
 
   getById: (id: number, customFetch?: FetchFn) =>
     apiCall(signal => getBulletinsId({ path: { id }, fetch: customFetch, signal })),
-
-  getLatestByStation: async (stationId: number, customFetch?: FetchFn) => {
-    const response = await apiCall(signal =>
-      getStationsIdBulletins({
-        path: { id: stationId },
-        query: { latest: true },
-        fetch: customFetch,
-        signal,
-      })
-    )
-
-    if ('data' in response) {
-      const latest = response.data[0]
-      if (!latest) throw new ApiError(404, 'Bulletin not found')
-      return latest
-    }
-    return response
-  },
 
   generate: async (stationId: number) => {
     const response = await apiCall(signal =>

@@ -35,7 +35,6 @@ export default tseslint.config(
       'dist/',
       'node_modules/',
       'src/lib/api/generated/',
-      'src/lib/types/api.ts',
       // .svelte.ts files use Svelte 5 runes which ESLint's TS parser can't parse.
       // These files are still type-checked by `svelte-check` which understands runes.
       '**/*.svelte.ts',
