@@ -66,13 +66,12 @@ npm run types:check      # Verify local types match remote spec
 
 ## Type Generation
 
-TypeScript types are auto-generated from the [Babbel API OpenAPI specification](https://github.com/oszuidwest/zwfm-babbel/blob/main/openapi.yaml) into `src/lib/types/api.ts`. This file should never be edited manually.
+TypeScript types are generated with Hey API from the [Babbel API OpenAPI specification](https://github.com/oszuidwest/zwfm-babbel/blob/main/openapi.yaml) into `src/lib/types/generated/`. These files should never be edited manually; application-facing aliases live in `src/lib/types/index.ts`.
 
 After a Babbel API update:
 
 ```bash
 npm run types:generate
-npm run format
 ```
 
 The `types:check` command verifies that local types are in sync with the remote specification and can be used in CI pipelines.

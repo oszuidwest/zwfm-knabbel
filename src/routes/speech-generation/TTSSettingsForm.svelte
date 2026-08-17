@@ -13,7 +13,7 @@
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
   import { MaybeTooltip, SelectInput, TextareaInput, TextInput } from '$lib/components/ui'
-  import type { components, TTSSettings } from '$lib/types'
+  import type { TTSSettings, ValidationError } from '$lib/types'
 
   type NumericSettingField = 'stability' | 'similarity_boost' | 'style' | 'speed'
 
@@ -22,7 +22,7 @@
     canEdit: boolean
   }
 
-  type ValidationErrorDetails = components['schemas']['ValidationError']
+  type ValidationErrorDetails = ValidationError
 
   let { settings, canEdit }: Props = $props()
 
