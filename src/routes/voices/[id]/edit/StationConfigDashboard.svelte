@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Attachment } from 'svelte/attachments'
   import { getMediaUrl } from '$lib/api/client'
   import { Radio, Upload, Music, Play, Pause } from '$lib/components/icons'
   import type { StationConfig } from './station-config'
@@ -27,9 +28,21 @@
 
   let dragOver = $state<number | null>(null)
   let playingIndex = $state<number | null>(null)
-  // audioElements is populated by bind:this for imperative playback only.
-  let audioElements: Record<number, HTMLAudioElement | null> = {}
+  // audioElements is populated by an attachment for imperative playback only.
+  const audioElements: Partial<Record<number, HTMLAudioElement>> = {}
   const effectiveDisabled = $derived(disabled || !canEdit)
+
+  function registerAudioElement(index: number): Attachment<HTMLAudioElement> {
+    return audio => {
+      audioElements[index] = audio
+
+      return () => {
+        if (audioElements[index] === audio) {
+          delete audioElements[index]
+        }
+      }
+    }
+  }
 
   function handleDragOver(e: DragEvent, index: number) {
     e.preventDefault()
@@ -189,7 +202,7 @@
               {#if config.hasAudio && config.audioUrl}
                 <div class="flex items-center gap-3 rounded-xl bg-base-200 p-3">
                   <audio
-                    bind:this={audioElements[index]}
+                    {@attach registerAudioElement(index)}
                     src={getMediaUrl(config.audioUrl)}
                     onended={() => handleAudioEnded(index)}
                     preload="none"
@@ -197,7 +210,7 @@
                   ></audio>
                   <button
                     type="button"
-                    class="btn btn-circle btn-sm btn-primary"
+                    class="btn btn-circle btn-primary btn-sm"
                     onclick={() => togglePlayback(index)}
                     disabled={config.saving}
                     aria-label={playingIndex === index ? 'Pauzeren' : 'Afspelen'}
@@ -281,7 +294,7 @@
                 <label
                   for="jingle-input-{config.station.id}"
                   class={[
-                    'block rounded-xl border-2 border-dashed p-6 text-center transition-colors peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary',
+                    'block rounded-xl border-2 border-dashed p-6 text-center transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary peer-disabled:cursor-not-allowed peer-disabled:opacity-50',
                     effectiveDisabled ? 'pointer-events-none cursor-not-allowed' : 'cursor-pointer',
                     dragOver === index
                       ? 'border-primary bg-primary/10'

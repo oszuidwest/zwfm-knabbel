@@ -396,7 +396,7 @@
   <div class="card bg-base-100">
     <div class="card-body gap-4">
       <div
-        class="alert alert-info alert-soft items-start"
+        class="alert items-start alert-soft alert-info"
         role="note"
       >
         <Info

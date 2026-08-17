@@ -230,7 +230,7 @@
             <input
               id="{setting.field}_number"
               type="number"
-              class={['input w-24 input-sm tabular-nums', errors[setting.field] && 'input-error']}
+              class={['input w-24 tabular-nums input-sm', errors[setting.field] && 'input-error']}
               min={setting.min}
               max={setting.max}
               step={setting.step}
