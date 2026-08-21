@@ -92,7 +92,7 @@ client.interceptors.error.use((error, response, request) => {
   if (error instanceof ApiError) return error
 
   if (!response) {
-    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+    if (request?.signal.reason?.name === 'TimeoutError') {
       return new ApiError(0, isUpload(request) ? 'Upload timeout' : 'Request timeout')
     }
     if (error instanceof TypeError) return new ApiError(0, 'Network error')
