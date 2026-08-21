@@ -29,6 +29,17 @@ export function formatDuration(seconds: number | undefined | null): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
+/** formatRelativeTime renders a timestamp as Dutch relative copy ("3 uur geleden"). */
+export function formatRelativeTime(dateString: string | undefined): string {
+  if (!dateString) return '-'
+  const rtf = new Intl.RelativeTimeFormat('nl-NL', { numeric: 'auto' })
+  const minutes = Math.round((new Date(dateString).getTime() - Date.now()) / 60_000)
+  if (Math.abs(minutes) < 60) return rtf.format(minutes, 'minute')
+  const hours = Math.round(minutes / 60)
+  if (Math.abs(hours) < 24) return rtf.format(hours, 'hour')
+  return rtf.format(Math.round(hours / 24), 'day')
+}
+
 /** formatFileSize renders byte counts with binary KB/MB units for compact UI labels. */
 export function formatFileSize(bytes: number | undefined): string {
   if (!bytes) return '-'
