@@ -1,3 +1,5 @@
+// Importing the client module registers its timeout and error interceptors
+// before any SDK call; keep this import even if ApiError moves elsewhere.
 import { ApiError } from '$lib/api/client'
 import { getSessionsCurrent } from '$lib/api/generated/sdk.gen'
 import { AUTH_DEPENDENCY } from '$lib/auth/session'

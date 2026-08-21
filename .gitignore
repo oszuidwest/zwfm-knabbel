@@ -23,9 +23,6 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# Type generation temp file
-.api-types-check.ts
-
 # Markdown files
 *.md
 !README.md

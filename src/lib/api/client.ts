@@ -76,6 +76,8 @@ function isUpload(request: Request | undefined): boolean {
 }
 
 // Timeouts live on the client so no SDK call site can forget them.
+// Interceptor registration is a side effect of importing this module; the root
+// +layout.ts imports it explicitly so it runs before any SDK call.
 client.interceptors.request.use(
   request =>
     new Request(request, {
@@ -117,10 +119,9 @@ export function getMediaUrl(path: string | undefined | null): string | undefined
 }
 
 export function notifyMutationError(error: unknown, fallbackMessage: string): void {
-  if (error instanceof ApiError && error.notified) return
   if (error instanceof ApiError) {
-    const details = isProblemDetails(error.details) ? error.details : undefined
-    toast.error(details?.detail || error.message || fallbackMessage)
+    // The error interceptor already extracted the ProblemDetails message.
+    if (!error.notified) toast.error(error.message || fallbackMessage)
     return
   }
   toast.error(fallbackMessage)

@@ -5,6 +5,7 @@ import type { StoryFilters } from '$lib/api/stories'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
 import { toLocalDateString } from '$lib/utils/format'
 import { getPaginationParams, getPaginationInfo } from '$lib/utils/pagination'
+import { storySchema } from '$lib/schemas/story'
 import { WEEKDAY_BITS_BY_DAY } from '$lib/types'
 
 function getDateAndWeekdayBit(dateFilter: string): { date: string; weekdayBit: number } | null {
@@ -36,8 +37,9 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
     filter,
   }
 
-  if (statusFilter === 'draft' || statusFilter === 'active' || statusFilter === 'expired') {
-    filter.status = statusFilter
+  const status = storySchema.shape.status.safeParse(statusFilter)
+  if (status.success) {
+    filter.status = status.data
   }
 
   if (searchQuery) {

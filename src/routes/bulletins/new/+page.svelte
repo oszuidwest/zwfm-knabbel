@@ -24,7 +24,7 @@
 
   async function handleGenerate(e: Event): Promise<void> {
     e.preventDefault()
-    if (!canGenerate) return
+    if (!canGenerate || generating) return
 
     if (!selectedStation) {
       toast.error('Selecteer eerst een zender')
@@ -32,20 +32,20 @@
     }
 
     generating = true
-    const controller = new AbortController()
-    generationController = controller
+    generationController = new AbortController()
     try {
-      const bulletin = await generateBulletin(Number(selectedStation), controller.signal)
+      const bulletinId = await generateBulletin(
+        Number(selectedStation),
+        generationController.signal
+      )
       toast.success('Bulletin gegenereerd')
-      goto(resolveInternalHref(`/bulletins/${bulletin.id}`))
+      goto(resolveInternalHref(`/bulletins/${bulletinId}`))
     } catch (err) {
-      if (!controller.signal.aborted) {
+      if (!generationController?.signal.aborted) {
         notifyMutationError(err, 'Genereren mislukt')
       }
     } finally {
-      if (generationController === controller) {
-        generationController = undefined
-      }
+      generationController = undefined
       generating = false
     }
   }
