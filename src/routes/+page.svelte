@@ -195,7 +195,7 @@
   {#if data.stationBulletins.length > 0}
     <section class="space-y-3">
       <h2 class="text-lg font-semibold">Laatste bulletin per zender</h2>
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div class="grid gap-4 md:grid-cols-[repeat(auto-fit,minmax(20rem,1fr))]">
         {#each data.stationBulletins as { station, bulletin } (station.id)}
           <div class="card bg-base-100 card-sm">
             <div class="card-body">
