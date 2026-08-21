@@ -36,7 +36,7 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
     filter,
   }
 
-  if (statusFilter) {
+  if (statusFilter === 'draft' || statusFilter === 'active' || statusFilter === 'expired') {
     filter.status = statusFilter
   }
 
@@ -52,9 +52,9 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
   }
 
   if (audioFilter === 'with') {
-    filter.audio_url = { ne: '' }
+    filter.has_audio = true
   } else if (audioFilter === 'without') {
-    filter.audio_url = ''
+    filter.has_audio = false
   }
 
   const responseResult = settleLoad(getStories({ query: params, fetch }))

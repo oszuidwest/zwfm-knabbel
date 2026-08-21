@@ -4,6 +4,309 @@ export type ClientOptions = {
   baseUrl: `${string}://${string}` | (string & {})
 }
 
+export type StringFilter = string | StringFilterOperators
+
+export type NullableStringFilter = string | NullableStringFilterOperators
+
+export type StringFilterOperators = {
+  eq?: string
+  ne?: string
+  /**
+   * Alias for `ne`.
+   */
+  not?: string
+  /**
+   * Case-sensitive literal substring match.
+   */
+  like?: string
+  /**
+   * Comma-separated values.
+   */
+  in?: string
+}
+
+export type NullableStringFilterOperators = {
+  eq?: string
+  ne?: string
+  /**
+   * Alias for `ne`.
+   */
+  not?: string
+  /**
+   * Case-sensitive literal substring match.
+   */
+  like?: string
+  /**
+   * Comma-separated values.
+   */
+  in?: string
+  /**
+   * True selects null values; false selects non-null values.
+   */
+  null?: boolean
+}
+
+export type IntegerFilter = number | IntegerFilterOperators
+
+export type NullableIntegerFilter = number | NullableIntegerFilterOperators
+
+export type IntegerFilterOperators = {
+  eq?: number
+  ne?: number
+  /**
+   * Alias for `ne`.
+   */
+  not?: number
+  gt?: number
+  gte?: number
+  lt?: number
+  lte?: number
+  /**
+   * Comma-separated integers.
+   */
+  in?: string
+  /**
+   * Two comma-separated inclusive integer bounds.
+   */
+  between?: string
+}
+
+export type NullableIntegerFilterOperators = {
+  eq?: number
+  ne?: number
+  /**
+   * Alias for `ne`.
+   */
+  not?: number
+  gt?: number
+  gte?: number
+  lt?: number
+  lte?: number
+  /**
+   * Comma-separated integers.
+   */
+  in?: string
+  /**
+   * Two comma-separated inclusive integer bounds.
+   */
+  between?: string
+  /**
+   * True selects null values; false selects non-null values.
+   */
+  null?: boolean
+}
+
+export type NumberFilter = number | NumberFilterOperators
+
+export type NullableNumberFilter = number | NullableNumberFilterOperators
+
+export type NumberFilterOperators = {
+  eq?: number
+  ne?: number
+  /**
+   * Alias for `ne`.
+   */
+  not?: number
+  gt?: number
+  gte?: number
+  lt?: number
+  lte?: number
+  /**
+   * Comma-separated numbers.
+   */
+  in?: string
+  /**
+   * Two comma-separated inclusive numeric bounds.
+   */
+  between?: string
+}
+
+export type NullableNumberFilterOperators = {
+  eq?: number
+  ne?: number
+  /**
+   * Alias for `ne`.
+   */
+  not?: number
+  gt?: number
+  gte?: number
+  lt?: number
+  lte?: number
+  /**
+   * Comma-separated numbers.
+   */
+  in?: string
+  /**
+   * Two comma-separated inclusive numeric bounds.
+   */
+  between?: string
+  /**
+   * True selects null values; false selects non-null values.
+   */
+  null?: boolean
+}
+
+export type DateFilter = string | DateFilterOperators
+
+export type DateFilterOperators = {
+  eq?: string
+  ne?: string
+  /**
+   * Alias for `ne`.
+   */
+  not?: string
+  gt?: string
+  gte?: string
+  lt?: string
+  lte?: string
+  /**
+   * Comma-separated dates.
+   */
+  in?: string
+  /**
+   * Two comma-separated inclusive date bounds.
+   */
+  between?: string
+}
+
+/**
+ * RFC 3339 date-time, or a bare date compared as midnight.
+ */
+export type DateTimeValue = string | string
+
+export type DateTimeFilter = DateTimeValue | DateTimeFilterOperators
+
+export type NullableDateTimeFilter = DateTimeValue | NullableDateTimeFilterOperators
+
+export type DateTimeFilterOperators = {
+  eq?: DateTimeValue
+  ne?: DateTimeValue
+  /**
+   * Alias for `ne`.
+   */
+  not?: DateTimeValue
+  gt?: DateTimeValue
+  gte?: DateTimeValue
+  lt?: DateTimeValue
+  lte?: DateTimeValue
+  /**
+   * Comma-separated date-time values.
+   */
+  in?: string
+  /**
+   * Two comma-separated inclusive date-time bounds.
+   */
+  between?: string
+}
+
+export type NullableDateTimeFilterOperators = {
+  eq?: DateTimeValue
+  ne?: DateTimeValue
+  /**
+   * Alias for `ne`.
+   */
+  not?: DateTimeValue
+  gt?: DateTimeValue
+  gte?: DateTimeValue
+  lt?: DateTimeValue
+  lte?: DateTimeValue
+  /**
+   * Comma-separated date-time values.
+   */
+  in?: string
+  /**
+   * Two comma-separated inclusive date-time bounds.
+   */
+  between?: string
+  /**
+   * True selects null values; false selects non-null values.
+   */
+  null?: boolean
+}
+
+export type BooleanFilter =
+  | boolean
+  | {
+      eq?: boolean
+      ne?: boolean
+      /**
+       * Alias for `ne`.
+       */
+      not?: boolean
+      /**
+       * Comma-separated boolean values.
+       */
+      in?: string
+    }
+
+export type PresenceFilter =
+  | boolean
+  | {
+      eq?: boolean
+      ne?: boolean
+      /**
+       * Alias for `ne`.
+       */
+      not?: boolean
+    }
+
+export type BitmaskFilter =
+  | number
+  | {
+      eq?: number
+      ne?: number
+      /**
+       * Alias for `ne`.
+       */
+      not?: number
+      /**
+       * Selects rows where field & value is non-zero.
+       */
+      band?: number
+    }
+
+export type StoryStatusFilter =
+  | 'draft'
+  | 'active'
+  | 'expired'
+  | {
+      eq?: 'draft' | 'active' | 'expired'
+      ne?: 'draft' | 'active' | 'expired'
+      /**
+       * Alias for `ne`.
+       */
+      not?: 'draft' | 'active' | 'expired'
+      /**
+       * Comma-separated status values.
+       */
+      in?: string
+    }
+
+export type UserRoleFilter =
+  | 'admin'
+  | 'editor'
+  | 'viewer'
+  | {
+      eq?: 'admin' | 'editor' | 'viewer'
+      ne?: 'admin' | 'editor' | 'viewer'
+      /**
+       * Alias for `ne`.
+       */
+      not?: 'admin' | 'editor' | 'viewer'
+      /**
+       * Comma-separated role values.
+       */
+      in?: string
+    }
+
+/**
+ * Identifier and confirmation message returned when a resource is created
+ */
+export type IDMessageResponse = {
+  id: number
+  message: string
+}
+
 export type Station = {
   /**
    * Station ID
@@ -418,6 +721,21 @@ export type User = {
   deleted_at: string | null
 }
 
+export type CurrentSession = User & {
+  /**
+   * Effective actions per resource. Resources with no allowed actions are omitted.
+   */
+  permissions: {
+    stations?: Array<'read' | 'write'>
+    voices?: Array<'read' | 'write'>
+    stories?: Array<'read' | 'write'>
+    bulletins?: Array<'read' | 'generate'>
+    users?: Array<'read' | 'write'>
+    'settings:tts'?: Array<'read' | 'write'>
+    pronunciation_rules?: Array<'read' | 'write'>
+  }
+}
+
 export type UserInput = {
   /**
    * Unique username (alphanumeric only)
@@ -523,6 +841,42 @@ export type BulletinResponse = {
 }
 
 /**
+ * Durable asynchronous bulletin-generation state
+ */
+export type BulletinJob = {
+  id: number
+  station_id: number
+  /**
+   * Calendar date used when selecting eligible stories
+   */
+  target_date: string
+  status: 'queued' | 'running' | 'succeeded' | 'failed'
+  /**
+   * Number of generation attempts, including the current attempt. Jobs interrupted by restarts are retried a limited number of times
+   */
+  attempt: number
+  /**
+   * Created bulletin ID when status is succeeded; null when the bulletin has since been deleted
+   */
+  bulletin_id: number | null
+  /**
+   * Stable failure code when status is failed: `bulletin.no_stories`,
+   * `internal.timeout`, `audio.processing_failed`,
+   * `internal.retries_exhausted`, or `internal.generation_failed`
+   *
+   */
+  error_code?: string
+  /**
+   * Client-safe failure detail when status is failed
+   */
+  error_detail?: string
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+/**
  * RFC 9457 Problem Details for HTTP APIs.
  *
  * ## Problem Types
@@ -565,7 +919,7 @@ export type ProblemDetails = {
   /**
    * Human-readable explanation specific to this occurrence
    */
-  detail?: string
+  detail: string
   /**
    * URI reference that identifies the specific occurrence of the problem
    */
@@ -931,79 +1285,98 @@ export type search = string
 export type trashed = 'only' | 'with'
 
 /**
- * Advanced filtering using field-based operators.
- *
- * Basic usage: `filter[field]=value`
- *
- * Advanced operators: `filter[field][op]=value`
- *
- * Supported operators:
- * - `eq` - equals (default)
- * - `ne` - not equals
- * - `not` - alias for `ne` (not equals)
- * - `gt`, `gte`, `lt`, `lte` - comparisons
- * - `like` - case-sensitive substring match (contains)
- * - `in` - comma-separated values
- * - `between` - two comma-separated inclusive bounds
- * - `null` - is/isn't null
- * - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
- *
- * **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
- *
+ * Typed station filters using `filter[field]` or `filter[field][operator]`.
  */
-export type filter = {
-  [key: string]:
-    | string
-    | {
-        /**
-         * Equals
-         */
-        eq?: string
-        /**
-         * Not equals
-         */
-        ne?: string
-        /**
-         * Alias for ne (not equals)
-         */
-        not?: string
-        /**
-         * Greater than
-         */
-        gt?: string
-        /**
-         * Greater than or equal
-         */
-        gte?: string
-        /**
-         * Less than
-         */
-        lt?: string
-        /**
-         * Less than or equal
-         */
-        lte?: string
-        /**
-         * Case-sensitive substring match (contains); value matched literally
-         */
-        like?: string
-        /**
-         * Comma-separated list of values
-         */
-        in?: string
-        /**
-         * Two comma-separated inclusive bounds
-         */
-        between?: string
-        /**
-         * Is null (true) or not null (false)
-         */
-        null?: boolean
-        /**
-         * Bitwise AND (for bitmask fields like weekdays)
-         */
-        band?: number
-      }
+export type stationFilter = {
+  id?: IntegerFilter
+  name?: StringFilter
+  max_stories_per_block?: IntegerFilter
+  pause_seconds?: NumberFilter
+  created_at?: DateTimeFilter
+  updated_at?: DateTimeFilter
+}
+
+/**
+ * Typed voice filters using `filter[field]` or `filter[field][operator]`.
+ */
+export type voiceFilter = {
+  id?: IntegerFilter
+  name?: StringFilter
+  elevenlabs_voice_id?: NullableStringFilter
+  created_at?: DateTimeFilter
+  updated_at?: DateTimeFilter
+}
+
+/**
+ * Typed story filters. `has_audio` replaces empty-string comparisons on `audio_url`.
+ */
+export type storyFilter = {
+  id?: IntegerFilter
+  title?: StringFilter
+  text?: StringFilter
+  voice_id?: NullableIntegerFilter
+  /**
+   * Use `has_audio` for presence filtering.
+   *
+   * @deprecated
+   */
+  audio_url?: StringFilter
+  has_audio?: PresenceFilter
+  status?: StoryStatusFilter
+  start_date?: DateFilter
+  end_date?: DateFilter
+  duration_seconds?: NullableNumberFilter
+  weekdays?: BitmaskFilter
+  is_breaking?: BooleanFilter
+  created_at?: DateTimeFilter
+  updated_at?: DateTimeFilter
+  deleted_at?: NullableDateTimeFilter
+}
+
+/**
+ * Typed user filters using `filter[field]` or `filter[field][operator]`.
+ */
+export type userFilter = {
+  id?: IntegerFilter
+  username?: StringFilter
+  full_name?: StringFilter
+  email?: NullableStringFilter
+  role?: UserRoleFilter
+  created_at?: DateTimeFilter
+  updated_at?: DateTimeFilter
+}
+
+/**
+ * Typed bulletin filters using `filter[field]` or `filter[field][operator]`.
+ */
+export type bulletinFilter = {
+  id?: IntegerFilter
+  station_id?: IntegerFilter
+  filename?: StringFilter
+  duration_seconds?: NumberFilter
+  file_size?: IntegerFilter
+  story_count?: IntegerFilter
+  file_purged_at?: NullableDateTimeFilter
+  created_at?: DateTimeFilter
+}
+
+/**
+ * Typed station-voice filters. `has_audio` replaces empty-string comparisons on `audio_url`.
+ */
+export type stationVoiceFilter = {
+  id?: IntegerFilter
+  station_id?: IntegerFilter
+  voice_id?: IntegerFilter
+  /**
+   * Use `has_audio` for presence filtering.
+   *
+   * @deprecated
+   */
+  audio_url?: StringFilter
+  has_audio?: PresenceFilter
+  mix_point?: NumberFilter
+  created_at?: DateTimeFilter
+  updated_at?: DateTimeFilter
 }
 
 export type GetHealthData = {
@@ -1017,10 +1390,7 @@ export type GetHealthErrors = {
   /**
    * The service is unhealthy because it cannot connect to the database
    */
-  503: {
-    status: 'unhealthy'
-    service: string
-  }
+  503: ProblemDetails
 }
 
 export type GetHealthError = GetHealthErrors[keyof GetHealthErrors]
@@ -1088,9 +1458,9 @@ export type GetPublicBulletinErrors = {
    */
   404: ProblemDetails
   /**
-   * The requested byte range cannot be satisfied. The plain-text body describes the error.
+   * The requested byte range is invalid or cannot be satisfied.
    */
-  416: unknown
+  416: ProblemDetails
   /**
    * Invalid parameters
    */
@@ -1178,7 +1548,7 @@ export type PostSessionsResponses = {
    * Session created successfully
    */
   201: {
-    message?: string
+    message: string
   }
 }
 
@@ -1300,7 +1670,7 @@ export type GetSessionsCurrentResponses = {
   /**
    * Current user information
    */
-  200: User
+  200: CurrentSession
 }
 
 export type GetSessionsCurrentResponse =
@@ -1349,79 +1719,15 @@ export type GetStationsData = {
      */
     search?: string
     /**
-     * Advanced filtering using field-based operators.
-     *
-     * Basic usage: `filter[field]=value`
-     *
-     * Advanced operators: `filter[field][op]=value`
-     *
-     * Supported operators:
-     * - `eq` - equals (default)
-     * - `ne` - not equals
-     * - `not` - alias for `ne` (not equals)
-     * - `gt`, `gte`, `lt`, `lte` - comparisons
-     * - `like` - case-sensitive substring match (contains)
-     * - `in` - comma-separated values
-     * - `between` - two comma-separated inclusive bounds
-     * - `null` - is/isn't null
-     * - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-     *
-     * **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-     *
+     * Typed station filters using `filter[field]` or `filter[field][operator]`.
      */
     filter?: {
-      [key: string]:
-        | string
-        | {
-            /**
-             * Equals
-             */
-            eq?: string
-            /**
-             * Not equals
-             */
-            ne?: string
-            /**
-             * Alias for ne (not equals)
-             */
-            not?: string
-            /**
-             * Greater than
-             */
-            gt?: string
-            /**
-             * Greater than or equal
-             */
-            gte?: string
-            /**
-             * Less than
-             */
-            lt?: string
-            /**
-             * Less than or equal
-             */
-            lte?: string
-            /**
-             * Case-sensitive substring match (contains); value matched literally
-             */
-            like?: string
-            /**
-             * Comma-separated list of values
-             */
-            in?: string
-            /**
-             * Two comma-separated inclusive bounds
-             */
-            between?: string
-            /**
-             * Is null (true) or not null (false)
-             */
-            null?: boolean
-            /**
-             * Bitwise AND (for bitmask fields like weekdays)
-             */
-            band?: number
-          }
+      id?: IntegerFilter
+      name?: StringFilter
+      max_stories_per_block?: IntegerFilter
+      pause_seconds?: NumberFilter
+      created_at?: DateTimeFilter
+      updated_at?: DateTimeFilter
     }
   }
   url: '/api/v1/stations'
@@ -1508,10 +1814,7 @@ export type PostStationsResponses = {
   /**
    * Station created
    */
-  201: {
-    id?: number
-    message?: string
-  }
+  201: IDMessageResponse
 }
 
 export type PostStationsResponse = PostStationsResponses[keyof PostStationsResponses]
@@ -1733,79 +2036,14 @@ export type GetVoicesData = {
      */
     search?: string
     /**
-     * Advanced filtering using field-based operators.
-     *
-     * Basic usage: `filter[field]=value`
-     *
-     * Advanced operators: `filter[field][op]=value`
-     *
-     * Supported operators:
-     * - `eq` - equals (default)
-     * - `ne` - not equals
-     * - `not` - alias for `ne` (not equals)
-     * - `gt`, `gte`, `lt`, `lte` - comparisons
-     * - `like` - case-sensitive substring match (contains)
-     * - `in` - comma-separated values
-     * - `between` - two comma-separated inclusive bounds
-     * - `null` - is/isn't null
-     * - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-     *
-     * **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-     *
+     * Typed voice filters using `filter[field]` or `filter[field][operator]`.
      */
     filter?: {
-      [key: string]:
-        | string
-        | {
-            /**
-             * Equals
-             */
-            eq?: string
-            /**
-             * Not equals
-             */
-            ne?: string
-            /**
-             * Alias for ne (not equals)
-             */
-            not?: string
-            /**
-             * Greater than
-             */
-            gt?: string
-            /**
-             * Greater than or equal
-             */
-            gte?: string
-            /**
-             * Less than
-             */
-            lt?: string
-            /**
-             * Less than or equal
-             */
-            lte?: string
-            /**
-             * Case-sensitive substring match (contains); value matched literally
-             */
-            like?: string
-            /**
-             * Comma-separated list of values
-             */
-            in?: string
-            /**
-             * Two comma-separated inclusive bounds
-             */
-            between?: string
-            /**
-             * Is null (true) or not null (false)
-             */
-            null?: boolean
-            /**
-             * Bitwise AND (for bitmask fields like weekdays)
-             */
-            band?: number
-          }
+      id?: IntegerFilter
+      name?: StringFilter
+      elevenlabs_voice_id?: NullableStringFilter
+      created_at?: DateTimeFilter
+      updated_at?: DateTimeFilter
     }
   }
   url: '/api/v1/voices'
@@ -1898,10 +2136,7 @@ export type PostVoicesResponses = {
   /**
    * Voice created
    */
-  201: {
-    id?: number
-    message?: string
-  }
+  201: IDMessageResponse
 }
 
 export type PostVoicesResponse = PostVoicesResponses[keyof PostVoicesResponses]
@@ -2137,79 +2372,29 @@ export type GetStoriesData = {
      */
     trashed?: 'only' | 'with'
     /**
-     * Advanced filtering using field-based operators.
-     *
-     * Basic usage: `filter[field]=value`
-     *
-     * Advanced operators: `filter[field][op]=value`
-     *
-     * Supported operators:
-     * - `eq` - equals (default)
-     * - `ne` - not equals
-     * - `not` - alias for `ne` (not equals)
-     * - `gt`, `gte`, `lt`, `lte` - comparisons
-     * - `like` - case-sensitive substring match (contains)
-     * - `in` - comma-separated values
-     * - `between` - two comma-separated inclusive bounds
-     * - `null` - is/isn't null
-     * - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-     *
-     * **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-     *
+     * Typed story filters. `has_audio` replaces empty-string comparisons on `audio_url`.
      */
     filter?: {
-      [key: string]:
-        | string
-        | {
-            /**
-             * Equals
-             */
-            eq?: string
-            /**
-             * Not equals
-             */
-            ne?: string
-            /**
-             * Alias for ne (not equals)
-             */
-            not?: string
-            /**
-             * Greater than
-             */
-            gt?: string
-            /**
-             * Greater than or equal
-             */
-            gte?: string
-            /**
-             * Less than
-             */
-            lt?: string
-            /**
-             * Less than or equal
-             */
-            lte?: string
-            /**
-             * Case-sensitive substring match (contains); value matched literally
-             */
-            like?: string
-            /**
-             * Comma-separated list of values
-             */
-            in?: string
-            /**
-             * Two comma-separated inclusive bounds
-             */
-            between?: string
-            /**
-             * Is null (true) or not null (false)
-             */
-            null?: boolean
-            /**
-             * Bitwise AND (for bitmask fields like weekdays)
-             */
-            band?: number
-          }
+      id?: IntegerFilter
+      title?: StringFilter
+      text?: StringFilter
+      voice_id?: NullableIntegerFilter
+      /**
+       * Use `has_audio` for presence filtering.
+       *
+       * @deprecated
+       */
+      audio_url?: StringFilter
+      has_audio?: PresenceFilter
+      status?: StoryStatusFilter
+      start_date?: DateFilter
+      end_date?: DateFilter
+      duration_seconds?: NullableNumberFilter
+      weekdays?: BitmaskFilter
+      is_breaking?: BooleanFilter
+      created_at?: DateTimeFilter
+      updated_at?: DateTimeFilter
+      deleted_at?: NullableDateTimeFilter
     }
   }
   url: '/api/v1/stories'
@@ -2289,10 +2474,7 @@ export type PostStoriesResponses = {
   /**
    * Story created
    */
-  201: {
-    id?: number
-    message?: string
-  }
+  201: IDMessageResponse
 }
 
 export type PostStoriesResponse = PostStoriesResponses[keyof PostStoriesResponses]
@@ -2346,9 +2528,9 @@ export type GetStoriesIdAudioErrors = {
    */
   404: ProblemDetails
   /**
-   * The requested byte range cannot be satisfied. The plain-text body describes the error.
+   * The requested byte range is invalid or cannot be satisfied.
    */
-  416: unknown
+  416: ProblemDetails
   /**
    * Internal server error
    */
@@ -2431,7 +2613,7 @@ export type PostStoriesIdAudioResponses = {
    * Audio uploaded successfully
    */
   201: {
-    message?: string
+    message: string
   }
 }
 
@@ -2517,7 +2699,7 @@ export type PostStoriesIdTtsResponses = {
    * TTS audio generated successfully
    */
   201: {
-    message?: string
+    message: string
   }
 }
 
@@ -2966,79 +3148,17 @@ export type GetStoriesIdBulletinsData = {
      */
     search?: string
     /**
-     * Advanced filtering using field-based operators.
-     *
-     * Basic usage: `filter[field]=value`
-     *
-     * Advanced operators: `filter[field][op]=value`
-     *
-     * Supported operators:
-     * - `eq` - equals (default)
-     * - `ne` - not equals
-     * - `not` - alias for `ne` (not equals)
-     * - `gt`, `gte`, `lt`, `lte` - comparisons
-     * - `like` - case-sensitive substring match (contains)
-     * - `in` - comma-separated values
-     * - `between` - two comma-separated inclusive bounds
-     * - `null` - is/isn't null
-     * - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-     *
-     * **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-     *
+     * Typed bulletin filters using `filter[field]` or `filter[field][operator]`.
      */
     filter?: {
-      [key: string]:
-        | string
-        | {
-            /**
-             * Equals
-             */
-            eq?: string
-            /**
-             * Not equals
-             */
-            ne?: string
-            /**
-             * Alias for ne (not equals)
-             */
-            not?: string
-            /**
-             * Greater than
-             */
-            gt?: string
-            /**
-             * Greater than or equal
-             */
-            gte?: string
-            /**
-             * Less than
-             */
-            lt?: string
-            /**
-             * Less than or equal
-             */
-            lte?: string
-            /**
-             * Case-sensitive substring match (contains); value matched literally
-             */
-            like?: string
-            /**
-             * Comma-separated list of values
-             */
-            in?: string
-            /**
-             * Two comma-separated inclusive bounds
-             */
-            between?: string
-            /**
-             * Is null (true) or not null (false)
-             */
-            null?: boolean
-            /**
-             * Bitwise AND (for bitmask fields like weekdays)
-             */
-            band?: number
-          }
+      id?: IntegerFilter
+      station_id?: IntegerFilter
+      filename?: StringFilter
+      duration_seconds?: NumberFilter
+      file_size?: IntegerFilter
+      story_count?: IntegerFilter
+      file_purged_at?: NullableDateTimeFilter
+      created_at?: DateTimeFilter
     }
   }
   url: '/api/v1/stories/{id}/bulletins'
@@ -3135,79 +3255,16 @@ export type GetUsersData = {
      */
     trashed?: 'only' | 'with'
     /**
-     * Advanced filtering using field-based operators.
-     *
-     * Basic usage: `filter[field]=value`
-     *
-     * Advanced operators: `filter[field][op]=value`
-     *
-     * Supported operators:
-     * - `eq` - equals (default)
-     * - `ne` - not equals
-     * - `not` - alias for `ne` (not equals)
-     * - `gt`, `gte`, `lt`, `lte` - comparisons
-     * - `like` - case-sensitive substring match (contains)
-     * - `in` - comma-separated values
-     * - `between` - two comma-separated inclusive bounds
-     * - `null` - is/isn't null
-     * - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-     *
-     * **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-     *
+     * Typed user filters using `filter[field]` or `filter[field][operator]`.
      */
     filter?: {
-      [key: string]:
-        | string
-        | {
-            /**
-             * Equals
-             */
-            eq?: string
-            /**
-             * Not equals
-             */
-            ne?: string
-            /**
-             * Alias for ne (not equals)
-             */
-            not?: string
-            /**
-             * Greater than
-             */
-            gt?: string
-            /**
-             * Greater than or equal
-             */
-            gte?: string
-            /**
-             * Less than
-             */
-            lt?: string
-            /**
-             * Less than or equal
-             */
-            lte?: string
-            /**
-             * Case-sensitive substring match (contains); value matched literally
-             */
-            like?: string
-            /**
-             * Comma-separated list of values
-             */
-            in?: string
-            /**
-             * Two comma-separated inclusive bounds
-             */
-            between?: string
-            /**
-             * Is null (true) or not null (false)
-             */
-            null?: boolean
-            /**
-             * Bitwise AND (for bitmask fields like weekdays)
-             */
-            band?: number
-          }
+      id?: IntegerFilter
+      username?: StringFilter
+      full_name?: StringFilter
+      email?: NullableStringFilter
+      role?: UserRoleFilter
+      created_at?: DateTimeFilter
+      updated_at?: DateTimeFilter
     }
   }
   url: '/api/v1/users'
@@ -3294,10 +3351,7 @@ export type PostUsersResponses = {
   /**
    * User created
    */
-  201: {
-    id?: number
-    message?: string
-  }
+  201: IDMessageResponse
 }
 
 export type PostUsersResponse = PostUsersResponses[keyof PostUsersResponses]
@@ -3576,79 +3630,17 @@ export type GetBulletinsData = {
      */
     search?: string
     /**
-     * Advanced filtering using field-based operators.
-     *
-     * Basic usage: `filter[field]=value`
-     *
-     * Advanced operators: `filter[field][op]=value`
-     *
-     * Supported operators:
-     * - `eq` - equals (default)
-     * - `ne` - not equals
-     * - `not` - alias for `ne` (not equals)
-     * - `gt`, `gte`, `lt`, `lte` - comparisons
-     * - `like` - case-sensitive substring match (contains)
-     * - `in` - comma-separated values
-     * - `between` - two comma-separated inclusive bounds
-     * - `null` - is/isn't null
-     * - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-     *
-     * **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-     *
+     * Typed bulletin filters using `filter[field]` or `filter[field][operator]`.
      */
     filter?: {
-      [key: string]:
-        | string
-        | {
-            /**
-             * Equals
-             */
-            eq?: string
-            /**
-             * Not equals
-             */
-            ne?: string
-            /**
-             * Alias for ne (not equals)
-             */
-            not?: string
-            /**
-             * Greater than
-             */
-            gt?: string
-            /**
-             * Greater than or equal
-             */
-            gte?: string
-            /**
-             * Less than
-             */
-            lt?: string
-            /**
-             * Less than or equal
-             */
-            lte?: string
-            /**
-             * Case-sensitive substring match (contains); value matched literally
-             */
-            like?: string
-            /**
-             * Comma-separated list of values
-             */
-            in?: string
-            /**
-             * Two comma-separated inclusive bounds
-             */
-            between?: string
-            /**
-             * Is null (true) or not null (false)
-             */
-            null?: boolean
-            /**
-             * Bitwise AND (for bitmask fields like weekdays)
-             */
-            band?: number
-          }
+      id?: IntegerFilter
+      station_id?: IntegerFilter
+      filename?: StringFilter
+      duration_seconds?: NumberFilter
+      file_size?: IntegerFilter
+      story_count?: IntegerFilter
+      file_purged_at?: NullableDateTimeFilter
+      created_at?: DateTimeFilter
     }
   }
   url: '/api/v1/bulletins'
@@ -3782,84 +3774,18 @@ export type GetStationsIdBulletinsData = {
      */
     search?: string
     /**
-     * Advanced filtering using field-based operators.
-     *
-     * Basic usage: `filter[field]=value`
-     *
-     * Advanced operators: `filter[field][op]=value`
-     *
-     * Supported operators:
-     * - `eq` - equals (default)
-     * - `ne` - not equals
-     * - `not` - alias for `ne` (not equals)
-     * - `gt`, `gte`, `lt`, `lte` - comparisons
-     * - `like` - case-sensitive substring match (contains)
-     * - `in` - comma-separated values
-     * - `between` - two comma-separated inclusive bounds
-     * - `null` - is/isn't null
-     * - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-     *
-     * **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-     *
+     * Typed bulletin filters using `filter[field]` or `filter[field][operator]`.
      */
     filter?: {
-      [key: string]:
-        | string
-        | {
-            /**
-             * Equals
-             */
-            eq?: string
-            /**
-             * Not equals
-             */
-            ne?: string
-            /**
-             * Alias for ne (not equals)
-             */
-            not?: string
-            /**
-             * Greater than
-             */
-            gt?: string
-            /**
-             * Greater than or equal
-             */
-            gte?: string
-            /**
-             * Less than
-             */
-            lt?: string
-            /**
-             * Less than or equal
-             */
-            lte?: string
-            /**
-             * Case-sensitive substring match (contains); value matched literally
-             */
-            like?: string
-            /**
-             * Comma-separated list of values
-             */
-            in?: string
-            /**
-             * Two comma-separated inclusive bounds
-             */
-            between?: string
-            /**
-             * Is null (true) or not null (false)
-             */
-            null?: boolean
-            /**
-             * Bitwise AND (for bitmask fields like weekdays)
-             */
-            band?: number
-          }
+      id?: IntegerFilter
+      station_id?: IntegerFilter
+      filename?: StringFilter
+      duration_seconds?: NumberFilter
+      file_size?: IntegerFilter
+      story_count?: IntegerFilter
+      file_purged_at?: NullableDateTimeFilter
+      created_at?: DateTimeFilter
     }
-    /**
-     * Return only the latest bulletin for this station (equivalent to limit=1)
-     */
-    latest?: boolean
   }
   url: '/api/v1/stations/{id}/bulletins'
 }
@@ -3896,11 +3822,9 @@ export type GetStationsIdBulletinsError =
 
 export type GetStationsIdBulletinsResponses = {
   /**
-   * Station bulletins. Returns a paginated list by default, or a single
-   * BulletinResponse object when `latest=true` or `limit=1` is used.
-   *
+   * Station bulletins in a paginated list envelope
    */
-  200: BulletinsListResponse | BulletinResponse
+  200: BulletinsListResponse
 }
 
 export type GetStationsIdBulletinsResponse =
@@ -3912,26 +3836,6 @@ export type PostStationsIdBulletinsData = {
      * Date for bulletin in YYYY-MM-DD format (defaults to today)
      */
     date?: string
-  }
-  headers?: {
-    /**
-     * Response format - use 'audio/wav' to download file directly
-     */
-    Accept?: 'application/json' | 'audio/wav'
-    /**
-     * Byte-range request (e.g. `bytes=0-1023`). Audio file responses support
-     * byte ranges; a satisfiable range returns 206 Partial Content and an
-     * unsatisfiable range returns 416 Range Not Satisfiable.
-     *
-     */
-    Range?: string
-    /**
-     * Cache control directives:
-     * - `no-cache` - Force new generation ignoring existing bulletins
-     * - `max-age=N` - Reuse bulletin if created within N seconds
-     *
-     */
-    'Cache-Control'?: string
   }
   path: {
     /**
@@ -3963,13 +3867,13 @@ export type PostStationsIdBulletinsErrors = {
    */
   404: ProblemDetails
   /**
+   * The requested response media type is not available from this operation
+   */
+  406: ProblemDetails
+  /**
    * Request body too large
    */
   413: ProblemDetails
-  /**
-   * The requested byte range cannot be satisfied. The plain-text body describes the error.
-   */
-  416: unknown
   /**
    * Validation error
    */
@@ -3989,59 +3893,119 @@ export type PostStationsIdBulletinsError =
 
 export type PostStationsIdBulletinsResponses = {
   /**
-   * Bulletin generated successfully or WAV file if download=true
+   * Bulletin generation job accepted
    */
-  200: {
-    /**
-     * Bulletin ID (if saved to database)
-     */
-    id: number
-    /**
-     * Station ID
-     */
-    station_id: number
-    /**
-     * Station name
-     */
-    station_name?: string
-    /**
-     * URL to download the audio file
-     */
-    audio_url?: string
-    /**
-     * Bulletin filename
-     */
-    filename: string
-    /**
-     * When the bulletin was created
-     */
-    created_at: string
-    /**
-     * Duration in seconds
-     */
-    duration_seconds: number
-    /**
-     * File size in bytes
-     */
-    file_size: number
-    /**
-     * Number of stories in the bulletin
-     */
-    story_count: number
-  }
-  /**
-   * Partial audio content for a satisfiable byte-range request. A
-   * single-range request returns `audio/wav` with a `Content-Range`
-   * header; a request with multiple ranges returns a
-   * `multipart/byteranges` body in which each part carries its own
-   * Content-Range.
-   *
-   */
-  206: Blob | File
+  202: BulletinJob
 }
 
 export type PostStationsIdBulletinsResponse =
   PostStationsIdBulletinsResponses[keyof PostStationsIdBulletinsResponses]
+
+export type GetBulletinJobsIdData = {
+  body?: never
+  path: {
+    /**
+     * Resource ID. Must be a positive integer; a malformed, zero, or negative
+     * ID is rejected with 400 Bad Request.
+     *
+     */
+    id: number
+  }
+  query?: never
+  url: '/api/v1/bulletin-jobs/{id}'
+}
+
+export type GetBulletinJobsIdErrors = {
+  /**
+   * Bad request
+   */
+  400: ProblemDetails
+  /**
+   * Unauthorized
+   */
+  401: ProblemDetails
+  /**
+   * Insufficient permissions
+   */
+  403: ProblemDetails
+  /**
+   * Resource not found
+   */
+  404: ProblemDetails
+  /**
+   * Internal server error
+   */
+  500: ProblemDetails
+  /**
+   * The operation exceeded the server-side timeout
+   */
+  504: ProblemDetails
+}
+
+export type GetBulletinJobsIdError = GetBulletinJobsIdErrors[keyof GetBulletinJobsIdErrors]
+
+export type GetBulletinJobsIdResponses = {
+  /**
+   * Current bulletin generation job state
+   */
+  200: BulletinJob
+}
+
+export type GetBulletinJobsIdResponse = GetBulletinJobsIdResponses[keyof GetBulletinJobsIdResponses]
+
+export type GetStationsIdBulletinsLatestData = {
+  body?: never
+  path: {
+    /**
+     * Resource ID. Must be a positive integer; a malformed, zero, or negative
+     * ID is rejected with 400 Bad Request.
+     *
+     */
+    id: number
+  }
+  query?: never
+  url: '/api/v1/stations/{id}/bulletins/latest'
+}
+
+export type GetStationsIdBulletinsLatestErrors = {
+  /**
+   * Bad request
+   */
+  400: ProblemDetails
+  /**
+   * Unauthorized
+   */
+  401: ProblemDetails
+  /**
+   * Insufficient permissions
+   */
+  403: ProblemDetails
+  /**
+   * Resource not found
+   */
+  404: ProblemDetails
+  /**
+   * Internal server error
+   */
+  500: ProblemDetails
+  /**
+   * The operation exceeded the server-side timeout
+   */
+  504: ProblemDetails
+}
+
+export type GetStationsIdBulletinsLatestError =
+  GetStationsIdBulletinsLatestErrors[keyof GetStationsIdBulletinsLatestErrors]
+
+export type GetStationsIdBulletinsLatestResponses = {
+  /**
+   * Latest station bulletin
+   */
+  200: BulletinResponse
+}
+
+export type GetStationsIdBulletinsLatestResponse =
+  GetStationsIdBulletinsLatestResponses[keyof GetStationsIdBulletinsLatestResponses]
 
 export type GetBulletinsIdAudioData = {
   body?: never
@@ -4092,9 +4056,9 @@ export type GetBulletinsIdAudioErrors = {
    */
   404: ProblemDetails
   /**
-   * The requested byte range cannot be satisfied. The plain-text body describes the error.
+   * The requested byte range is invalid or cannot be satisfied.
    */
-  416: unknown
+  416: ProblemDetails
   /**
    * Internal server error
    */
@@ -4226,79 +4190,22 @@ export type GetStationVoicesData = {
      */
     fields?: string
     /**
-     * Advanced filtering using field-based operators.
-     *
-     * Basic usage: `filter[field]=value`
-     *
-     * Advanced operators: `filter[field][op]=value`
-     *
-     * Supported operators:
-     * - `eq` - equals (default)
-     * - `ne` - not equals
-     * - `not` - alias for `ne` (not equals)
-     * - `gt`, `gte`, `lt`, `lte` - comparisons
-     * - `like` - case-sensitive substring match (contains)
-     * - `in` - comma-separated values
-     * - `between` - two comma-separated inclusive bounds
-     * - `null` - is/isn't null
-     * - `band` - bitwise AND (for bitmask fields, returns records where field & value != 0)
-     *
-     * **URL Encoding:** Bracket characters `[` and `]` must be URL-encoded as `%5B` and `%5D` when using HTTP clients like curl. Most modern HTTP libraries (axios, fetch, etc.) handle this encoding automatically.
-     *
+     * Typed station-voice filters. `has_audio` replaces empty-string comparisons on `audio_url`.
      */
     filter?: {
-      [key: string]:
-        | string
-        | {
-            /**
-             * Equals
-             */
-            eq?: string
-            /**
-             * Not equals
-             */
-            ne?: string
-            /**
-             * Alias for ne (not equals)
-             */
-            not?: string
-            /**
-             * Greater than
-             */
-            gt?: string
-            /**
-             * Greater than or equal
-             */
-            gte?: string
-            /**
-             * Less than
-             */
-            lt?: string
-            /**
-             * Less than or equal
-             */
-            lte?: string
-            /**
-             * Case-sensitive substring match (contains); value matched literally
-             */
-            like?: string
-            /**
-             * Comma-separated list of values
-             */
-            in?: string
-            /**
-             * Two comma-separated inclusive bounds
-             */
-            between?: string
-            /**
-             * Is null (true) or not null (false)
-             */
-            null?: boolean
-            /**
-             * Bitwise AND (for bitmask fields like weekdays)
-             */
-            band?: number
-          }
+      id?: IntegerFilter
+      station_id?: IntegerFilter
+      voice_id?: IntegerFilter
+      /**
+       * Use `has_audio` for presence filtering.
+       *
+       * @deprecated
+       */
+      audio_url?: StringFilter
+      has_audio?: PresenceFilter
+      mix_point?: NumberFilter
+      created_at?: DateTimeFilter
+      updated_at?: DateTimeFilter
     }
   }
   url: '/api/v1/station-voices'
@@ -4389,10 +4296,7 @@ export type PostStationVoicesResponses = {
   /**
    * Station-voice relationship created
    */
-  201: {
-    id?: number
-    message?: string
-  }
+  201: IDMessageResponse
 }
 
 export type PostStationVoicesResponse = PostStationVoicesResponses[keyof PostStationVoicesResponses]
@@ -4446,9 +4350,9 @@ export type GetStationVoicesIdAudioErrors = {
    */
   404: ProblemDetails
   /**
-   * The requested byte range cannot be satisfied. The plain-text body describes the error.
+   * The requested byte range is invalid or cannot be satisfied.
    */
-  416: unknown
+  416: ProblemDetails
   /**
    * Internal server error
    */
@@ -4534,7 +4438,7 @@ export type PostStationVoicesIdAudioResponses = {
    * Jingle uploaded successfully
    */
   201: {
-    message?: string
+    message: string
   }
 }
 

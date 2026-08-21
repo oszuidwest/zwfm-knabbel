@@ -105,11 +105,11 @@
 
     submitting = true
     try {
-      await putStoriesId({ path: { id: data.story.id! }, body: toStoryApiFormat(form) })
+      await putStoriesId({ path: { id: data.story.id }, body: toStoryApiFormat(form) })
 
       if (audioFile) {
         try {
-          await postStoriesIdAudio({ path: { id: data.story.id! }, body: { audio: audioFile } })
+          await postStoriesIdAudio({ path: { id: data.story.id }, body: { audio: audioFile } })
         } catch (err) {
           if (!(err instanceof ApiError && err.notified)) {
             toast.warning('Bericht bijgewerkt, maar audio upload mislukt')

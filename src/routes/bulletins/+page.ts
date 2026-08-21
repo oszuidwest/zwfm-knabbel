@@ -24,7 +24,7 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
 
   const params: BulletinFilters = { limit, offset }
   if (stationId) {
-    params.filter = { station_id: String(stationId) }
+    params.filter = { station_id: stationId }
   }
 
   const responseResult = settleLoad(
@@ -43,7 +43,7 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
     Promise.all(
       bulletinsRes.data.map(async bulletin => {
         try {
-          const storiesRes = await getBulletinsIdStories({ path: { id: bulletin.id! }, fetch })
+          const storiesRes = await getBulletinsIdStories({ path: { id: bulletin.id }, fetch })
           if (storiesRes.data.length > 0) {
             const firstStory = await getStoriesId({
               path: { id: storiesRes.data[0].story_id },

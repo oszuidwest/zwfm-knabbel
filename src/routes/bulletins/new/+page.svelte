@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
+  import { onDestroy } from 'svelte'
   import { notifyMutationError } from '$lib/api/client'
   import { generateBulletin } from '$lib/api/bulletins'
   import { getAuthContext } from '$lib/stores/auth.svelte'
@@ -14,9 +15,12 @@
 
   let selectedStation = $state('')
   let generating = $state(false)
+  let generationController: AbortController | undefined
 
   const stationOptions = $derived(toSelectOptions(data.stations))
   const canGenerate = $derived(auth.can('bulletins', 'generate'))
+
+  onDestroy(() => generationController?.abort())
 
   async function handleGenerate(e: Event): Promise<void> {
     e.preventDefault()
@@ -28,13 +32,20 @@
     }
 
     generating = true
+    const controller = new AbortController()
+    generationController = controller
     try {
-      const bulletin = await generateBulletin(Number(selectedStation))
+      const bulletin = await generateBulletin(Number(selectedStation), controller.signal)
       toast.success('Bulletin gegenereerd')
       goto(resolveInternalHref(`/bulletins/${bulletin.id}`))
     } catch (err) {
-      notifyMutationError(err, 'Genereren mislukt')
+      if (!controller.signal.aborted) {
+        notifyMutationError(err, 'Genereren mislukt')
+      }
     } finally {
+      if (generationController === controller) {
+        generationController = undefined
+      }
       generating = false
     }
   }
@@ -66,14 +77,15 @@
           <ul class="list-inside list-disc space-y-1 text-sm text-base-content/70">
             <li>Actieve berichten voor deze zender worden opgehaald</li>
             <li>De nieuwslezer van de zender spreekt de berichten in</li>
-            <li>Een audio bestand wordt gegenereerd</li>
+            <li>De backend zet de generatie in de wachtrij</li>
+            <li>Je gaat automatisch naar het bulletin zodra het audiobestand klaar is</li>
           </ul>
         </div>
 
         <FormActions
           cancelHref="/bulletins"
           submitting={generating}
-          submitLabel="Genereren"
+          submitLabel={generating ? 'Bulletin wordt gemaakt…' : 'Genereren'}
           submitIcon={RefreshCw}
           canSubmit={canGenerate && !!selectedStation}
           forbidTooltip={canGenerate ? 'Selecteer eerst een zender' : 'Geen rechten'}

@@ -15,7 +15,7 @@
   function handleDelete(station: Station): void {
     deleteWithConfirm({
       name: station.name ?? 'deze zender',
-      deleteFn: () => deleteStationsId({ path: { id: station.id! } }),
+      deleteFn: () => deleteStationsId({ path: { id: station.id } }),
       onSuccess: () => invalidateAll(),
       successMessage: 'Zender verwijderd',
     })

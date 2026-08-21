@@ -59,7 +59,7 @@
       const isSelfRoleChange =
         !!auth.user && data.user.id === auth.user.id && form.role !== auth.user.role
 
-      await putUsersId({ path: { id: data.user.id! }, body: updateData })
+      await putUsersId({ path: { id: data.user.id }, body: updateData })
       if (isSelfRoleChange) {
         const refreshed = await auth.checkAuth({ force: true })
         if (!refreshed) {

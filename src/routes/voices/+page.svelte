@@ -15,7 +15,7 @@
   function handleDelete(voice: Voice): void {
     deleteWithConfirm({
       name: voice.name ?? 'deze stem',
-      deleteFn: () => deleteVoicesId({ path: { id: voice.id! } }),
+      deleteFn: () => deleteVoicesId({ path: { id: voice.id } }),
       onSuccess: () => invalidateAll(),
       successMessage: 'Stem verwijderd',
     })

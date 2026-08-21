@@ -31,7 +31,7 @@ export const load: PageLoad = async ({ fetch, parent }) => {
   const settingsResult = settleLoad(getSettingsTts({ fetch }))
 
   const { user } = await parent()
-  requirePermission(user, 'settings_tts', 'read')
+  requirePermission(user, 'settings:tts', 'read')
 
   const result = await settingsResult
   if (result.ok) {

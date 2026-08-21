@@ -34,6 +34,9 @@ import type {
   GetAuthOauthCallbackErrors,
   GetAuthOauthData,
   GetAuthOauthErrors,
+  GetBulletinJobsIdData,
+  GetBulletinJobsIdErrors,
+  GetBulletinJobsIdResponses,
   GetBulletinsData,
   GetBulletinsErrors,
   GetBulletinsIdAudioData,
@@ -65,6 +68,9 @@ import type {
   GetStationsErrors,
   GetStationsIdBulletinsData,
   GetStationsIdBulletinsErrors,
+  GetStationsIdBulletinsLatestData,
+  GetStationsIdBulletinsLatestErrors,
+  GetStationsIdBulletinsLatestResponses,
   GetStationsIdBulletinsResponses,
   GetStationsIdData,
   GetStationsIdErrors,
@@ -315,7 +321,7 @@ export const deleteSessionsCurrent = <ThrowOnError extends boolean = true>(
 /**
  * Get current user information
  *
- * Returns the complete user object for the authenticated user, including full_name, email, and login statistics.
+ * Returns the authenticated user and effective permissions derived from the server RBAC policy.
  */
 export const getSessionsCurrent = <ThrowOnError extends boolean = true>(
   options?: Options<GetSessionsCurrentData, ThrowOnError>
@@ -575,9 +581,9 @@ export const putVoicesId = <ThrowOnError extends boolean = true>(
  * - `filter[voice_id][null]=true` - Stories without voice
  *
  * ## Audio Filtering
- * Filter stories by audio presence using the `audio_url` field:
- * - `filter[audio_url]=` - Stories WITHOUT audio (empty value)
- * - `filter[audio_url][ne]=` - Stories WITH audio (not empty)
+ * Filter stories by audio presence with an explicit boolean:
+ * - `filter[has_audio]=false` - Stories without audio
+ * - `filter[has_audio]=true` - Stories with audio
  *
  * Use cases:
  * - Quality control: Find stories missing audio before publication
@@ -1173,18 +1179,12 @@ export const getBulletinsId = <ThrowOnError extends boolean = true>(
  * - `file_purged_at` - File cleanup timestamp
  * - `created_at` - Creation timestamp (default: descending)
  *
- * ## Special Parameters
- * - `latest=true` - Returns the latest bulletin object directly with `X-Cache` and `Age` headers
- * - `limit=1` - Also triggers the same single-bulletin response as `latest=true`
- *
- * When the latest shortcut is active, the only other accepted query parameter is `limit=1`.
- * `filter`, `sort`, `fields`, `search`, `trashed`, `offset`, and `limit!=1` are rejected with 422.
- *
  * ## Notes
+ * To retrieve one latest bulletin, use GET /stations/{id}/bulletins/latest.
+ * `limit=1` keeps this endpoint's list envelope intact.
  * To get story information for bulletins, use GET /bulletins/{id}/stories for each bulletin.
  *
  * ## Examples
- * - Latest bulletin: `?latest=true`
  * - Search by filename: `?search=bulletin_2024`
  * - Filter by date range: `?filter[created_at][gte]=2024-01-01&filter[created_at][lte]=2024-12-31`
  * - Sort by duration: `?sort=-duration_seconds`
@@ -1212,23 +1212,15 @@ export const getStationsIdBulletins = <ThrowOnError extends boolean = true>(
   })
 
 /**
- * Generate news bulletin for a station
+ * Queue bulletin generation for a station
  *
- * Generates a news bulletin for a specific station with smart caching and flexible response options.
+ * Persists a durable background-generation job and returns immediately.
+ * Poll the URL in the `Location` header until status is `succeeded` or
+ * `failed`. A successful job contains `bulletin_id`; retrieve that
+ * bulletin and its audio through the regular bulletin endpoints.
  *
- * ## HTTP Headers for Control
- * - `Accept: audio/wav` - Return WAV file directly instead of JSON response
- * - `Cache-Control: no-cache` - Force new generation ignoring cache
- * - `Cache-Control: max-age=N` - Reuse existing bulletin if created within N seconds
- * - `Range` - Byte-range requests apply to the `audio/wav` response variant:
- * a satisfiable range returns 206 Partial Content, an unsatisfiable range 416
- *
- * ## Response Headers
- * - `X-Cache: HIT|MISS` - Indicates if bulletin was served from cache or freshly generated
- * - `Age: N` - Age of the bulletin in seconds (0 for fresh bulletins)
- *
- * ## Notes
- * To get story information, use the separate GET /bulletins/{id}/stories endpoint after bulletin generation.
+ * Every request creates a generation job. A single background worker
+ * processes jobs one at a time in submission order.
  *
  */
 export const postStationsIdBulletins = <ThrowOnError extends boolean = true>(
@@ -1252,6 +1244,52 @@ export const postStationsIdBulletins = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  })
+
+/**
+ * Get bulletin generation job status
+ *
+ * Returns the durable state of a queued generation request. Poll until
+ * `status` is `succeeded` or `failed`. Successful jobs expose the created
+ * `bulletin_id`; failed jobs expose a stable `error_code` and safe detail.
+ * Finished job records are deleted after the bulletin retention period,
+ * after which this endpoint returns 404.
+ *
+ */
+export const getBulletinJobsId = <ThrowOnError extends boolean = true>(
+  options: Options<GetBulletinJobsIdData, ThrowOnError>
+): RequestResult<GetBulletinJobsIdResponses, GetBulletinJobsIdErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<
+    GetBulletinJobsIdResponses,
+    GetBulletinJobsIdErrors,
+    ThrowOnError,
+    'data'
+  >({
+    responseStyle: 'data',
+    url: '/api/v1/bulletin-jobs/{id}',
+    ...options,
+  })
+
+/**
+ * Get the latest bulletin for a station
+ */
+export const getStationsIdBulletinsLatest = <ThrowOnError extends boolean = true>(
+  options: Options<GetStationsIdBulletinsLatestData, ThrowOnError>
+): RequestResult<
+  GetStationsIdBulletinsLatestResponses,
+  GetStationsIdBulletinsLatestErrors,
+  ThrowOnError,
+  'data'
+> =>
+  (options.client ?? client).get<
+    GetStationsIdBulletinsLatestResponses,
+    GetStationsIdBulletinsLatestErrors,
+    ThrowOnError,
+    'data'
+  >({
+    responseStyle: 'data',
+    url: '/api/v1/stations/{id}/bulletins/latest',
+    ...options,
   })
 
 /**
@@ -1318,15 +1356,16 @@ export const getBulletinsIdStories = <ThrowOnError extends boolean = true>(
  * - `id` - Station-voice relationship ID
  * - `station_id` - Station ID
  * - `voice_id` - Voice ID
- * - `audio_url` - Filter by audio presence (maps to audio_file column)
+ * - `audio_url` - Filter by audio presence (deprecated, use `has_audio`)
+ * - `has_audio` - Boolean jingle-audio presence
  * - `mix_point` - Mix point in seconds
  * - `created_at` - Creation timestamp
  * - `updated_at` - Last update timestamp
  *
  * ## Audio Filtering
  * Filter station-voices by jingle audio presence:
- * - `filter[audio_url]=` - Station-voices WITHOUT jingle audio
- * - `filter[audio_url][ne]=` - Station-voices WITH jingle audio
+ * - `filter[has_audio]=false` - Station-voices without jingle audio
+ * - `filter[has_audio]=true` - Station-voices with jingle audio
  *
  * ## Sort Fields
  * Available sort fields:

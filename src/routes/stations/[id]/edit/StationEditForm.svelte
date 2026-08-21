@@ -43,7 +43,7 @@
 
     submitting = true
     try {
-      await putStationsId({ path: { id: data.station.id! }, body: form })
+      await putStationsId({ path: { id: data.station.id }, body: form })
       toast.success('Zender bijgewerkt')
       goto(resolveInternalHref('/stations'))
     } catch (err) {

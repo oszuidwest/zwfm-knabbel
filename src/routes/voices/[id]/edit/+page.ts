@@ -15,7 +15,7 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
     Promise.all([
       getVoicesId({ path: { id: voiceId }, fetch }),
       getStations({ fetch }),
-      getStationVoices({ query: { filter: { voice_id: String(voiceId) } }, fetch }),
+      getStationVoices({ query: { filter: { voice_id: voiceId } }, fetch }),
     ])
   )
 

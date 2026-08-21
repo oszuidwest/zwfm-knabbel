@@ -51,7 +51,7 @@
   const handleDelete = (story: Story) =>
     deleteWithConfirm({
       name: story.title ?? 'dit bericht',
-      deleteFn: () => deleteStoriesId({ path: { id: story.id! } }),
+      deleteFn: () => deleteStoriesId({ path: { id: story.id } }),
       onSuccess: () => invalidateAll(),
       successMessage: 'Bericht verwijderd',
     })

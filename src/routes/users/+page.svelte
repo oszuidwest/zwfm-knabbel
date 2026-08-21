@@ -20,7 +20,7 @@
     }
 
     try {
-      await deleteUsersId({ path: { id: user.id! } })
+      await deleteUsersId({ path: { id: user.id } })
       toast.success('Gebruiker verwijderd')
       await invalidateAll()
     } catch (err) {

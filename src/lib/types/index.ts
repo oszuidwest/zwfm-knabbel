@@ -1,5 +1,8 @@
+import type { PostVoicesData } from '$lib/api/generated/types.gen'
+
 export type {
   BulletinResponse as Bulletin,
+  CurrentSession as Session,
   PronunciationRule,
   PronunciationRulesList,
   PronunciationRulesUpdate,
@@ -16,9 +19,7 @@ export type {
   Voice,
 } from '$lib/api/generated/types.gen'
 
-export interface VoiceInput {
-  name: string
-}
+export type VoiceInput = PostVoicesData['body']
 
 /** Weekdays stores schedule state in the shape forms can bind directly. */
 export interface Weekdays {

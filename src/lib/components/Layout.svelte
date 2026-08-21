@@ -146,7 +146,7 @@
             </li>
           {/each}
 
-          {#if auth.can('pronunciation_rules', 'read') || auth.can('settings_tts', 'read')}
+          {#if auth.can('pronunciation_rules', 'read') || auth.can('settings:tts', 'read')}
             <li class="mt-4 menu-title tracking-widest uppercase">AI</li>
             {#each aiNavItems as item (item.path)}
               {@const Icon = item.icon}

@@ -5,11 +5,11 @@
   import {
     deleteStationVoicesId,
     getStationVoicesId,
+    postStationVoices,
     postStationVoicesIdAudio,
     putStationVoicesId,
     putVoicesId,
   } from '$lib/api/generated/sdk.gen'
-  import { createStationVoice } from '$lib/api/station-voices'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
@@ -54,7 +54,7 @@
     )
 
     return pageData.stations.map(station => {
-      const sv = stationVoicesByStationId[station.id!]
+      const sv = stationVoicesByStationId[station.id]
       const mixPoint = sv?.mix_point ?? 0
       const hasAudio = !!sv?.audio_file
 
@@ -90,7 +90,7 @@
     submitting = true
 
     try {
-      await putVoicesId({ path: { id: data.voice.id! }, body: form })
+      await putVoicesId({ path: { id: data.voice.id }, body: form })
       toast.success('Stem bijgewerkt')
       goto(resolveInternalHref('/voices'))
     } catch (err) {
@@ -116,7 +116,7 @@
 
     const wasEnabled = config.enabled
     const stationVoiceId = config.stationVoiceId
-    const stationId = config.station.id!
+    const stationId = config.station.id
     const stationName = config.station.name
 
     updateConfig(index, { saving: true })
@@ -136,10 +136,12 @@
         })
         toast.success(`${stationName} ontkoppeld`)
       } else if (!wasEnabled) {
-        const result = await createStationVoice({
-          station_id: stationId,
-          voice_id: data.voice.id!,
-          mix_point: 0,
+        const result = await postStationVoices({
+          body: {
+            station_id: stationId,
+            voice_id: data.voice.id,
+            mix_point: 0,
+          },
         })
         updateConfig(index, {
           enabled: true,
