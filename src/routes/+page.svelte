@@ -123,7 +123,7 @@
       href: '/stories?status=active',
       icon: CircleCheckBig,
       accent: 'text-success/60',
-      tint: 'hover:bg-success/5',
+      tint: 'sm:hover:bg-success/5',
       show: data.canStories,
     },
     {
@@ -132,7 +132,7 @@
       href: '/stories?status=active',
       icon: Zap,
       accent: 'text-error/60',
-      tint: 'hover:bg-error/5',
+      tint: 'sm:hover:bg-error/5',
       show: data.canStories,
     },
     {
@@ -141,7 +141,7 @@
       href: '/stories?status=draft',
       icon: Pencil,
       accent: 'text-warning/60',
-      tint: 'hover:bg-warning/5',
+      tint: 'sm:hover:bg-warning/5',
       show: data.canStories,
     },
     {
@@ -150,7 +150,7 @@
       href: '/bulletins',
       icon: Podcast,
       accent: 'text-primary/60',
-      tint: 'hover:bg-primary/5',
+      tint: 'sm:hover:bg-primary/5',
       show: data.canBulletins,
     },
   ])
@@ -170,12 +170,14 @@
   />
 
   {#if statTiles.some(tile => tile.show)}
-    <div class="stats w-full stats-vertical bg-base-100 sm:stats-horizontal">
+    <div
+      class="stats w-full bg-base-100 max-sm:grid-flow-row max-sm:grid-cols-2 max-sm:gap-3 max-sm:bg-transparent"
+    >
       {#each statTiles.filter(tile => tile.show) as tile (tile.label)}
         {@const Icon = tile.icon}
         <a
           href={resolveInternalHref(tile.href)}
-          class="stat transition-colors {tile.tint}"
+          class="stat transition-colors {tile.tint} max-sm:rounded-box max-sm:border-0 max-sm:bg-base-100 max-sm:p-4"
         >
           <div class="stat-figure {tile.accent}">
             <Icon
@@ -183,7 +185,7 @@
               class="h-8 w-8"
             />
           </div>
-          <div class="stat-title">{tile.label}</div>
+          <div class="stat-title max-sm:whitespace-normal">{tile.label}</div>
           <div class="stat-value">{tile.value}</div>
         </a>
       {/each}
