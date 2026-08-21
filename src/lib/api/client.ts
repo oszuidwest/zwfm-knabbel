@@ -1,21 +1,9 @@
 import { PUBLIC_API_URL } from '$env/static/public'
+import { client } from './generated/client.gen'
 import { toast } from '$lib/stores/toast'
 
-const API_BASE = `${PUBLIC_API_URL}/api/v1`
-
-type FetchFn = typeof fetch
-
-interface PaginationFilters {
-  limit?: number
-  offset?: number
-  [key: string]: string | number | boolean | undefined
-}
-
-interface RequestOptions extends Omit<RequestInit, 'body'> {
-  params?: Record<string, string | number | boolean | undefined>
-  body?: unknown
-  fetch?: FetchFn
-}
+const REQUEST_TIMEOUT_MS = 30_000
+const UPLOAD_TIMEOUT_MS = 120_000
 
 export interface ProblemFieldError {
   field?: string
@@ -71,137 +59,54 @@ function isProblemDetails(value: unknown): value is ProblemDetails {
   )
 }
 
-async function parseErrorResponse(
-  response: Response,
-  fallbackMessage: string
-): Promise<{ message: string; details?: unknown }> {
-  try {
-    const errorData = await response.json()
-    // Babbel returns both legacy error envelopes and RFC 7807 problem details.
-    const message =
-      errorData.detail || errorData.message || errorData.title || errorData.error || fallbackMessage
-    return { message, details: errorData }
-  } catch {
-    return { message: fallbackMessage }
+function getErrorMessage(error: unknown, fallbackMessage: string): string {
+  if (typeof error === 'string' && error) return error
+  if (typeof error !== 'object' || error === null) return fallbackMessage
+
+  const candidate = error as Record<string, unknown>
+  for (const key of ['detail', 'message', 'title', 'error']) {
+    if (typeof candidate[key] === 'string' && candidate[key]) return candidate[key]
   }
+
+  return fallbackMessage
 }
 
-async function parseResponseBody<T>(response: Response): Promise<T> {
-  const text = await response.text()
-  if (!text) return {} as T
-  return JSON.parse(text) as T
+function isUpload(request: Request | undefined): boolean {
+  return request?.headers.get('content-type')?.startsWith('multipart/form-data') ?? false
 }
 
-function handleFetchError(err: unknown, timeoutMessage: string): never {
-  if (err instanceof ApiError) throw err
-  if (err instanceof Error && err.name === 'AbortError') {
-    throw new ApiError(0, timeoutMessage)
-  }
-  if (err instanceof TypeError) {
-    throw new ApiError(0, 'Network error')
-  }
-  throw err
-}
-
-async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { params, body, fetch: customFetch, ...fetchOptions } = options
-  const fetchFn = customFetch ?? fetch
-
-  let url = `${API_BASE}${endpoint}`
-
-  if (params) {
-    const searchParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) {
-        searchParams.set(key, String(value))
-      }
+// Timeouts live on the client so no SDK call site can forget them.
+// Interceptor registration is a side effect of importing this module; the root
+// +layout.ts imports it explicitly so it runs before any SDK call.
+client.interceptors.request.use(
+  request =>
+    new Request(request, {
+      signal: AbortSignal.any([
+        request.signal,
+        AbortSignal.timeout(isUpload(request) ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS),
+      ]),
     })
-    const queryString = searchParams.toString()
-    if (queryString) {
-      url += `?${queryString}`
+)
+
+client.interceptors.error.use((error, response, request) => {
+  if (error instanceof ApiError) return error
+
+  if (!response) {
+    if (request?.signal.reason?.name === 'TimeoutError') {
+      return new ApiError(0, isUpload(request) ? 'Upload timeout' : 'Request timeout')
     }
+    if (error instanceof TypeError) return new ApiError(0, 'Network error')
+    return error
   }
 
-  const requestBody = body !== undefined ? JSON.stringify(body) : undefined
-  const headers = new Headers(fetchOptions.headers)
-  if (requestBody !== undefined && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json')
-  }
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 30000)
-
-  let response: Response
-  try {
-    response = await fetchFn(url, {
-      ...fetchOptions,
-      credentials: 'include',
-      headers,
-      body: requestBody,
-      signal: controller.signal,
-    })
-  } catch (err) {
-    clearTimeout(timeoutId)
-    handleFetchError(err, 'Request timeout')
+  const apiError = new ApiError(response.status, getErrorMessage(error, 'Request failed'), error)
+  if (response.status === 403 && request?.method !== 'GET') {
+    toast.error('Geen rechten voor deze actie')
+    apiError.notified = true
   }
 
-  clearTimeout(timeoutId)
-
-  if (!response.ok) {
-    const { message, details } = await parseErrorResponse(response, 'Request failed')
-    const err = new ApiError(response.status, message, details)
-    if (response.status === 403 && (fetchOptions.method ?? 'GET') !== 'GET') {
-      toast.error('Geen rechten voor deze actie')
-      err.notified = true
-    }
-    throw err
-  }
-
-  return parseResponseBody<T>(response)
-}
-
-async function upload<T>(
-  endpoint: string,
-  file: File,
-  fieldName = 'audio',
-  customFetch?: FetchFn
-): Promise<T> {
-  const url = `${API_BASE}${endpoint}`
-  const fetchFn = customFetch ?? fetch
-
-  const formData = new FormData()
-  formData.append(fieldName, file)
-
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 120000)
-
-  let response: Response
-  try {
-    response = await fetchFn(url, {
-      method: 'POST',
-      credentials: 'include',
-      // Let the browser include the multipart boundary in Content-Type.
-      body: formData,
-      signal: controller.signal,
-    })
-  } catch (err) {
-    clearTimeout(timeoutId)
-    handleFetchError(err, 'Upload timeout')
-  }
-
-  clearTimeout(timeoutId)
-
-  if (!response.ok) {
-    const { message, details } = await parseErrorResponse(response, 'Upload failed')
-    const err = new ApiError(response.status, message, details)
-    if (response.status === 403) {
-      toast.error('Geen rechten voor deze actie')
-      err.notified = true
-    }
-    throw err
-  }
-
-  return parseResponseBody<T>(response)
-}
+  return apiError
+})
 
 export function getMediaUrl(path: string | undefined | null): string | undefined {
   if (!path) return undefined
@@ -213,34 +118,13 @@ export function getMediaUrl(path: string | undefined | null): string | undefined
   return `${PUBLIC_API_URL}${cleanPath}`
 }
 
-export const api = {
-  get: <T>(endpoint: string, params?: RequestOptions['params'], customFetch?: FetchFn) =>
-    request<T>(endpoint, { method: 'GET', params, fetch: customFetch }),
-
-  post: <T>(endpoint: string, body?: unknown, customFetch?: FetchFn) =>
-    request<T>(endpoint, { method: 'POST', body, fetch: customFetch }),
-
-  put: <T>(endpoint: string, body?: unknown, customFetch?: FetchFn) =>
-    request<T>(endpoint, { method: 'PUT', body, fetch: customFetch }),
-
-  patch: <T>(endpoint: string, body?: unknown, customFetch?: FetchFn) =>
-    request<T>(endpoint, { method: 'PATCH', body, fetch: customFetch }),
-
-  delete: <T>(endpoint: string, customFetch?: FetchFn) =>
-    request<T>(endpoint, { method: 'DELETE', fetch: customFetch }),
-
-  upload,
-}
-
-export function notifyMutationError(err: unknown, fallbackMessage: string): void {
-  if (err instanceof ApiError && err.notified) return
-  if (err instanceof ApiError) {
-    const details = isProblemDetails(err.details) ? err.details : undefined
-    toast.error(details?.detail ?? fallbackMessage)
+export function notifyMutationError(error: unknown, fallbackMessage: string): void {
+  if (error instanceof ApiError) {
+    // The error interceptor already extracted the ProblemDetails message.
+    if (!error.notified) toast.error(error.message || fallbackMessage)
     return
   }
   toast.error(fallbackMessage)
 }
 
 export { ApiError, isProblemDetails }
-export type { FetchFn, PaginationFilters }

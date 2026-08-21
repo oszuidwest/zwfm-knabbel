@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation'
   import { notifyMutationError } from '$lib/api/client'
   import { userCreateSchema, type UserFormData } from '$lib/schemas/user'
-  import { usersApi } from '$lib/api/users'
+  import { postUsers } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
@@ -38,12 +38,14 @@
 
     submitting = true
     try {
-      await usersApi.create({
-        username: form.username,
-        full_name: form.full_name,
-        email: form.email || undefined,
-        password: form.password!,
-        role: form.role,
+      await postUsers({
+        body: {
+          username: form.username,
+          full_name: form.full_name,
+          email: form.email || undefined,
+          password: form.password!,
+          role: form.role,
+        },
       })
       toast.success('Gebruiker aangemaakt')
       goto(resolveInternalHref('/users'))

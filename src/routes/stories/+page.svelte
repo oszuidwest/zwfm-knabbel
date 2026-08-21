@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto, invalidateAll } from '$app/navigation'
   import { page } from '$app/state'
-  import { storiesApi } from '$lib/api/stories'
+  import { deleteStoriesId } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { deleteWithConfirm } from '$lib/utils/crud'
   import { formatDate } from '$lib/utils/format'
@@ -51,7 +51,7 @@
   const handleDelete = (story: Story) =>
     deleteWithConfirm({
       name: story.title ?? 'dit bericht',
-      deleteFn: () => storiesApi.delete(story.id!),
+      deleteFn: () => deleteStoriesId({ path: { id: story.id } }),
       onSuccess: () => invalidateAll(),
       successMessage: 'Bericht verwijderd',
     })

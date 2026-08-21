@@ -14,12 +14,13 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
-    "types:generate": "openapi-typescript https://raw.githubusercontent.com/oszuidwest/zwfm-babbel/main/openapi.yaml -o src/lib/types/api.ts",
-    "types:check": "openapi-typescript https://raw.githubusercontent.com/oszuidwest/zwfm-babbel/main/openapi.yaml -o .api-types-check.ts && prettier --write --ignore-path .prettierignore .api-types-check.ts > /dev/null && diff -q src/lib/types/api.ts .api-types-check.ts; EXIT=$?; rm -f .api-types-check.ts; if [ $EXIT -ne 0 ]; then echo 'Types out of sync! Run: npm run types:generate && npm run format'; exit 1; fi",
+    "types:generate": "node scripts/api-types.mjs generate",
+    "types:check": "node scripts/api-types.mjs check",
     "check-all": "npm run check && npm run lint && npm run format:check && npm run types:check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@hey-api/openapi-ts": "0.99.0",
     "@sveltejs/adapter-cloudflare": "^7.2.9",
     "@sveltejs/kit": "^2.70.2",
     "@sveltejs/vite-plugin-svelte": "^7.2.0",
@@ -29,7 +30,6 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-svelte": "^3.22.0",
     "globals": "^17.8.0",
-    "openapi-typescript": "^7.13.0",
     "prettier": "^3.9.6",
     "prettier-plugin-svelte": "^4.1.1",
     "prettier-plugin-tailwindcss": "^0.8.1",
@@ -37,7 +37,7 @@
     "svelte-check": "^4.7.4",
     "svelte-eslint-parser": "^1.8.0",
     "tailwindcss": "^4.2.2",
-    "typescript": "^5.9.3",
+    "typescript": "6.0.3",
     "typescript-eslint": "^8.65.0",
     "vite": "^8.2.0",
     "wrangler": "^4.116.0"

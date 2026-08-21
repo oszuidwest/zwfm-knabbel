@@ -1,12 +1,12 @@
 import type { PageLoad } from './$types'
 import { requirePermission } from '$lib/auth/guard'
-import { voicesApi } from '$lib/api/voices'
+import { getVoices } from '$lib/api/generated/sdk.gen'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
 import { getPaginationParams, getPaginationInfo } from '$lib/utils/pagination'
 
 export const load: PageLoad = async ({ fetch, url, parent }) => {
   const { page, limit, offset } = getPaginationParams(url.searchParams)
-  const responseResult = settleLoad(voicesApi.getAll({ limit, offset }, fetch))
+  const responseResult = settleLoad(getVoices({ query: { limit, offset }, fetch }))
 
   const { user } = await parent()
   requirePermission(user, 'voices', 'read')

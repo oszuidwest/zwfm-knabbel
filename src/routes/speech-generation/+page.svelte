@@ -57,7 +57,7 @@
     {#key JSON.stringify(data.settings)}
       <TTSSettingsForm
         settings={data.settings}
-        canEdit={auth.can('settings_tts', 'write')}
+        canEdit={auth.can('settings:tts', 'write')}
       />
     {/key}
   {/if}

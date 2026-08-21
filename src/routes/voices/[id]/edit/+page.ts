@@ -1,7 +1,5 @@
 import type { PageLoad } from './$types'
-import { voicesApi } from '$lib/api/voices'
-import { stationsApi } from '$lib/api/stations'
-import { stationVoicesApi } from '$lib/api/station-voices'
+import { getStationVoices, getStations, getVoicesId } from '$lib/api/generated/sdk.gen'
 import { requirePermission } from '$lib/auth/guard'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
 import { error } from '@sveltejs/kit'
@@ -15,9 +13,9 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
 
   const responseResult = settleLoad(
     Promise.all([
-      voicesApi.getById(voiceId, fetch),
-      stationsApi.getAll(undefined, fetch),
-      stationVoicesApi.getAll({ voice_id: voiceId }, fetch),
+      getVoicesId({ path: { id: voiceId }, fetch }),
+      getStations({ fetch }),
+      getStationVoices({ query: { filter: { voice_id: voiceId } }, fetch }),
     ])
   )
 

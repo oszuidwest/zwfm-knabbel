@@ -2,7 +2,7 @@
   import { tick } from 'svelte'
   import { beforeNavigate, invalidateAll } from '$app/navigation'
   import { ApiError, isProblemDetails, notifyMutationError } from '$lib/api/client'
-  import { settingsApi } from '$lib/api/settings'
+  import { putSettingsTtsPronunciations } from '$lib/api/generated/sdk.gen'
   import {
     isPronunciationRuleField,
     pronunciationRulesSchema,
@@ -218,7 +218,7 @@
     try {
       let saved: PronunciationRulesList
       try {
-        saved = await settingsApi.updateTtsPronunciations({ rules: payload })
+        saved = await putSettingsTtsPronunciations({ body: { rules: payload } })
       } catch (err) {
         handleSaveError(err)
         return

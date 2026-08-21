@@ -1,6 +1,6 @@
 import type { PageLoad } from './$types'
 import { ApiError, isProblemDetails } from '$lib/api/client'
-import { settingsApi } from '$lib/api/settings'
+import { getSettingsTts } from '$lib/api/generated/sdk.gen'
 import { requirePermission } from '$lib/auth/guard'
 import { redirectToLogin, settleLoad } from '$lib/utils/load-error'
 
@@ -28,10 +28,10 @@ function toSettingsLoadError(err: unknown): SettingsLoadError {
 }
 
 export const load: PageLoad = async ({ fetch, parent }) => {
-  const settingsResult = settleLoad(settingsApi.getTts(fetch))
+  const settingsResult = settleLoad(getSettingsTts({ fetch }))
 
   const { user } = await parent()
-  requirePermission(user, 'settings_tts', 'read')
+  requirePermission(user, 'settings:tts', 'read')
 
   const result = await settingsResult
   if (result.ok) {

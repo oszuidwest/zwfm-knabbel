@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation'
   import { ApiError, notifyMutationError } from '$lib/api/client'
-  import { settingsApi } from '$lib/api/settings'
+  import { patchSettingsTts } from '$lib/api/generated/sdk.gen'
   import {
     textNormalizationOptions,
     toTTSSettingsFormData,
@@ -13,7 +13,7 @@
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
   import { MaybeTooltip, SelectInput, TextareaInput, TextInput } from '$lib/components/ui'
-  import type { components, TTSSettings } from '$lib/types'
+  import type { TTSSettings, ValidationError } from '$lib/types'
 
   type NumericSettingField = 'stability' | 'similarity_boost' | 'style' | 'speed'
 
@@ -21,8 +21,6 @@
     settings: TTSSettings
     canEdit: boolean
   }
-
-  type ValidationErrorDetails = components['schemas']['ValidationError']
 
   let { settings, canEdit }: Props = $props()
 
@@ -90,7 +88,7 @@
   const reloadLabel = $derived(isDirty ? 'Wijzigingen verwerpen' : 'Herladen')
   const formDisabled = $derived(submitting || !canEdit)
 
-  function isValidationErrorDetails(value: unknown): value is ValidationErrorDetails {
+  function isValidationErrorDetails(value: unknown): value is ValidationError {
     return typeof value === 'object' && value !== null && 'errors' in value
   }
 
@@ -131,7 +129,7 @@
     submitting = true
     try {
       try {
-        await settingsApi.updateTts(toTTSSettingsUpdate(result.data))
+        await patchSettingsTts({ body: toTTSSettingsUpdate(result.data) })
       } catch (err) {
         if (err instanceof ApiError && (err.status === 400 || err.status === 422)) {
           const validationErrors = validationErrorsFromDetails(err.details)

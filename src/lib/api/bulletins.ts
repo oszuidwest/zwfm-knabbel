@@ -1,43 +1,27 @@
-import { api, type FetchFn, type PaginationFilters } from './client'
-import type { Bulletin } from '$lib/types'
+import { ApiError } from './client'
+import { getBulletinJobsId, postStationsIdBulletins } from './generated/sdk.gen'
+import type { GetBulletinsData } from './generated/types.gen'
 
-interface BulletinsResponse {
-  data: Bulletin[]
-  total: number
-}
+export type BulletinFilters = NonNullable<GetBulletinsData['query']>
 
-export interface BulletinStory {
-  id: number
-  bulletin_id: number
-  story_id: number
-  story_order: number
-  created_at: string
-}
+const JOB_POLL_INTERVAL_MS = 1_000
 
-interface BulletinStoriesResponse {
-  data: BulletinStory[]
-  total: number
-}
+export async function generateBulletin(stationId: number, signal?: AbortSignal): Promise<number> {
+  let job = await postStationsIdBulletins({ path: { id: stationId }, signal })
 
-export interface BulletinFilters extends PaginationFilters {
-  station_id?: number
-}
+  while (job.status === 'queued' || job.status === 'running') {
+    await new Promise(resolve => setTimeout(resolve, JOB_POLL_INTERVAL_MS))
+    signal?.throwIfAborted()
+    job = await getBulletinJobsId({ path: { id: job.id }, signal })
+  }
 
-export const bulletinsApi = {
-  getAll: (params?: BulletinFilters, customFetch?: FetchFn) =>
-    api.get<BulletinsResponse>('/bulletins', params, customFetch),
+  if (job.status === 'failed') {
+    throw new ApiError(0, job.error_detail ?? 'Bulletin genereren mislukt')
+  }
 
-  getById: (id: number, customFetch?: FetchFn) =>
-    api.get<Bulletin>(`/bulletins/${id}`, undefined, customFetch),
+  if (job.bulletin_id === null) {
+    throw new ApiError(0, 'Gegenereerd bulletin is niet meer beschikbaar')
+  }
 
-  getLatestByStation: (stationId: number, customFetch?: FetchFn) =>
-    api.get<Bulletin>(`/bulletins/latest/${stationId}`, undefined, customFetch),
-
-  generate: (stationId: number) => api.post<Bulletin>(`/stations/${stationId}/bulletins`, {}),
-
-  getStories: (id: number, customFetch?: FetchFn) =>
-    api.get<BulletinStoriesResponse>(`/bulletins/${id}/stories`, undefined, customFetch),
-
-  getByStory: (storyId: number, params?: PaginationFilters, customFetch?: FetchFn) =>
-    api.get<BulletinsResponse>(`/stories/${storyId}/bulletins`, params, customFetch),
+  return job.bulletin_id
 }

@@ -1,7 +1,6 @@
 import type { PageLoad } from './$types'
 import { requirePermission } from '$lib/auth/guard'
-import { bulletinsApi } from '$lib/api/bulletins'
-import { storiesApi } from '$lib/api/stories'
+import { getBulletinsId, getBulletinsIdStories, getStoriesId } from '$lib/api/generated/sdk.gen'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
 import { error } from '@sveltejs/kit'
 import type { Story } from '$lib/types'
@@ -15,8 +14,8 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
 
   const responseResult = settleLoad(
     Promise.all([
-      bulletinsApi.getById(bulletinId, fetch),
-      bulletinsApi.getStories(bulletinId, fetch),
+      getBulletinsId({ path: { id: bulletinId }, fetch }),
+      getBulletinsIdStories({ path: { id: bulletinId }, fetch }),
     ])
   )
 
@@ -32,7 +31,7 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
     Promise.all(
       bulletinStories.data
         .sort((a, b) => a.story_order - b.story_order)
-        .map(bs => storiesApi.getById(bs.story_id, fetch))
+        .map(bs => getStoriesId({ path: { id: bs.story_id }, fetch }))
     )
   )
 

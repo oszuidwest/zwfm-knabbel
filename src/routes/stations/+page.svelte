@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation'
-  import { stationsApi } from '$lib/api/stations'
+  import { deleteStationsId } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { deleteWithConfirm } from '$lib/utils/crud'
   import { Radio } from '$lib/components/icons'
@@ -15,7 +15,7 @@
   function handleDelete(station: Station): void {
     deleteWithConfirm({
       name: station.name ?? 'deze zender',
-      deleteFn: () => stationsApi.delete(station.id!),
+      deleteFn: () => deleteStationsId({ path: { id: station.id } }),
       onSuccess: () => invalidateAll(),
       successMessage: 'Zender verwijderd',
     })

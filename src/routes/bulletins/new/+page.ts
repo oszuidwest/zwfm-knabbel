@@ -1,10 +1,10 @@
 import type { PageLoad } from './$types'
 import { requirePermission } from '$lib/auth/guard'
-import { stationsApi } from '$lib/api/stations'
+import { getStations } from '$lib/api/generated/sdk.gen'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
 
 export const load: PageLoad = async ({ fetch, parent }) => {
-  const stationsResult = settleLoad(stationsApi.getAll(undefined, fetch))
+  const stationsResult = settleLoad(getStations({ fetch }))
 
   const { user } = await parent()
   requirePermission(user, 'bulletins', 'generate')

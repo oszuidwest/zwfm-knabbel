@@ -1,24 +1,19 @@
-export type * from './api'
-
-import type { components } from './api'
-
-export type User = components['schemas']['User']
-export type UserInput = components['schemas']['UserInput']
-export type UserUpdate = components['schemas']['UserUpdate']
-export type Story = components['schemas']['Story']
-export type Voice = components['schemas']['Voice']
-export interface VoiceInput {
-  name: string
-}
-export type Station = components['schemas']['Station']
-export type StationInput = components['schemas']['StationInput']
-export type StationVoice = components['schemas']['StationVoice']
-export type TTSSettings = components['schemas']['TTSSettings']
-export type TTSSettingsUpdate = components['schemas']['TTSSettingsUpdate']
-export type PronunciationRule = components['schemas']['PronunciationRule']
-export type PronunciationRulesList = components['schemas']['PronunciationRulesList']
-export type PronunciationRulesUpdate = components['schemas']['PronunciationRulesUpdate']
-export type Bulletin = components['schemas']['BulletinResponse']
+export type {
+  BulletinResponse as Bulletin,
+  CurrentSession as Session,
+  PronunciationRule,
+  PronunciationRulesList,
+  PronunciationRulesUpdate,
+  Station,
+  StationVoice,
+  Story,
+  TTSSettings,
+  TTSSettingsUpdate,
+  User,
+  UserUpdateWritable as UserUpdate,
+  ValidationError,
+  Voice,
+} from '$lib/api/generated/types.gen'
 
 /** Weekdays stores schedule state in the shape forms can bind directly. */
 export interface Weekdays {

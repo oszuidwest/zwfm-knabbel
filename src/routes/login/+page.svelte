@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { authApi } from '$lib/api/auth'
+  import { oauthLogin } from '$lib/api/auth'
   import { AudioWaveform, Grid2x2, TriangleAlert } from '$lib/components/icons'
 
   let ssoLoading = $state(false)
@@ -8,7 +8,7 @@
 
   function handleSsoLogin(): void {
     ssoLoading = true
-    authApi.oauthLogin()
+    oauthLogin()
   }
 </script>
 

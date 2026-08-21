@@ -1,9 +1,13 @@
 import type { PageLoad } from './$types'
 import { ApiError } from '$lib/api/client'
 import { requirePermission } from '$lib/auth/guard'
-import { bulletinsApi, type BulletinFilters } from '$lib/api/bulletins'
-import { stationsApi } from '$lib/api/stations'
-import { storiesApi } from '$lib/api/stories'
+import type { BulletinFilters } from '$lib/api/bulletins'
+import {
+  getBulletins,
+  getBulletinsIdStories,
+  getStations,
+  getStoriesId,
+} from '$lib/api/generated/sdk.gen'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
 import { getPaginationParams, getPaginationInfo } from '$lib/utils/pagination'
 import type { Bulletin } from '$lib/types'
@@ -20,11 +24,11 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
 
   const params: BulletinFilters = { limit, offset }
   if (stationId) {
-    params.station_id = stationId
+    params.filter = { station_id: stationId }
   }
 
   const responseResult = settleLoad(
-    Promise.all([bulletinsApi.getAll(params, fetch), stationsApi.getAll(undefined, fetch)])
+    Promise.all([getBulletins({ query: params, fetch }), getStations({ fetch })])
   )
 
   const { user } = await parent()
@@ -39,9 +43,12 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
     Promise.all(
       bulletinsRes.data.map(async bulletin => {
         try {
-          const storiesRes = await bulletinsApi.getStories(bulletin.id!, fetch)
+          const storiesRes = await getBulletinsIdStories({ path: { id: bulletin.id }, fetch })
           if (storiesRes.data.length > 0) {
-            const firstStory = await storiesApi.getById(storiesRes.data[0].story_id, fetch)
+            const firstStory = await getStoriesId({
+              path: { id: storiesRes.data[0].story_id },
+              fetch,
+            })
             return { ...bulletin, voice_name: firstStory.voice_name ?? undefined }
           }
         } catch (err) {

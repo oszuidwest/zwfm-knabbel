@@ -1,9 +1,11 @@
 import type { PageLoad } from './$types'
 import { requirePermission } from '$lib/auth/guard'
-import { storiesApi, type StoryFilters } from '$lib/api/stories'
+import { getStories } from '$lib/api/generated/sdk.gen'
+import type { StoryFilters } from '$lib/api/stories'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
 import { toLocalDateString } from '$lib/utils/format'
 import { getPaginationParams, getPaginationInfo } from '$lib/utils/pagination'
+import { storySchema } from '$lib/schemas/story'
 import { WEEKDAY_BITS_BY_DAY } from '$lib/types'
 
 function getDateAndWeekdayBit(dateFilter: string): { date: string; weekdayBit: number } | null {
@@ -28,13 +30,16 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
 
   const { page, limit, offset } = getPaginationParams(url.searchParams)
 
+  const filter: NonNullable<StoryFilters['filter']> = {}
   const params: StoryFilters = {
     limit,
     offset,
+    filter,
   }
 
-  if (statusFilter) {
-    params['filter[status]'] = statusFilter
+  const status = storySchema.shape.status.safeParse(statusFilter)
+  if (status.success) {
+    filter.status = status.data
   }
 
   if (searchQuery) {
@@ -43,18 +48,18 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
 
   const dateInfo = getDateAndWeekdayBit(dateFilter)
   if (dateInfo) {
-    params['filter[start_date][lte]'] = dateInfo.date
-    params['filter[end_date][gte]'] = dateInfo.date
-    params['filter[weekdays][band]'] = dateInfo.weekdayBit
+    filter.start_date = { lte: dateInfo.date }
+    filter.end_date = { gte: dateInfo.date }
+    filter.weekdays = { band: dateInfo.weekdayBit }
   }
 
   if (audioFilter === 'with') {
-    params['filter[audio_url][ne]'] = ''
+    filter.has_audio = true
   } else if (audioFilter === 'without') {
-    params['filter[audio_url]'] = ''
+    filter.has_audio = false
   }
 
-  const responseResult = settleLoad(storiesApi.getAll(params, fetch))
+  const responseResult = settleLoad(getStories({ query: params, fetch }))
 
   const { user } = await parent()
   requirePermission(user, 'stories', 'read')
