@@ -261,7 +261,7 @@
                   <div class="card-actions justify-end">
                     <a
                       href={resolveInternalHref('/bulletins/new')}
-                      class="btn btn-outline btn-sm"
+                      class="btn btn-ghost btn-sm"
                     >
                       Genereren
                     </a>
