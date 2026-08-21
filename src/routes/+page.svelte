@@ -22,60 +22,75 @@
   const canGenerate = $derived(auth.can('bulletins', 'generate'))
 
   // Dry time-of-day greetings; every entry addresses the user by {name}.
-  const GREETINGS: Record<'night' | 'morning' | 'afternoon' | 'evening', string[]> = {
+  const GREETINGS: Record<
+    'night' | 'morning' | 'afternoon' | 'early_evening' | 'late_evening',
+    string[]
+  > = {
     night: [
       'Hey {name}, nog wakker?',
       'Hallo {name}, de nacht is voor de diehards',
-      'Dag {name}, zelfs Babbel gaapt al',
-      'Hey {name}, samen met Babbel de nacht door',
+      'Dag {name}, zelfs Babbel gaapt',
+      'Hey {name}, met Babbel de nacht door',
       'Ha {name}, iemand moet het doen',
-      'Hallo {name}, heel West-Brabant slaapt. Jij niet',
+      'Hallo {name}, West-Brabant slaapt. Jij niet',
       'Dag {name}, de zender draait door, jij ook',
-      'Ha {name}, ZuidWest slaapt nooit helemaal',
+      'Ha {name}, ZuidWest slaapt nooit',
     ],
     morning: [
       'Morgen {name}, alweer een dag vol nieuws',
       'Hey {name}, eerst koffie en dan bulletins',
       'Hallo {name}, de regio rekent op je',
-      'Dag {name}, Babbel is er klaar voor. Jij ook?',
+      'Dag {name}, Babbel is wakker. Jij ook?',
       'Ha {name}, tijd om te babbelen',
-      'Hey {name}, West-Brabant wordt wakker met onze bulletins',
-      'Hallo {name}, de ether is nog lekker vers',
+      'Hey {name}, West-Brabant wordt wakker met ons nieuws',
       'Dag {name}, ZuidWest draait al, nu het nieuws nog',
       'Hey {name}, de ochtendspits wacht op ons nieuws',
       'Hallo {name}, verse bulletins bij het ontbijt',
-      'Ha {name}, ZuidWest wordt er wakker mee',
       'Dag {name}, de studio ruikt nog naar koffie',
     ],
     afternoon: [
       'Hallo {name}, lunch gehad? De bulletins niet',
       'Dag {name}, het nieuws neemt geen pauze',
       'Ha {name}, even bijbabbelen?',
-      'Hey {name}, middagdienst? Iemand moet het doen!',
+      'Hey {name}, middagdienst? Iemand moet het doen',
       'Hallo {name}, West-Brabant wil weten wat er speelt',
       'Dag {name}, de ether wacht op verse bulletins',
       'Hey {name}, ZuidWest draait door. Jij ook?',
       'Ha {name}, Babbel staat te trappelen',
-      'Hey {name}, tussen de platen door even nieuws',
       'Hallo {name}, Babbel heeft er zin in vanmiddag',
       'Dag {name}, West-Brabant is klaar voor een update',
       'Ha {name}, de middag klinkt beter met nieuws',
     ],
-    evening: [
-      'Hey {name}, het nieuws slaapt nooit',
+    early_evening: [
       'Hallo {name}, nog even de avond door',
-      'Dag {name}, avonddienst? Respect!',
-      'Ha {name}, nog een babbeltje voor het slapen?',
-      'Hey {name}, de late uurtjes tellen dubbel',
+      'Dag {name}, avonddienst? Respect.',
       'Hallo {name}, West-Brabant rekent op nieuws',
       'Ha {name}, de studio is van jou vanavond',
       'Hallo {name}, de avondploeg is compleet',
+      'Hey {name}, de avond is nog jong',
+      'Dag {name}, prime time voor de bulletins',
+    ],
+    late_evening: [
+      'Hey {name}, het nieuws slaapt nooit',
+      'Ha {name}, nog even Babbel voor het slapen?',
+      'Hey {name}, de late uurtjes tellen dubbel',
       'Ha {name}, Babbel blijft op tot jij klaar bent',
+      'Dag {name}, de laatste loodjes van vandaag',
+      'Hallo {name}, bijna bedtijd?',
     ],
   }
 
   const hour = new Date().getHours()
-  const daypart = hour < 6 ? 'night' : hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening'
+  const daypart =
+    hour < 5
+      ? 'night'
+      : hour < 12
+        ? 'morning'
+        : hour < 18
+          ? 'afternoon'
+          : hour < 21
+            ? 'early_evening'
+            : 'late_evening'
   const greetingSeed = Math.random()
   const firstName = $derived(
     (auth.user?.full_name || auth.user?.username || '').trim().split(' ')[0] || 'collega'
