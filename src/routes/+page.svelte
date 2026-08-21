@@ -177,12 +177,12 @@
         {@const Icon = tile.icon}
         <a
           href={resolveInternalHref(tile.href)}
-          class="stat transition-colors {tile.tint} max-sm:rounded-box max-sm:border-0 max-sm:bg-base-100 max-sm:p-4"
+          class="stat transition-colors {tile.tint} max-sm:gap-x-2 max-sm:rounded-box max-sm:border-0 max-sm:bg-base-100 max-sm:p-4"
         >
           <div class="stat-figure {tile.accent}">
             <Icon
               aria-hidden="true"
-              class="h-8 w-8"
+              class="h-8 w-8 max-sm:h-6 max-sm:w-6"
             />
           </div>
           <div class="stat-title max-sm:whitespace-normal">{tile.label}</div>
