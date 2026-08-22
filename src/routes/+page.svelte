@@ -239,7 +239,7 @@
                 {:else if bulletin.audio_url}
                   <audio
                     controls
-                    preload="none"
+                    preload="metadata"
                     class="h-10 w-full"
                   >
                     <source
