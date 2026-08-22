@@ -15,7 +15,7 @@
 </script>
 
 <div
-  class="tooltip tooltip-bottom"
+  class="sm:tooltip sm:tooltip-bottom"
   data-tip="Wordt in elk bulletin opgenomen"
 >
   <button

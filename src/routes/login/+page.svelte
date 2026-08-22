@@ -12,7 +12,7 @@
   }
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-base-200">
+<div class="flex min-h-screen items-center justify-center bg-base-200 p-4">
   <div class="card w-full max-w-md bg-base-100">
     <div class="card-body">
       <div class="mb-6 flex flex-col items-center">

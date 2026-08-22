@@ -45,7 +45,7 @@
   />
 
   <div class="grid gap-6 md:grid-cols-2">
-    <div class="card bg-base-100">
+    <div class="card min-w-0 bg-base-100">
       <div class="card-body">
         <h2 class="card-title">Informatie</h2>
         <dl class="space-y-2">
@@ -65,9 +65,9 @@
             <dt class="page-subtitle">Duur</dt>
             <dd>{formatDuration(data.bulletin.duration_seconds)}</dd>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between gap-4">
             <dt class="page-subtitle">Bestandsnaam</dt>
-            <dd>{data.bulletin.filename || '-'}</dd>
+            <dd class="min-w-0 text-right break-all">{data.bulletin.filename || '-'}</dd>
           </div>
           <div class="flex justify-between">
             <dt class="page-subtitle">Bestandsgrootte</dt>
@@ -81,7 +81,7 @@
       </div>
     </div>
 
-    <div class="card bg-base-100">
+    <div class="card min-w-0 bg-base-100">
       <div class="card-body">
         <h2 class="card-title">Audio</h2>
         {#if data.bulletin.file_purged_at}

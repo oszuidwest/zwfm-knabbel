@@ -3,7 +3,7 @@
   import { resolveInternalHref } from '$lib/utils/routes'
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-base-200">
+<div class="flex min-h-screen items-center justify-center bg-base-200 p-4">
   <div class="card w-full max-w-md bg-base-100 shadow-xl">
     <div class="card-body items-center text-center">
       <h1 class="text-6xl font-bold text-error">{page.status}</h1>
