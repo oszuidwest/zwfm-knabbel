@@ -12,6 +12,7 @@
     submitIcon?: Component
     canSubmit?: boolean
     forbidTooltip?: string
+    disabled?: boolean
   }
 
   let {
@@ -22,6 +23,7 @@
     submitIcon: SubmitIcon = Check,
     canSubmit = true,
     forbidTooltip = 'Geen rechten',
+    disabled = false,
   }: Props = $props()
 
   const resolvedCancelHref = $derived(resolveInternalHref(cancelHref))
@@ -43,7 +45,7 @@
     <button
       type="submit"
       class="btn btn-primary"
-      disabled={submitting || !canSubmit}
+      disabled={submitting || disabled || !canSubmit}
     >
       {#if submitting}
         <span class="loading loading-sm loading-spinner"></span>

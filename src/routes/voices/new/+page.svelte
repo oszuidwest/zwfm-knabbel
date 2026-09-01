@@ -13,6 +13,7 @@
 
   let form = $state<VoiceFormData>({
     name: '',
+    elevenlabs_voice_id: '',
   })
 
   let errors = $state<Record<string, string>>({})
@@ -32,7 +33,12 @@
 
     submitting = true
     try {
-      await postVoices({ body: form })
+      await postVoices({
+        body: {
+          name: result.data.name,
+          elevenlabs_voice_id: result.data.elevenlabs_voice_id || null,
+        },
+      })
       toast.success('Stem aangemaakt')
       goto(resolveInternalHref('/voices'))
     } catch (err) {
@@ -61,6 +67,16 @@
           bind:value={form.name}
           error={errors.name}
           placeholder="Hugo de Geweldige"
+          disabled={!canWrite}
+        />
+
+        <TextInput
+          id="elevenlabs_voice_id"
+          label="ElevenLabs voice-ID"
+          bind:value={form.elevenlabs_voice_id}
+          error={errors.elevenlabs_voice_id}
+          placeholder="Bijv. JBFqnCBsd6RMkjVDRZzb"
+          hint="Laat leeg voor een stem zonder AI-spraaksynthese."
           disabled={!canWrite}
         />
 

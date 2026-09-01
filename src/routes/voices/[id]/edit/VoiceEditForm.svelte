@@ -29,7 +29,10 @@
   const auth = getAuthContext()
 
   function initialForm(): VoiceFormData {
-    return { name: data.voice.name ?? '' }
+    return {
+      name: data.voice.name ?? '',
+      elevenlabs_voice_id: data.voice.elevenlabs_voice_id ?? '',
+    }
   }
 
   function initialStationConfigs(): StationConfig[] {
@@ -90,7 +93,13 @@
     submitting = true
 
     try {
-      await putVoicesId({ path: { id: data.voice.id }, body: form })
+      await putVoicesId({
+        path: { id: data.voice.id },
+        body: {
+          name: result.data.name,
+          elevenlabs_voice_id: result.data.elevenlabs_voice_id || null,
+        },
+      })
       toast.success('Stem bijgewerkt')
       goto(resolveInternalHref('/voices'))
     } catch (err) {
@@ -260,6 +269,16 @@
           disabled={!canWrite}
         />
 
+        <TextInput
+          id="elevenlabs_voice_id"
+          label="ElevenLabs voice-ID"
+          bind:value={form.elevenlabs_voice_id}
+          error={errors.elevenlabs_voice_id}
+          placeholder="Bijv. JBFqnCBsd6RMkjVDRZzb"
+          hint="Laat leeg om de AI-stem te ontkoppelen."
+          disabled={!canWrite}
+        />
+
         <div class="flex justify-end gap-2">
           <MaybeTooltip
             when={!canWrite}
@@ -276,7 +295,7 @@
               {:else}
                 <Check class="h-5 w-5" />
               {/if}
-              Naam opslaan
+              Gegevens opslaan
             </button>
           </MaybeTooltip>
         </div>

@@ -3,7 +3,7 @@
   import { deleteVoicesId } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { deleteWithConfirm } from '$lib/utils/crud'
-  import { Mic } from '$lib/components/icons'
+  import { Mic, Sparkles } from '$lib/components/icons'
   import { ListPage, TableActions } from '$lib/components/ui'
   import type { Voice } from '$lib/types'
 
@@ -41,7 +41,21 @@
   canDelete={canWrite}
 >
   {#snippet cardContent(voice)}
-    <h3 class="font-medium">{voice.name}</h3>
+    <h3 class="flex min-w-0 items-center gap-1.5 font-medium">
+      <span class="truncate">{voice.name}</span>
+      {#if voice.elevenlabs_voice_id}
+        <span
+          class="shrink-0 text-info"
+          title="AI-stem"
+          aria-label="AI-stem"
+        >
+          <Sparkles
+            aria-hidden="true"
+            class="h-4 w-4"
+          />
+        </span>
+      {/if}
+    </h3>
   {/snippet}
 
   {#snippet tableHeader()}
@@ -50,7 +64,23 @@
   {/snippet}
 
   {#snippet tableRow(voice)}
-    <td class="font-medium">{voice.name}</td>
+    <td class="font-medium">
+      <span class="flex items-center gap-1.5">
+        {voice.name}
+        {#if voice.elevenlabs_voice_id}
+          <span
+            class="shrink-0 text-info"
+            title="AI-stem"
+            aria-label="AI-stem"
+          >
+            <Sparkles
+              aria-hidden="true"
+              class="h-4 w-4"
+            />
+          </span>
+        {/if}
+      </span>
+    </td>
     <td>
       <TableActions
         editHref="/voices/{voice.id}/edit"

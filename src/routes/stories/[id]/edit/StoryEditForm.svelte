@@ -5,6 +5,7 @@
   import {
     getStoriesIdBulletins,
     postStoriesIdAudio,
+    postStoriesIdTts,
     putStoriesId,
   } from '$lib/api/generated/sdk.gen'
   import { toStoryApiFormat } from '$lib/api/stories'
@@ -16,6 +17,7 @@
   import { formatDateTime, formatDuration } from '$lib/utils/format'
   import { resolveInternalHref } from '$lib/utils/routes'
   import {
+    AIAudioField,
     BreakingToggle,
     TextInput,
     TextareaInput,
@@ -39,6 +41,7 @@
   const auth = getAuthContext()
 
   let audioFile = $state<File | null>(null)
+  let audioInputKey = $state(0)
   let showReadMode = $state(false)
 
   function initialForm(): StoryFormData {
@@ -62,17 +65,45 @@
     return data.bulletinsTotal
   }
 
+  function initialAudioUrl(): string | undefined {
+    return data.story.audio_file ? getMediaUrl(data.story.audio_url) : undefined
+  }
+
+  function initialHasAudio(): boolean {
+    return Boolean(data.story.audio_file)
+  }
+
+  function cacheBust(url: string | undefined): string | undefined {
+    if (!url) return undefined
+    return `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`
+  }
+
   let form = $state<StoryFormData>(initialForm())
   let errors = $state<Record<string, string>>({})
   let submitting = $state(false)
+  let generating = $state(false)
+  let hasAudio = $state(initialHasAudio())
+  let currentAudioUrl = $state(initialAudioUrl())
 
   let bulletins = $state.raw<Bulletin[]>(initialBulletins())
   let bulletinsTotal = $state(initialBulletinsTotal())
   let loadingMore = $state(false)
 
   const voiceOptions = $derived(toSelectOptions(data.voices))
+  const selectedVoice = $derived(data.voices.find(voice => String(voice.id) === form.voice_id))
   const hasMoreBulletins = $derived(bulletins.length < bulletinsTotal)
   const canWrite = $derived(auth.can('stories', 'write'))
+  const formDisabled = $derived(!canWrite || submitting || generating)
+
+  function setVoiceId(value: string | null | undefined): void {
+    form.voice_id = value ?? ''
+
+    const voice = data.voices.find(candidate => String(candidate.id) === form.voice_id)
+    if (voice?.elevenlabs_voice_id) {
+      audioFile = null
+      audioInputKey += 1
+    }
+  }
 
   async function loadMoreBulletins(): Promise<void> {
     if (loadingMore || !data.story.id) return
@@ -127,6 +158,38 @@
       submitting = false
     }
   }
+
+  async function handleGenerateAudio(): Promise<void> {
+    if (!canWrite || !selectedVoice?.elevenlabs_voice_id || submitting || generating) return
+
+    const result = validateForm(storySchema, form)
+    if (!result.success) {
+      errors = result.errors
+      toast.error('Controleer de velden')
+      return
+    }
+
+    if (hasAudio && !confirm('Bestaande audio vervangen door nieuw gegenereerde audio?')) return
+    errors = {}
+    generating = true
+    try {
+      await putStoriesId({ path: { id: data.story.id }, body: toStoryApiFormat(result.data) })
+      await postStoriesIdTts({
+        path: { id: data.story.id },
+        query: hasAudio ? { force: 'true' } : undefined,
+      })
+
+      hasAudio = true
+      currentAudioUrl = cacheBust(getMediaUrl(data.story.audio_url))
+      audioFile = null
+      audioInputKey += 1
+      toast.success('Audio gegenereerd')
+    } catch (err) {
+      notifyMutationError(err, 'Audio genereren mislukt')
+    } finally {
+      generating = false
+    }
+  }
 </script>
 
 <div class="space-y-6">
@@ -159,7 +222,7 @@
           bind:value={form.title}
           error={errors.title}
           placeholder="Titel van het bericht"
-          disabled={!canWrite}
+          disabled={formDisabled}
         />
 
         <TextareaInput
@@ -169,17 +232,17 @@
           error={errors.text}
           placeholder="De tekst die wordt voorgelezen"
           rows={8}
-          disabled={!canWrite}
+          disabled={formDisabled}
         />
 
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
           <SelectInput
             id="voice_id"
             label="Stem"
-            bind:value={form.voice_id}
+            bind:value={() => form.voice_id, setVoiceId}
             options={voiceOptions}
             emptyOption="Geen stem geselecteerd"
-            disabled={!canWrite}
+            disabled={formDisabled}
           />
 
           <FormField
@@ -192,7 +255,7 @@
                 id="status"
                 class={['select join-item flex-1', errors.status && 'select-error']}
                 bind:value={form.status}
-                disabled={!canWrite}
+                disabled={formDisabled}
               >
                 {#each statusOptions as option (option.value)}
                   <option value={option.value}>{option.label}</option>
@@ -200,7 +263,7 @@
               </select>
               <BreakingToggle
                 bind:checked={form.is_breaking}
-                disabled={!canWrite}
+                disabled={formDisabled}
               />
             </div>
           </FormField>
@@ -213,7 +276,7 @@
             type="date"
             bind:value={form.start_date}
             error={errors.start_date}
-            disabled={!canWrite}
+            disabled={formDisabled}
           />
 
           <TextInput
@@ -222,28 +285,42 @@
             type="date"
             bind:value={form.end_date}
             error={errors.end_date}
-            disabled={!canWrite}
+            disabled={formDisabled}
           />
         </div>
 
         <WeekdayCheckboxGroup
           bind:value={form.weekdays}
-          disabled={!canWrite}
+          disabled={formDisabled}
         />
 
-        <FileInput
-          id="audio"
-          label="Audiobestand"
-          accept="audio/wav,audio/*"
-          existingAudioUrl={data.story.audio_file ? getMediaUrl(data.story.audio_url) : undefined}
-          hint={audioFile?.name}
-          onchange={file => (audioFile = file)}
-          disabled={!canWrite}
-        />
+        {#if selectedVoice?.elevenlabs_voice_id}
+          <AIAudioField
+            voiceName={selectedVoice.name}
+            mode="edit"
+            {generating}
+            disabled={formDisabled}
+            audioUrl={hasAudio ? currentAudioUrl : undefined}
+            ongenerate={handleGenerateAudio}
+          />
+        {:else}
+          {#key audioInputKey}
+            <FileInput
+              id="audio"
+              label="Audiobestand"
+              accept="audio/wav,audio/*"
+              existingAudioUrl={hasAudio ? currentAudioUrl : undefined}
+              hint={audioFile?.name}
+              onchange={file => (audioFile = file)}
+              disabled={formDisabled}
+            />
+          {/key}
+        {/if}
 
         <FormActions
           cancelHref="/stories"
           {submitting}
+          disabled={generating}
           canSubmit={canWrite}
         />
       </form>
