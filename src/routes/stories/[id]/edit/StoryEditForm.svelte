@@ -41,7 +41,6 @@
   const auth = getAuthContext()
 
   let audioFile = $state<File | null>(null)
-  let audioInputKey = $state(0)
   let showReadMode = $state(false)
 
   function initialForm(): StoryFormData {
@@ -69,10 +68,6 @@
     return data.story.audio_file ? getMediaUrl(data.story.audio_url) : undefined
   }
 
-  function initialHasAudio(): boolean {
-    return Boolean(data.story.audio_file)
-  }
-
   function cacheBust(url: string | undefined): string | undefined {
     if (!url) return undefined
     return `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`
@@ -82,7 +77,6 @@
   let errors = $state<Record<string, string>>({})
   let submitting = $state(false)
   let generating = $state(false)
-  let hasAudio = $state(initialHasAudio())
   let currentAudioUrl = $state(initialAudioUrl())
 
   let bulletins = $state.raw<Bulletin[]>(initialBulletins())
@@ -97,12 +91,7 @@
 
   function setVoiceId(value: string | null | undefined): void {
     form.voice_id = value ?? ''
-
-    const voice = data.voices.find(candidate => String(candidate.id) === form.voice_id)
-    if (voice?.elevenlabs_voice_id) {
-      audioFile = null
-      audioInputKey += 1
-    }
+    if (selectedVoice?.elevenlabs_voice_id) audioFile = null
   }
 
   async function loadMoreBulletins(): Promise<void> {
@@ -136,7 +125,7 @@
 
     submitting = true
     try {
-      await putStoriesId({ path: { id: data.story.id }, body: toStoryApiFormat(form) })
+      await putStoriesId({ path: { id: data.story.id }, body: toStoryApiFormat(result.data) })
 
       if (audioFile) {
         try {
@@ -169,20 +158,18 @@
       return
     }
 
-    if (hasAudio && !confirm('Bestaande audio vervangen door nieuw gegenereerde audio?')) return
+    if (currentAudioUrl && !confirm('Bestaande audio vervangen door nieuw gegenereerde audio?'))
+      return
     errors = {}
     generating = true
     try {
       await putStoriesId({ path: { id: data.story.id }, body: toStoryApiFormat(result.data) })
       await postStoriesIdTts({
         path: { id: data.story.id },
-        query: hasAudio ? { force: 'true' } : undefined,
+        query: currentAudioUrl ? { force: 'true' } : undefined,
       })
 
-      hasAudio = true
       currentAudioUrl = cacheBust(getMediaUrl(data.story.audio_url))
-      audioFile = null
-      audioInputKey += 1
       toast.success('Audio gegenereerd')
     } catch (err) {
       notifyMutationError(err, 'Audio genereren mislukt')
@@ -300,28 +287,26 @@
             mode="edit"
             {generating}
             disabled={formDisabled}
-            audioUrl={hasAudio ? currentAudioUrl : undefined}
+            audioUrl={currentAudioUrl}
             ongenerate={handleGenerateAudio}
           />
         {:else}
-          {#key audioInputKey}
-            <FileInput
-              id="audio"
-              label="Audiobestand"
-              accept="audio/wav,audio/*"
-              existingAudioUrl={hasAudio ? currentAudioUrl : undefined}
-              hint={audioFile?.name}
-              onchange={file => (audioFile = file)}
-              disabled={formDisabled}
-            />
-          {/key}
+          <FileInput
+            id="audio"
+            label="Audiobestand"
+            accept="audio/wav,audio/*"
+            existingAudioUrl={currentAudioUrl}
+            hint={audioFile?.name}
+            onchange={file => (audioFile = file)}
+            disabled={formDisabled}
+          />
         {/if}
 
         <FormActions
           cancelHref="/stories"
           {submitting}
-          disabled={generating}
-          canSubmit={canWrite}
+          canSubmit={canWrite && !generating}
+          forbidTooltip={canWrite ? 'Audio wordt gegenereerd…' : 'Geen rechten'}
         />
       </form>
     </div>

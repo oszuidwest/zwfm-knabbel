@@ -3,6 +3,7 @@
   import { notifyMutationError } from '$lib/api/client'
   import { voiceSchema, type VoiceFormData } from '$lib/schemas/voice'
   import { postVoices } from '$lib/api/generated/sdk.gen'
+  import { toVoiceApiFormat } from '$lib/api/voices'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
@@ -33,12 +34,7 @@
 
     submitting = true
     try {
-      await postVoices({
-        body: {
-          name: result.data.name,
-          elevenlabs_voice_id: result.data.elevenlabs_voice_id || null,
-        },
-      })
+      await postVoices({ body: toVoiceApiFormat(result.data) })
       toast.success('Stem aangemaakt')
       goto(resolveInternalHref('/voices'))
     } catch (err) {

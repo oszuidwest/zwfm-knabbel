@@ -54,11 +54,7 @@
 
   function setVoiceId(value: string | null | undefined): void {
     form.voice_id = value ?? ''
-
-    const voice = data.voices.find(candidate => String(candidate.id) === form.voice_id)
-    if (voice?.elevenlabs_voice_id) {
-      audioFile = null
-    }
+    if (selectedVoice?.elevenlabs_voice_id) audioFile = null
   }
 
   async function handleSubmit(e: Event): Promise<void> {
@@ -94,13 +90,10 @@
       if (generateAudio && story.id) {
         try {
           await postStoriesIdTts({ path: { id: story.id } })
+          toast.success('Bericht en audio aangemaakt')
         } catch (err) {
           notifyMutationError(err, 'Bericht aangemaakt, maar audio genereren mislukt')
-          goto(resolveInternalHref(`/stories/${story.id}/edit`))
-          return
         }
-
-        toast.success('Bericht en audio aangemaakt')
         goto(resolveInternalHref(`/stories/${story.id}/edit`))
         return
       }
@@ -240,8 +233,8 @@
         <FormActions
           cancelHref="/stories"
           {submitting}
-          disabled={generating}
-          canSubmit={canWrite}
+          canSubmit={canWrite && !generating}
+          forbidTooltip={canWrite ? 'Audio wordt gegenereerd…' : 'Geen rechten'}
         />
       </form>
     </div>

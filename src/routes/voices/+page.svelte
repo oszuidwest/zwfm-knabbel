@@ -22,6 +22,21 @@
   }
 </script>
 
+{#snippet aiBadge(voice: Voice)}
+  {#if voice.elevenlabs_voice_id}
+    <span
+      class="shrink-0 text-info"
+      title="AI-stem"
+      aria-label="AI-stem"
+    >
+      <Sparkles
+        aria-hidden="true"
+        class="h-4 w-4"
+      />
+    </span>
+  {/if}
+{/snippet}
+
 <ListPage
   title="Stemmen"
   subtitle="{data.pagination.totalItems} stemmen"
@@ -43,18 +58,7 @@
   {#snippet cardContent(voice)}
     <h3 class="flex min-w-0 items-center gap-1.5 font-medium">
       <span class="truncate">{voice.name}</span>
-      {#if voice.elevenlabs_voice_id}
-        <span
-          class="shrink-0 text-info"
-          title="AI-stem"
-          aria-label="AI-stem"
-        >
-          <Sparkles
-            aria-hidden="true"
-            class="h-4 w-4"
-          />
-        </span>
-      {/if}
+      {@render aiBadge(voice)}
     </h3>
   {/snippet}
 
@@ -67,18 +71,7 @@
     <td class="font-medium">
       <span class="flex items-center gap-1.5">
         {voice.name}
-        {#if voice.elevenlabs_voice_id}
-          <span
-            class="shrink-0 text-info"
-            title="AI-stem"
-            aria-label="AI-stem"
-          >
-            <Sparkles
-              aria-hidden="true"
-              class="h-4 w-4"
-            />
-          </span>
-        {/if}
+        {@render aiBadge(voice)}
       </span>
     </td>
     <td>

@@ -10,6 +10,7 @@
     putStationVoicesId,
     putVoicesId,
   } from '$lib/api/generated/sdk.gen'
+  import { toVoiceApiFormat } from '$lib/api/voices'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
@@ -93,13 +94,7 @@
     submitting = true
 
     try {
-      await putVoicesId({
-        path: { id: data.voice.id },
-        body: {
-          name: result.data.name,
-          elevenlabs_voice_id: result.data.elevenlabs_voice_id || null,
-        },
-      })
+      await putVoicesId({ path: { id: data.voice.id }, body: toVoiceApiFormat(result.data) })
       toast.success('Stem bijgewerkt')
       goto(resolveInternalHref('/voices'))
     } catch (err) {
