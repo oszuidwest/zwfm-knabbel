@@ -1,4 +1,5 @@
 import type { TTSSettings, TTSSettingsUpdate } from '$lib/types'
+import { toNumberOrNull, toStringOrEmpty } from '$lib/utils/form'
 import { z } from 'zod'
 
 const textNormalizationValues = ['auto', 'on', 'off'] as const
@@ -23,9 +24,6 @@ const seedSchema = z
 
 export const ttsSettingsSchema = z.object({
   stability: z.number().min(0, 'Minimaal 0').max(1, 'Maximaal 1'),
-  similarity_boost: z.number().min(0, 'Minimaal 0').max(1, 'Maximaal 1'),
-  style: z.number().min(0, 'Minimaal 0').max(1, 'Maximaal 1'),
-  speed: z.number().min(0.7, 'Minimaal 0.7').max(1.2, 'Maximaal 1.2'),
   apply_text_normalization: z.enum(textNormalizationValues, {
     error: 'Tekstnormalisatie is verplicht',
   }),
@@ -38,11 +36,8 @@ export type TTSSettingsFormData = z.infer<typeof ttsSettingsSchema>
 export function toTTSSettingsFormData(settings: TTSSettings): TTSSettingsFormData {
   return {
     stability: settings.stability,
-    similarity_boost: settings.similarity_boost,
-    style: settings.style,
-    speed: settings.speed,
     apply_text_normalization: settings.apply_text_normalization,
-    seed: settings.seed == null ? '' : String(settings.seed),
+    seed: toStringOrEmpty(settings.seed),
     tts_style_prefix: settings.tts_style_prefix,
   }
 }
@@ -50,6 +45,6 @@ export function toTTSSettingsFormData(settings: TTSSettings): TTSSettingsFormDat
 export function toTTSSettingsUpdate(form: TTSSettingsFormData): TTSSettingsUpdate {
   return {
     ...form,
-    seed: form.seed === '' ? null : Number(form.seed),
+    seed: toNumberOrNull(form.seed),
   }
 }

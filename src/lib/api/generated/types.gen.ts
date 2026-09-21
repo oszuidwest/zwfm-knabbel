@@ -358,10 +358,10 @@ export type Voice = {
  * Global singleton ElevenLabs text-to-speech settings.
  */
 export type TTSSettings = {
+  /**
+   * The voice_settings value Babbel sends to eleven_v3.
+   */
   stability: number
-  similarity_boost: number
-  style: number
-  speed: number
   apply_text_normalization: 'auto' | 'on' | 'off'
   /**
    * Best-effort deterministic seed. Null means random output.
@@ -382,10 +382,10 @@ export type TTSSettings = {
  * Partial update for global singleton TTS settings.
  */
 export type TTSSettingsUpdate = {
+  /**
+   * The voice_settings value Babbel sends to eleven_v3.
+   */
   stability?: number
-  similarity_boost?: number
-  style?: number
-  speed?: number
   apply_text_normalization?: 'auto' | 'on' | 'off'
   /**
    * Set to null to clear the stored seed.
