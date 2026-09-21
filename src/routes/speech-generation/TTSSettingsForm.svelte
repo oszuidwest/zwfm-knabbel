@@ -15,7 +15,7 @@
   import { MaybeTooltip, SelectInput, TextareaInput, TextInput } from '$lib/components/ui'
   import type { TTSSettings, ValidationError } from '$lib/types'
 
-  type NumericSettingField = 'stability' | 'similarity_boost' | 'style' | 'speed'
+  type NumericSettingField = 'stability'
 
   interface Props {
     settings: TTSSettings
@@ -38,31 +38,7 @@
       min: 0,
       max: 1,
       step: 0.01,
-      hint: 'Lager geeft meer expressie en variatie. Hoger klinkt voorspelbaarder.',
-    },
-    {
-      field: 'similarity_boost',
-      label: 'Stemgelijkenis',
-      min: 0,
-      max: 1,
-      step: 0.01,
-      hint: 'Hoger blijft dichter bij de gekozen stem. Te hoog kan bijgeluiden versterken.',
-    },
-    {
-      field: 'style',
-      label: 'Stijl',
-      min: 0,
-      max: 1,
-      step: 0.01,
-      hint: 'Versterkt de spreekstijl van de stem. 0 is meestal het stabielste startpunt.',
-    },
-    {
-      field: 'speed',
-      label: 'Snelheid',
-      min: 0.7,
-      max: 1.2,
-      step: 0.01,
-      hint: '1,0 is normale snelheid. Lager vertraagt, hoger versnelt.',
+      hint: 'De enige steminstelling van Eleven v3. Hoger klinkt consistenter en voorspelbaarder.',
     },
   ]
 
@@ -70,8 +46,7 @@
     'Maakt cijfers, symbolen en afkortingen beter uitspreekbaar. Auto laat ElevenLabs kiezen.'
   const seedHint =
     'Leeg is willekeurig. Een vaste seed helpt herhalen, maar garandeert geen gelijke audio.'
-  const stylePrefixHint =
-    'Vaste v3-aanwijzing voor elke story, bijvoorbeeld [nieuwslezer] of [rustig].'
+  const stylePrefixHint = 'Vaste audiotags voor elke story, bijvoorbeeld [calm] of [whispers].'
 
   // Svelte warns when prop values are captured directly into state initializers.
   // This lazy reader makes the keyed component's one-time form initialization explicit.
@@ -190,8 +165,9 @@
       <h2 class="card-title">Spraakgeneratie</h2>
     </div>
     <p class="max-w-3xl text-sm leading-relaxed text-base-content/70">
-      ElevenLabs blijft per generatie licht variabel. Deze instellingen sturen de kans op expressie,
-      consistentie en herhaalbaarheid.
+      Eleven v3 ondersteunt alleen stabiliteit als steminstelling. Tekstnormalisatie, seed en
+      stijl-aanwijzingen worden apart aan de generatie meegegeven; audio kan per generatie blijven
+      variëren.
     </p>
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -215,7 +191,7 @@
       />
     </div>
 
-    <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+    <div class="max-w-2xl">
       {#each numericSettings as setting (setting.field)}
         <div class="space-y-4">
           <div class="flex items-center justify-between gap-4">
@@ -264,12 +240,12 @@
 
     <TextareaInput
       id="tts_style_prefix"
-      label="Eleven v3-stijlprefix"
+      label="Eleven v3-audiotags"
       bind:value={form.tts_style_prefix}
       error={errors.tts_style_prefix}
       hint={stylePrefixHint}
       rows={3}
-      placeholder="[nieuwslezer] "
+      placeholder="[calm] "
       disabled={formDisabled}
     />
 

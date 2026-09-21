@@ -685,7 +685,7 @@ export const postStoriesIdAudio = <ThrowOnError extends boolean = true>(
  *
  * TTS request options are read from the global settings row exposed at
  * `GET/PATCH /api/v1/settings/tts`. The API key and timeout remain environment
- * configuration; Babbel always sends `eleven_v3`. Voice settings, text
+ * configuration; Babbel always sends `eleven_v3`. Stability, text
  * normalization, seed, and the Eleven v3 style prefix are database-backed
  * settings. Local pronunciation rules are injected as inline IPA before
  * the TTS request is sent.
