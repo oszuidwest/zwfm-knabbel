@@ -1,4 +1,5 @@
 import type { TTSSettings, TTSSettingsUpdate } from '$lib/types'
+import { toNumberOrNull, toStringOrEmpty } from '$lib/utils/form'
 import { z } from 'zod'
 
 const textNormalizationValues = ['auto', 'on', 'off'] as const
@@ -36,7 +37,7 @@ export function toTTSSettingsFormData(settings: TTSSettings): TTSSettingsFormDat
   return {
     stability: settings.stability,
     apply_text_normalization: settings.apply_text_normalization,
-    seed: settings.seed == null ? '' : String(settings.seed),
+    seed: toStringOrEmpty(settings.seed),
     tts_style_prefix: settings.tts_style_prefix,
   }
 }
@@ -44,6 +45,6 @@ export function toTTSSettingsFormData(settings: TTSSettings): TTSSettingsFormDat
 export function toTTSSettingsUpdate(form: TTSSettingsFormData): TTSSettingsUpdate {
   return {
     ...form,
-    seed: form.seed === '' ? null : Number(form.seed),
+    seed: toNumberOrNull(form.seed),
   }
 }

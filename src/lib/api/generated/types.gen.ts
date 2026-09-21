@@ -359,7 +359,7 @@ export type Voice = {
  */
 export type TTSSettings = {
   /**
-   * The only voice_settings field supported by eleven_v3.
+   * The voice_settings value Babbel sends to eleven_v3.
    */
   stability: number
   apply_text_normalization: 'auto' | 'on' | 'off'
@@ -383,7 +383,7 @@ export type TTSSettings = {
  */
 export type TTSSettingsUpdate = {
   /**
-   * The only voice_settings field supported by eleven_v3.
+   * The voice_settings value Babbel sends to eleven_v3.
    */
   stability?: number
   apply_text_normalization?: 'auto' | 'on' | 'off'

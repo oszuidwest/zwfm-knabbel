@@ -15,8 +15,6 @@
   import { MaybeTooltip, SelectInput, TextareaInput, TextInput } from '$lib/components/ui'
   import type { TTSSettings, ValidationError } from '$lib/types'
 
-  type NumericSettingField = 'stability'
-
   interface Props {
     settings: TTSSettings
     canEdit: boolean
@@ -24,24 +22,8 @@
 
   let { settings, canEdit }: Props = $props()
 
-  const numericSettings: {
-    field: NumericSettingField
-    label: string
-    min: number
-    max: number
-    step: number
-    hint: string
-  }[] = [
-    {
-      field: 'stability',
-      label: 'Stabiliteit',
-      min: 0,
-      max: 1,
-      step: 0.01,
-      hint: 'De enige steminstelling van Eleven v3. Hoger klinkt consistenter en voorspelbaarder.',
-    },
-  ]
-
+  const stabilityHint =
+    'Hoger klinkt consistenter en voorspelbaarder, lager geeft meer expressie en variatie.'
   const textNormalizationHint =
     'Maakt cijfers, symbolen en afkortingen beter uitspreekbaar. Auto laat ElevenLabs kiezen.'
   const seedHint =
@@ -126,14 +108,10 @@
     }
   }
 
-  function handleNumberInput(field: NumericSettingField, e: Event): void {
-    const input = e.target as HTMLInputElement
-    if (input.value === '') return
-
-    const value = Number(input.value)
-    if (!Number.isNaN(value)) {
-      form = { ...form, [field]: value }
-    }
+  // Keep the last valid value while the number box is empty or mid-edit.
+  function handleStabilityInput(e: Event & { currentTarget: HTMLInputElement }): void {
+    const value = e.currentTarget.valueAsNumber
+    if (!Number.isNaN(value)) form.stability = value
   }
 </script>
 
@@ -165,9 +143,8 @@
       <h2 class="card-title">Spraakgeneratie</h2>
     </div>
     <p class="max-w-3xl text-sm leading-relaxed text-base-content/70">
-      Eleven v3 ondersteunt alleen stabiliteit als steminstelling. Tekstnormalisatie, seed en
-      stijl-aanwijzingen worden apart aan de generatie meegegeven; audio kan per generatie blijven
-      variëren.
+      Eleven v3 kent maar één steminstelling: stabiliteit. Tekstnormalisatie, seed en audiotags
+      sturen de generatie daarnaast; audio kan per generatie licht variëren.
     </p>
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -191,51 +168,43 @@
       />
     </div>
 
-    <div class="max-w-2xl">
-      {#each numericSettings as setting (setting.field)}
-        <div class="space-y-4">
-          <div class="flex items-center justify-between gap-4">
-            <label
-              class="font-medium"
-              for="{setting.field}_number"
-            >
-              {setting.label}
-            </label>
-            <input
-              id="{setting.field}_number"
-              type="number"
-              class={['input w-24 tabular-nums input-sm', errors[setting.field] && 'input-error']}
-              min={setting.min}
-              max={setting.max}
-              step={setting.step}
-              value={form[setting.field]}
-              oninput={e => handleNumberInput(setting.field, e)}
-              disabled={formDisabled}
-            />
-          </div>
-          <input
-            id={setting.field}
-            type="range"
-            class="range w-full range-primary range-sm"
-            min={setting.min}
-            max={setting.max}
-            step={setting.step}
-            value={form[setting.field]}
-            oninput={e => handleNumberInput(setting.field, e)}
-            disabled={formDisabled}
-            aria-label="{setting.label} slider"
-          />
-          {#if errors[setting.field]}
-            <p class="fieldset-label text-sm leading-relaxed text-error">
-              {errors[setting.field]}
-            </p>
-          {:else}
-            <p class="fieldset-label text-sm leading-relaxed text-base-content/70">
-              {setting.hint}
-            </p>
-          {/if}
-        </div>
-      {/each}
+    <div class="max-w-2xl space-y-4">
+      <div class="flex items-center justify-between gap-4">
+        <label
+          class="font-medium"
+          for="stability_number"
+        >
+          Stabiliteit
+        </label>
+        <input
+          id="stability_number"
+          type="number"
+          class={['input w-24 tabular-nums input-sm', errors.stability && 'input-error']}
+          min={0}
+          max={1}
+          step={0.01}
+          value={form.stability}
+          oninput={handleStabilityInput}
+          disabled={formDisabled}
+        />
+      </div>
+      <input
+        id="stability"
+        type="range"
+        class="range w-full range-primary range-sm"
+        min={0}
+        max={1}
+        step={0.01}
+        value={form.stability}
+        oninput={handleStabilityInput}
+        disabled={formDisabled}
+        aria-label="Stabiliteit"
+      />
+      {#if errors.stability}
+        <p class="fieldset-label text-sm leading-relaxed text-error">{errors.stability}</p>
+      {:else}
+        <p class="fieldset-label text-sm leading-relaxed text-base-content/70">{stabilityHint}</p>
+      {/if}
     </div>
 
     <TextareaInput
