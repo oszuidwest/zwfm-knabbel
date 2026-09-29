@@ -28,7 +28,7 @@
   {#if data.loadError}
     <PageHeader
       title="Uitspraakregels"
-      subtitle="Uitspraak voor ElevenLabs v3"
+      subtitle="Uitspraakregels voor ElevenLabs"
     />
 
     <div
