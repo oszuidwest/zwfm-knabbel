@@ -143,8 +143,8 @@
       <h2 class="card-title">Spraakgeneratie</h2>
     </div>
     <p class="max-w-3xl text-sm leading-relaxed text-base-content/70">
-      Babbel stuurt voor Eleven v4 alleen stabiliteit als steminstelling mee. Tekstnormalisatie,
-      seed en audiotags sturen de generatie daarnaast; audio kan per generatie licht variëren.
+      Babbel stuurt alleen stabiliteit als steminstelling mee. Tekstnormalisatie, seed en audiotags
+      sturen de generatie daarnaast; audio kan per generatie licht variëren.
     </p>
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
