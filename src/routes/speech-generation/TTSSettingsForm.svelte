@@ -126,7 +126,7 @@
   </div>
   <div class="rounded-lg border border-base-300 bg-base-100 p-4">
     <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">Engine</div>
-    <div class="mt-2 font-semibold">Eleven v3</div>
+    <div class="mt-2 font-semibold">Eleven v4</div>
   </div>
 </div>
 
@@ -143,7 +143,7 @@
       <h2 class="card-title">Spraakgeneratie</h2>
     </div>
     <p class="max-w-3xl text-sm leading-relaxed text-base-content/70">
-      Eleven v3 kent maar één steminstelling: stabiliteit. Tekstnormalisatie, seed en audiotags
+      Babbel stuurt alleen stabiliteit als steminstelling mee. Tekstnormalisatie, seed en audiotags
       sturen de generatie daarnaast; audio kan per generatie licht variëren.
     </p>
 
@@ -209,7 +209,7 @@
 
     <TextareaInput
       id="tts_style_prefix"
-      label="Eleven v3-audiotags"
+      label="Audiotags"
       bind:value={form.tts_style_prefix}
       error={errors.tts_style_prefix}
       hint={stylePrefixHint}

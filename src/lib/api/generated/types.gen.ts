@@ -359,7 +359,7 @@ export type Voice = {
  */
 export type TTSSettings = {
   /**
-   * The voice_settings value Babbel sends to eleven_v3.
+   * The voice_settings value Babbel sends to ElevenLabs.
    */
   stability: number
   apply_text_normalization: 'auto' | 'on' | 'off'
@@ -368,7 +368,7 @@ export type TTSSettings = {
    */
   seed: number | null
   /**
-   * Audio-tag prefix prepended to story text before eleven_v3 synthesis.
+   * Audio-tag prefix prepended to story text before synthesis.
    */
   tts_style_prefix: string
   updated_at: string
@@ -383,7 +383,7 @@ export type TTSSettings = {
  */
 export type TTSSettingsUpdate = {
   /**
-   * The voice_settings value Babbel sends to eleven_v3.
+   * The voice_settings value Babbel sends to ElevenLabs.
    */
   stability?: number
   apply_text_normalization?: 'auto' | 'on' | 'off'
@@ -400,7 +400,7 @@ export type PronunciationRuleInput = {
    */
   string_to_replace: string
   /**
-   * IPA pronunciation without surrounding slashes. Forward slashes and control characters are rejected. ElevenLabs v3 inline IPA is typically 80-90% consistent.
+   * IPA pronunciation without surrounding slashes. Forward slashes and control characters are rejected. ElevenLabs inline IPA is best-effort, not guaranteed.
    */
   ipa: string
   /**

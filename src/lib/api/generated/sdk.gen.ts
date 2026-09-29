@@ -685,8 +685,8 @@ export const postStoriesIdAudio = <ThrowOnError extends boolean = true>(
  *
  * TTS request options are read from the global settings row exposed at
  * `GET/PATCH /api/v1/settings/tts`. The API key and timeout remain environment
- * configuration; Babbel always sends `eleven_v3`. Stability, text
- * normalization, seed, and the Eleven v3 style prefix are database-backed
+ * configuration; Babbel always sends `eleven_v4`. Stability, text
+ * normalization, seed, and the audio-tag style prefix are database-backed
  * settings. Local pronunciation rules are injected as inline IPA before
  * the TTS request is sent.
  *
@@ -770,7 +770,7 @@ export const patchSettingsTts = <ThrowOnError extends boolean = true>(
 /**
  * Get TTS pronunciation rules
  *
- * Returns local pronunciation rules used for ElevenLabs v3 inline IPA
+ * Returns local pronunciation rules used for ElevenLabs inline IPA
  * injection. No ElevenLabs API call is made for this management route.
  *
  */
@@ -797,10 +797,10 @@ export const getSettingsTtsPronunciations = <ThrowOnError extends boolean = true
  * Replace TTS pronunciation rules
  *
  * Replaces the complete local pronunciation rule set used for ElevenLabs
- * v3 inline IPA injection. Editors and admins can write; viewers can
- * only read. IPA injection is 80-90% consistent according to ElevenLabs
- * guidance; keep abbreviations case-sensitive when matching inside URLs
- * would be undesirable.
+ * inline IPA injection. Editors and admins can write; viewers can
+ * only read. IPA injection is best-effort, not guaranteed; keep
+ * abbreviations case-sensitive when matching inside URLs would be
+ * undesirable.
  *
  */
 export const putSettingsTtsPronunciations = <ThrowOnError extends boolean = true>(

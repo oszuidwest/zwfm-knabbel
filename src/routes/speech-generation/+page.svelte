@@ -17,7 +17,7 @@
 <div class="space-y-6">
   <PageHeader
     title="Spraakgeneratie"
-    subtitle="Globale ElevenLabs v3-instellingen"
+    subtitle="Globale instellingen voor ElevenLabs"
   />
 
   {#if data.loadError}
