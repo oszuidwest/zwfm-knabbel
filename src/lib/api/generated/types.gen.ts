@@ -376,6 +376,10 @@ export type TTSSettings = {
    * Whether BABBEL_ELEVENLABS_API_KEY is configured.
    */
   api_key_configured: boolean
+  /**
+   * ElevenLabs model used for text-to-speech generation.
+   */
+  model_id: string
 }
 
 /**
