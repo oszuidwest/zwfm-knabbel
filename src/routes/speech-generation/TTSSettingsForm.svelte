@@ -125,8 +125,8 @@
     </div>
   </div>
   <div class="rounded-lg border border-base-300 bg-base-100 p-4">
-    <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">Engine</div>
-    <div class="mt-2 font-semibold">Eleven v4</div>
+    <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">Model</div>
+    <div class="mt-2 font-mono font-semibold">{settings.model_id}</div>
   </div>
 </div>
 
