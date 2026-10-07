@@ -32,6 +32,7 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
 
   const filter: NonNullable<StoryFilters['filter']> = {}
   const params: StoryFilters = {
+    sort: '-start_date,-created_at,-id',
     limit,
     offset,
     filter,

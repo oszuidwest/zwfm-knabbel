@@ -35,6 +35,9 @@ jobs:
       - name: Svelte check
         run: npm run check
 
+      - name: Regression tests
+        run: npm test
+
       - name: API types in sync
         run: npm run types:check
 
