@@ -11,12 +11,13 @@
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "test": "node --test tests/*.test.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "types:generate": "node scripts/api-types.mjs generate",
     "types:check": "node scripts/api-types.mjs check",
-    "check-all": "npm run check && npm run lint && npm run format:check && npm run types:check"
+    "check-all": "npm run check && npm run test && npm run lint && npm run format:check && npm run types:check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

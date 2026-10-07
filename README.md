@@ -54,10 +54,11 @@ npm run preview          # Preview production build
 
 # Code Quality
 npm run check            # Svelte type checking
+npm test                 # Page loader regression tests
 npm run lint             # ESLint
 npm run format           # Prettier (write)
 npm run format:check     # Prettier (check only)
-npm run check-all        # Run all checks (types + lint + format + API types)
+npm run check-all        # Run all checks (types + tests + lint + format + API types)
 
 # API client
 npm run types:generate   # Regenerate client, SDK and types from Babbel OpenAPI spec
