@@ -40,8 +40,10 @@ export function formatDuration(seconds: number | undefined | null): string {
 /** formatRelativeTime renders a timestamp as Dutch relative copy ("3 uur geleden"). */
 export function formatRelativeTime(dateString: string | undefined): string {
   if (!dateString) return '-'
-  const rtf = new Intl.RelativeTimeFormat('nl-NL', { numeric: 'auto' })
   const minutes = Math.round((new Date(dateString).getTime() - Date.now()) / 60_000)
+  // Dutch `numeric: 'auto'` renders 0 minutes as "binnen een minuut", also for the past.
+  if (minutes === 0) return 'zojuist'
+  const rtf = new Intl.RelativeTimeFormat('nl-NL', { numeric: 'auto' })
   if (Math.abs(minutes) < 60) return rtf.format(minutes, 'minute')
   const hours = Math.round(minutes / 60)
   if (Math.abs(hours) < 24) return rtf.format(hours, 'hour')

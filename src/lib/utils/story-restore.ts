@@ -1,68 +1,29 @@
-import { maskToWeekdays, WEEKDAY_BITS_BY_DAY, type Story, type Weekdays } from '$lib/types'
+import { WEEKDAY_BITS_BY_DAY, type Story } from '$lib/types'
 import { formatDate, parseDate, toLocalDateString } from './format'
-import { weekdayLabels } from './labels'
 
-type RestoreStory = Pick<
-  Story,
-  'status' | 'start_date' | 'end_date' | 'weekdays' | 'audio_file' | 'metadata'
->
+type RestoreStory = Pick<Story, 'status' | 'start_date' | 'end_date' | 'weekdays' | 'audio_file'>
 
-export interface RestoreNotice {
-  tone: 'warning' | 'info'
-  message: string
-}
-
-export interface RestoreAssessment {
+interface RestoreAssessment {
   /**
-   * The safer way to restore, offered as the primary action: `reschedule`
-   * when the planning is over, `draft` when the story would reach bulletins.
+   * The safer way to restore, offered as the primary action: `edit` when the
+   * planning is over, `draft` when the story would reach bulletins.
    */
-  suggestion: 'reschedule' | 'draft' | null
-  notices: RestoreNotice[]
-}
-
-const WEEKDAY_ORDER: (keyof Weekdays)[] = [
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-  'sunday',
-]
-
-/** formatWeekdays renders a weekday bitmask as Dutch day abbreviations. */
-export function formatWeekdays(mask: number): string {
-  if ((mask & 127) === 127) return 'Elke dag'
-  const weekdays = maskToWeekdays(mask)
-  const days = WEEKDAY_ORDER.filter(day => weekdays[day]).map(day => weekdayLabels[day])
-  return days.length > 0 ? days.join(', ') : 'Geen dagen'
-}
-
-/** wordpressPostId returns the WordPress post a story was created from, if any. */
-export function wordpressPostId(story: Pick<Story, 'metadata'>): string | undefined {
-  const id = story.metadata?.wordpress_id
-  return typeof id === 'number' || (typeof id === 'string' && id !== '') ? String(id) : undefined
-}
-
-function addDays(date: string, days: number): string {
-  const result = parseDate(date)
-  result.setDate(result.getDate() + days)
-  return toLocalDateString(result)
+  suggestion: 'edit' | 'draft' | null
+  notices: { tone: 'warning' | 'info'; message: string }[]
 }
 
 /**
  * firstBroadcastDay returns the first day from `today` on which Babbel's
  * bulletin selection matches the story's period and weekdays, or null.
  */
-export function firstBroadcastDay(story: RestoreStory, today: string): string | null {
+function firstBroadcastDay(story: RestoreStory, today: string): string | null {
   if (!story.start_date || !story.end_date) return null
-  const from = story.start_date > today ? story.start_date : today
+  const date = parseDate(story.start_date > today ? story.start_date : today)
   // Seven consecutive days cover every weekday once.
-  for (let offset = 0; offset < 7; offset++) {
-    const day = addDays(from, offset)
+  for (let i = 0; i < 7; i++, date.setDate(date.getDate() + 1)) {
+    const day = toLocalDateString(date)
     if (day > story.end_date) return null
-    if (story.weekdays & (WEEKDAY_BITS_BY_DAY[parseDate(day).getDay()] ?? 0)) return day
+    if (story.weekdays & (WEEKDAY_BITS_BY_DAY[date.getDay()] ?? 0)) return day
   }
   return null
 }
@@ -85,13 +46,13 @@ export function assessRestore(
   story: RestoreStory,
   today: string = toLocalDateString()
 ): RestoreAssessment {
-  const notices: RestoreNotice[] = []
+  const notices: RestoreAssessment['notices'] = []
   let suggestion: RestoreAssessment['suggestion'] = null
 
   const ended = !!story.end_date && story.end_date < today
 
   if (ended || story.status === 'expired') {
-    suggestion = 'reschedule'
+    suggestion = 'edit'
     notices.push({
       tone: 'warning',
       message: ended
@@ -122,14 +83,6 @@ export function assessRestore(
     notices.push({
       tone: 'info',
       message: 'Het bericht is een concept en komt pas in bulletins als je het op actief zet.',
-    })
-  }
-
-  const postId = wordpressPostId(story)
-  if (postId) {
-    notices.push({
-      tone: 'info',
-      message: `Dit bericht komt uit WordPress (post ${postId}). Herstellen in Knabbel werkt de WordPress-plugin niet bij: een update die mislukte terwijl het bericht verwijderd was, wordt niet opnieuw verstuurd. Controleer de planning tegen het artikel in WordPress.`,
     })
   }
 

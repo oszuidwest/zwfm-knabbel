@@ -33,7 +33,6 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
 
   const filter: NonNullable<StoryFilters['filter']> = {}
   const params: StoryFilters = {
-    // The trash lists the most recently deleted story first.
     sort: trashed ? 'deleted_at:desc,id:desc' : 'start_date:desc,created_at:desc,id:desc',
     limit,
     offset,

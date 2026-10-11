@@ -4,8 +4,8 @@
   import { ArchiveRestore, Info, TriangleAlert, X } from '$lib/components/icons'
   import { toast } from '$lib/stores/toast'
   import { formatDate, formatDateTime, formatDuration } from '$lib/utils/format'
-  import { statusColors, statusLabels } from '$lib/utils/labels'
-  import { assessRestore, formatWeekdays } from '$lib/utils/story-restore'
+  import { formatWeekdays, statusColors, statusLabels } from '$lib/utils/labels'
+  import { assessRestore } from '$lib/utils/story-restore'
   import type { Story } from '$lib/types'
 
   interface Props {
@@ -19,27 +19,24 @@
 
   type RestoreMode = 'as-is' | 'draft' | 'edit'
 
+  // The last action is the primary one: the safer way to restore.
+  const ACTIONS: Record<'draft' | 'edit' | 'none', { mode: RestoreMode; label: string }[]> = {
+    draft: [
+      { mode: 'as-is', label: 'Actief herstellen' },
+      { mode: 'draft', label: 'Herstellen als concept' },
+    ],
+    edit: [
+      { mode: 'as-is', label: 'Alleen herstellen' },
+      { mode: 'edit', label: 'Herstellen en planning aanpassen' },
+    ],
+    none: [{ mode: 'as-is', label: 'Herstellen' }],
+  }
+
   let pending = $state<RestoreMode | null>(null)
   const restoring = $derived(pending !== null)
 
   const assessment = $derived(assessRestore(story))
-  // The safer option comes last and is the primary action.
-  const actions = $derived.by((): { mode: RestoreMode; label: string; primary: boolean }[] => {
-    switch (assessment.suggestion) {
-      case 'draft':
-        return [
-          { mode: 'as-is', label: 'Actief herstellen', primary: false },
-          { mode: 'draft', label: 'Herstellen als concept', primary: true },
-        ]
-      case 'reschedule':
-        return [
-          { mode: 'as-is', label: 'Alleen herstellen', primary: false },
-          { mode: 'edit', label: 'Herstellen en planning aanpassen', primary: true },
-        ]
-      default:
-        return [{ mode: 'as-is', label: 'Herstellen', primary: true }]
-    }
-  })
+  const actions = $derived(ACTIONS[assessment.suggestion ?? 'none'])
 
   // Like ReadMode, the dialog is removed rather than closed, so focus returns to the opener here.
   function showModal(dialog: HTMLDialogElement): () => void {
@@ -59,37 +56,32 @@
     if (restoring) return
     pending = mode
     try {
+      await patchStoriesId({ path: { id: story.id }, body: { deleted_at: '' } })
+    } catch (err) {
+      pending = null
+      notifyMutationError(err, 'Herstellen mislukt')
+      // The story is gone for good, so refresh the trash.
+      if (err instanceof ApiError && err.status === 404) await ondone(false)
+      return
+    }
+    // From here on every path ends in ondone, which removes the dialog.
+
+    if (mode === 'draft') {
+      // Babbel rejects status changes on a deleted story and cannot combine
+      // them with a restore, so the status follows in a second request.
       try {
-        await patchStoriesId({ path: { id: story.id }, body: { deleted_at: '' } })
+        await patchStoriesId({ path: { id: story.id }, body: { status: 'draft' } })
       } catch (err) {
-        if (err instanceof ApiError && err.status === 404) {
-          toast.error('Dit bericht bestaat niet meer')
-          await ondone(false)
-        } else {
-          notifyMutationError(err, 'Herstellen mislukt')
-        }
+        console.error('[stories] set restored story to draft failed', err)
+        // The story is live again, so this message must not slip by.
+        toast.error('Bericht hersteld, maar nog actief: zet het zelf op concept', 10_000)
+        await ondone(true)
         return
       }
-
-      if (mode === 'draft') {
-        // Babbel rejects status changes on a deleted story and cannot combine
-        // them with a restore, so the status follows in a second request.
-        try {
-          await patchStoriesId({ path: { id: story.id }, body: { status: 'draft' } })
-        } catch (err) {
-          console.error('[stories] set restored story to draft failed', err)
-          // The story is live again, so this message must not slip by.
-          toast.error('Bericht hersteld, maar nog actief: zet het zelf op concept', 10_000)
-          await ondone(true)
-          return
-        }
-      }
-
-      toast.success(mode === 'draft' ? 'Bericht hersteld als concept' : 'Bericht hersteld')
-      await ondone(mode === 'edit')
-    } finally {
-      pending = null
     }
+
+    toast.success(mode === 'draft' ? 'Bericht hersteld als concept' : 'Bericht hersteld')
+    await ondone(mode === 'edit')
   }
 </script>
 
@@ -165,20 +157,16 @@
     {#if assessment.notices.length > 0}
       <ul class="mt-3 space-y-2">
         {#each assessment.notices as notice (notice.message)}
+          {@const Icon = notice.tone === 'warning' ? TriangleAlert : Info}
           <li class={['alert items-start text-sm', notice.tone === 'warning' && 'alert-warning']}>
+            <Icon
+              aria-hidden="true"
+              class="h-5 w-5 shrink-0"
+            />
             {#if notice.tone === 'warning'}
-              <TriangleAlert
-                aria-hidden="true"
-                class="h-5 w-5 shrink-0"
-              />
-              <span><span class="sr-only">Let op: </span>{notice.message}</span>
-            {:else}
-              <Info
-                aria-hidden="true"
-                class="h-5 w-5 shrink-0"
-              />
-              <span>{notice.message}</span>
+              <span class="sr-only">Let op:</span>
             {/if}
+            <span>{notice.message}</span>
           </li>
         {/each}
       </ul>
@@ -194,16 +182,17 @@
       >
         Annuleren
       </button>
-      {#each actions as action (action.mode)}
+      {#each actions as action, i (action.mode)}
+        {@const primary = i === actions.length - 1}
         <button
           type="button"
-          class={['btn', action.primary ? 'btn-primary' : 'btn-outline']}
+          class={['btn', primary ? 'btn-primary' : 'btn-outline']}
           onclick={() => restore(action.mode)}
           disabled={restoring}
         >
           {#if pending === action.mode}
             <span class="loading loading-sm loading-spinner"></span>
-          {:else if action.primary}
+          {:else if primary}
             <ArchiveRestore
               aria-hidden="true"
               class="h-5 w-5"

@@ -85,7 +85,7 @@ test('date_order reads correctly on start_date too', async () => {
   assert.deepEqual(api.getFieldErrors(err), { start_date: 'Einddatum ligt voor de startdatum' })
 })
 
-test('conflict and gone codes use Dutch copy instead of the English detail', async () => {
+test('conflict, gone and not-found codes use Dutch copy instead of the English detail', async () => {
   const lastAdmin = await rejection(
     sdk.deleteUsersId({
       path: { id: 1 },
@@ -110,6 +110,15 @@ test('conflict and gone codes use Dutch copy instead of the English detail', asy
     })
   )
   assert.equal(deleted.message, 'Dit bericht is verwijderd')
+
+  const missing = await rejection(
+    sdk.patchStoriesId({
+      path: { id: 1 },
+      body: { deleted_at: '' },
+      fetch: problem(404, { code: 'story.not_found', detail: 'Story with id 1 not found' }),
+    })
+  )
+  assert.equal(missing.message, 'Bestaat niet (meer)')
 
   const rejectedKey = await rejection(
     sdk.postStoriesIdTts({
@@ -161,6 +170,12 @@ test('route IDs must be positive integers', () => {
   for (const id of ['0', '-1', '1.5', 'abc', '007', '1e3', '9007199254740992']) {
     assert.equal(matchId(id), false, id)
   }
+})
+
+test('relative time reads "zojuist" for the last minute', t => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-11T20:55:37Z').getTime() })
+  assert.equal(format.formatRelativeTime('2026-10-11T22:55:14+02:00'), 'zojuist')
+  assert.equal(format.formatRelativeTime('2026-10-11T22:54:07+02:00'), '1 minuut geleden')
 })
 
 test('plain API dates are local calendar days', () => {

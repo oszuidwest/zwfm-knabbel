@@ -35,6 +35,7 @@ const problemMessages: Record<string, string> = {
 const problemSuffixMessages: Record<string, string> = {
   duplicate: 'Bestaat al',
   has_dependencies: 'Nog in gebruik, ontkoppel of verwijder eerst de gekoppelde items',
+  not_found: 'Bestaat niet (meer)',
   reference_missing: 'Een gekoppeld item is intussen verwijderd, herlaad de pagina',
 }
 

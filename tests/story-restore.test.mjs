@@ -4,17 +4,15 @@ import { createServer } from 'vite'
 
 let server
 let assessRestore
-let firstBroadcastDay
 let formatWeekdays
-let wordpressPostId
 
 before(async () => {
   server = await createServer({
     server: { middlewareMode: true, watch: null },
     appType: 'custom',
   })
-  ;({ assessRestore, firstBroadcastDay, formatWeekdays, wordpressPostId } =
-    await server.ssrLoadModule('/src/lib/utils/story-restore.ts'))
+  ;({ assessRestore } = await server.ssrLoadModule('/src/lib/utils/story-restore.ts'))
+  ;({ formatWeekdays } = await server.ssrLoadModule('/src/lib/utils/labels.ts'))
 })
 
 after(async () => {
@@ -33,7 +31,6 @@ function story(overrides = {}) {
     end_date: '2026-10-20',
     weekdays: 127,
     audio_file: 'story_1.wav',
-    metadata: {},
     ...overrides,
   }
 }
@@ -54,6 +51,13 @@ test('an active story names the first day it can go on air', () => {
   const future = assessRestore(story({ start_date: '2026-10-29', end_date: '2026-10-30' }), today)
   assert.equal(future.suggestion, 'draft')
   assert.match(future.notices[0].message, /vanaf donderdag 29 oktober/)
+
+  // The search crosses the end of summer time (25 October).
+  const acrossDst = assessRestore(
+    story({ start_date: '2026-10-24', end_date: '2026-10-30', weekdays: MONDAY }),
+    today
+  )
+  assert.match(acrossDst.notices[0].message, /vanaf maandag 26 oktober/)
 })
 
 test('an active story whose weekdays never fall in the period is not eligible', () => {
@@ -62,6 +66,7 @@ test('an active story whose weekdays never fall in the period is not eligible', 
     today
   )
   assert.deepEqual(result, { suggestion: null, notices: [] })
+  assert.deepEqual(assessRestore(story({ weekdays: 0 }), today), { suggestion: null, notices: [] })
 })
 
 test('an active story without audio only gets an info notice', () => {
@@ -71,17 +76,17 @@ test('an active story without audio only gets an info notice', () => {
   assert.match(result.notices[0].message, /geen audio/)
 })
 
-test('a past period or expired status asks to reschedule', () => {
+test('a past period or expired status asks to edit the planning', () => {
   const ended = assessRestore(story({ end_date: '2026-10-10' }), today)
-  assert.equal(ended.suggestion, 'reschedule')
+  assert.equal(ended.suggestion, 'edit')
   assert.match(ended.notices[0].message, /voorbij \(laatste dag 10-10-2026\)/)
 
   const expired = assessRestore(story({ status: 'expired' }), today)
-  assert.equal(expired.suggestion, 'reschedule')
+  assert.equal(expired.suggestion, 'edit')
   assert.match(expired.notices[0].message, /verlopen/)
 
   const draftEnded = assessRestore(story({ status: 'draft', end_date: '2026-09-25' }), today)
-  assert.equal(draftEnded.suggestion, 'reschedule')
+  assert.equal(draftEnded.suggestion, 'edit')
 })
 
 test('the last day of the period still counts as running', () => {
@@ -93,28 +98,6 @@ test('a draft is safe to restore', () => {
   const result = assessRestore(story({ status: 'draft' }), today)
   assert.equal(result.suggestion, null)
   assert.equal(result.notices[0].tone, 'info')
-})
-
-test('a WordPress story mentions that the plugin is not updated', () => {
-  const result = assessRestore(
-    story({ status: 'draft', metadata: { wordpress_id: 177604 } }),
-    today
-  )
-  assert.equal(result.notices.length, 2)
-  assert.match(result.notices[1].message, /WordPress \(post 177604\)/)
-})
-
-test('wordpressPostId ignores missing and empty IDs', () => {
-  assert.equal(wordpressPostId({ metadata: { wordpress_id: '42' } }), '42')
-  assert.equal(wordpressPostId({ metadata: { wordpress_id: '' } }), undefined)
-  assert.equal(wordpressPostId({ metadata: { wordpress_id: null } }), undefined)
-  assert.equal(wordpressPostId({}), undefined)
-})
-
-test('firstBroadcastDay starts at today or the start date', () => {
-  assert.equal(firstBroadcastDay(story(), today), today)
-  assert.equal(firstBroadcastDay(story({ start_date: '2026-10-15' }), today), '2026-10-15')
-  assert.equal(firstBroadcastDay(story({ weekdays: 0 }), today), null)
 })
 
 test('formatWeekdays lists days from Monday', () => {

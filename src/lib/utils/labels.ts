@@ -1,3 +1,5 @@
+import { WEEKDAY_BITS } from '$lib/types'
+
 export const roleLabels: Record<string, string> = {
   admin: 'Beheerder',
   editor: 'Redacteur',
@@ -40,4 +42,13 @@ export const weekdayLabels: Record<string, string> = {
   friday: 'Vr',
   saturday: 'Za',
   sunday: 'Zo',
+}
+
+/** formatWeekdays renders a weekday bitmask as Dutch day abbreviations, Monday first. */
+export function formatWeekdays(mask: number): string {
+  if ((mask & 127) === 127) return 'Elke dag'
+  const days = Object.entries(weekdayLabels)
+    .filter(([day]) => mask & WEEKDAY_BITS[day as keyof typeof WEEKDAY_BITS])
+    .map(([, label]) => label)
+  return days.join(', ') || 'Geen dagen'
 }

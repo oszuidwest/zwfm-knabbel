@@ -19,14 +19,7 @@
     Trash2,
     Zap,
   } from '$lib/components/icons'
-  import {
-    PageHeader,
-    EmptyState,
-    TableActions,
-    FilterModal,
-    MaybeTooltip,
-    Pagination,
-  } from '$lib/components/ui'
+  import { PageHeader, EmptyState, TableActions, FilterModal, Pagination } from '$lib/components/ui'
   import ReadMode from '$lib/components/ReadMode.svelte'
   import RestoreStoryDialog from './RestoreStoryDialog.svelte'
   import type { Story } from '$lib/types'
@@ -232,27 +225,29 @@
     </div>
   {/if}
 
-  {#if data.stories.length === 0 && trashView}
-    <EmptyState
-      icon={Trash2}
-      title="Prullenbak is leeg"
-      description={hasActiveFilters
-        ? 'Geen verwijderde berichten gevonden met deze filters.'
-        : 'Verwijderde berichten verschijnen hier.'}
-    />
-  {:else if data.stories.length === 0}
-    <EmptyState
-      icon={FileText}
-      title="Geen berichten"
-      description={hasActiveFilters
-        ? 'Geen berichten gevonden met deze filters.'
-        : canWrite
-          ? 'Maak je eerste bericht aan om te beginnen.'
-          : 'Nog geen berichten aanwezig.'}
-      action={!hasActiveFilters && canWrite
-        ? { href: '/stories/new', label: 'Nieuw bericht' }
-        : undefined}
-    />
+  {#if data.stories.length === 0}
+    {#if trashView}
+      <EmptyState
+        icon={Trash2}
+        title="Prullenbak is leeg"
+        description={hasActiveFilters
+          ? 'Geen verwijderde berichten gevonden met deze filters.'
+          : 'Verwijderde berichten verschijnen hier.'}
+      />
+    {:else}
+      <EmptyState
+        icon={FileText}
+        title="Geen berichten"
+        description={hasActiveFilters
+          ? 'Geen berichten gevonden met deze filters.'
+          : canWrite
+            ? 'Maak je eerste bericht aan om te beginnen.'
+            : 'Nog geen berichten aanwezig.'}
+        action={!hasActiveFilters && canWrite
+          ? { href: '/stories/new', label: 'Nieuw bericht' }
+          : undefined}
+      />
+    {/if}
   {:else}
     <div class="space-y-2 md:hidden">
       {#each data.stories as story (story.id)}
@@ -356,15 +351,7 @@
                 <td class="whitespace-nowrap">{formatDate(story.start_date)}</td>
                 <td class="whitespace-nowrap">{formatDate(story.end_date)}</td>
                 {#if trashView}
-                  <td class="whitespace-nowrap">
-                    {#if story.deleted_at}
-                      <time
-                        datetime={story.deleted_at}
-                        title={formatDateTime(story.deleted_at)}
-                        >{formatRelativeTime(story.deleted_at)}</time
-                      >
-                    {/if}
-                  </td>
+                  <td class="whitespace-nowrap">{@render deletedAt(story)}</td>
                 {/if}
                 <td>
                   <div class="flex gap-1">
@@ -487,18 +474,25 @@
     {/if}
   </div>
   {#if trashView && story.deleted_at}
-    <p class="mt-1 text-sm text-base-content/60">
-      Verwijderd
-      <time
-        datetime={story.deleted_at}
-        title={formatDateTime(story.deleted_at)}>{formatRelativeTime(story.deleted_at)}</time
-      >
-    </p>
+    <p class="mt-1 text-sm text-base-content/60">Verwijderd {@render deletedAt(story)}</p>
+  {/if}
+{/snippet}
+
+{#snippet deletedAt(story: Story)}
+  {#if story.deleted_at}
+    <time
+      datetime={story.deleted_at}
+      title={formatDateTime(story.deleted_at)}>{formatRelativeTime(story.deleted_at)}</time
+    >
   {/if}
 {/snippet}
 
 {#snippet restoreButton(story: Story, iconClass: string)}
-  {#snippet button()}
+  <!-- Like the read mode button: icon only, named by its tooltip. -->
+  <div
+    class="tooltip tooltip-left"
+    data-tip={canWrite ? 'Herstellen' : 'Geen rechten'}
+  >
     <button
       type="button"
       class="btn btn-square btn-ghost btn-sm"
@@ -511,25 +505,11 @@
         class={iconClass}
       />
     </button>
-  {/snippet}
-
-  <!-- Like the read mode button: icon only, named by its tooltip. -->
-  {#if canWrite}
-    <div
-      class="tooltip tooltip-left"
-      data-tip="Herstellen"
-    >
-      {@render button()}
-    </div>
-  {:else}
-    <MaybeTooltip
-      when
-      tip="Geen rechten"
-      placement="tooltip-left"
-    >
-      {@render button()}
-    </MaybeTooltip>
-  {/if}
+    {#if !canWrite}
+      <!-- Disabled controls cannot take focus, so the tooltip never reaches assistive tech. -->
+      <span class="sr-only">Geen rechten</span>
+    {/if}
+  </div>
 {/snippet}
 
 {#if restoreStory}
