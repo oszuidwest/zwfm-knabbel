@@ -23,8 +23,8 @@
     PageHeader,
     EmptyState,
     TableActions,
-    FilterModal,
     MaybeTooltip,
+    Modal,
     Pagination,
   } from '$lib/components/ui'
   import ReadMode from '$lib/components/ReadMode.svelte'
@@ -382,38 +382,58 @@
   </a>
 {/if}
 
-<FilterModal
-  bind:open={showFilterModal}
-  hasActiveFilters={hiddenFilterCount > 0}
-  onClear={clearHiddenFilters}
->
-  <fieldset class="fieldset">
-    <legend class="fieldset-legend">Status</legend>
-    <select
-      id="modal-status"
-      class="select w-full"
-      value={statusFilter}
-      onchange={e => updateFilters({ status: e.currentTarget.value })}
-    >
-      <option value="">Alle statussen</option>
-      {#each statusOptions as option (option.value)}
-        <option value={option.value}>{option.label}</option>
-      {/each}
-    </select>
-  </fieldset>
+{#if showFilterModal}
+  <Modal
+    title="Filters"
+    onclose={() => (showFilterModal = false)}
+  >
+    <div class="space-y-4">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Status</legend>
+        <select
+          id="modal-status"
+          class="select w-full"
+          value={statusFilter}
+          onchange={e => updateFilters({ status: e.currentTarget.value })}
+        >
+          <option value="">Alle statussen</option>
+          {#each statusOptions as option (option.value)}
+            <option value={option.value}>{option.label}</option>
+          {/each}
+        </select>
+      </fieldset>
 
-  <fieldset class="fieldset">
-    <legend class="fieldset-legend">Zoeken</legend>
-    <input
-      id="modal-search"
-      type="search"
-      placeholder="Zoek in titel of tekst..."
-      class="input w-full"
-      value={searchQuery}
-      onchange={e => updateFilters({ q: e.currentTarget.value })}
-    />
-  </fieldset>
-</FilterModal>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Zoeken</legend>
+        <input
+          id="modal-search"
+          type="search"
+          placeholder="Zoek in titel of tekst..."
+          class="input w-full"
+          value={searchQuery}
+          onchange={e => updateFilters({ q: e.currentTarget.value })}
+        />
+      </fieldset>
+    </div>
+
+    {#snippet actions()}
+      {#if hiddenFilterCount > 0}
+        <button
+          class="btn btn-ghost"
+          onclick={clearHiddenFilters}
+        >
+          Filters wissen
+        </button>
+      {/if}
+      <button
+        class="btn btn-primary"
+        onclick={() => (showFilterModal = false)}
+      >
+        Sluiten
+      </button>
+    {/snippet}
+  </Modal>
+{/if}
 
 {#snippet cardSummary(story: Story)}
   <div class="flex items-center gap-2">

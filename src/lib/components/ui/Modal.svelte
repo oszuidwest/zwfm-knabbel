@@ -6,11 +6,10 @@
   interface Props {
     title: string
     onclose: () => void
-    /** boxClass adds classes to the modal box, such as a wider max width. */
     boxClass?: string
     children: Snippet
     /** actions renders the footer buttons. Put the primary one last so phones stack it on top. */
-    actions?: Snippet
+    actions: Snippet
   }
 
   let { title, onclose, boxClass, children, actions }: Props = $props()
@@ -22,11 +21,7 @@
 <dialog
   class="modal modal-bottom sm:modal-middle"
   aria-labelledby={titleId}
-  onclose={e => {
-    // The teardown's close() can deliver this event after the dialog is gone,
-    // when the parent may already show a new one.
-    if (e.currentTarget.isConnected) onclose()
-  }}
+  {onclose}
   {@attach showModal}
 >
   <div class={['modal-box', boxClass]}>
@@ -52,11 +47,9 @@
 
     {@render children()}
 
-    {#if actions}
-      <div class="modal-action flex-col-reverse sm:flex-row">
-        {@render actions()}
-      </div>
-    {/if}
+    <div class="modal-action flex-col-reverse sm:flex-row">
+      {@render actions()}
+    </div>
   </div>
   <form
     method="dialog"
