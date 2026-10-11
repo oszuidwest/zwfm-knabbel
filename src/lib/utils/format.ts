@@ -9,10 +9,20 @@ export function toLocalDateString(date: Date = new Date()): string {
   return `${year}-${month}-${day}`
 }
 
+/**
+ * parseDate reads an API date or date-time. A plain YYYY-MM-DD calendar date
+ * becomes local midnight; `new Date()` would read it as UTC midnight.
+ */
+export function parseDate(dateString: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString)
+  if (!match) return new Date(dateString)
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+}
+
 /** formatDate renders an API date string for Dutch UI copy. */
 export function formatDate(dateString: string | undefined): string {
   if (!dateString) return '-'
-  return new Date(dateString).toLocaleDateString('nl-NL')
+  return parseDate(dateString).toLocaleDateString('nl-NL')
 }
 
 /** formatDateTime renders an API date-time string for Dutch UI copy. */

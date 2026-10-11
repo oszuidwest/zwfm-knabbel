@@ -1,24 +1,10 @@
 import { PUBLIC_API_URL } from '$env/static/public'
 import { client } from './generated/client.gen'
 import { toast } from '$lib/stores/toast'
+import { describeProblem, fieldErrorsFromProblem, isProblemDetails } from './problems'
 
 const REQUEST_TIMEOUT_MS = 30_000
 const UPLOAD_TIMEOUT_MS = 120_000
-
-export interface ProblemFieldError {
-  field?: string
-  message?: string
-}
-
-export interface ProblemDetails {
-  code?: string
-  type?: string
-  title?: string
-  status?: number
-  detail?: string
-  hint?: string
-  errors?: ProblemFieldError[]
-}
 
 class ApiError extends Error {
   notified = false
@@ -33,34 +19,12 @@ class ApiError extends Error {
   }
 }
 
-function isOptionalString(value: unknown): value is string | undefined {
-  return value === undefined || typeof value === 'string'
-}
-
-function isProblemFieldError(value: unknown): value is ProblemFieldError {
-  if (typeof value !== 'object' || value === null) return false
-  const candidate = value as Record<string, unknown>
-  return isOptionalString(candidate.field) && isOptionalString(candidate.message)
-}
-
-function isProblemDetails(value: unknown): value is ProblemDetails {
-  if (typeof value !== 'object' || value === null) return false
-
-  const candidate = value as Record<string, unknown>
-  return (
-    isOptionalString(candidate.code) &&
-    isOptionalString(candidate.type) &&
-    isOptionalString(candidate.title) &&
-    (candidate.status === undefined || typeof candidate.status === 'number') &&
-    isOptionalString(candidate.detail) &&
-    isOptionalString(candidate.hint) &&
-    (candidate.errors === undefined ||
-      (Array.isArray(candidate.errors) && candidate.errors.every(isProblemFieldError)))
-  )
-}
-
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
+function getErrorMessage(error: unknown, status: number, fallbackMessage: string): string {
   if (typeof error === 'string' && error) return error
+  if (isProblemDetails(error)) {
+    const message = describeProblem(status, error)
+    if (message) return message
+  }
   if (typeof error !== 'object' || error === null) return fallbackMessage
 
   const candidate = error as Record<string, unknown>
@@ -99,7 +63,11 @@ client.interceptors.error.use((error, response, request) => {
     return error
   }
 
-  const apiError = new ApiError(response.status, getErrorMessage(error, 'Request failed'), error)
+  const apiError = new ApiError(
+    response.status,
+    getErrorMessage(error, response.status, 'Request failed'),
+    error
+  )
   if (response.status === 403 && request?.method !== 'GET') {
     toast.error('Geen rechten voor deze actie')
     apiError.notified = true
@@ -125,6 +93,21 @@ export function notifyMutationError(error: unknown, fallbackMessage: string): vo
     return
   }
   toast.error(fallbackMessage)
+}
+
+/** getFieldErrors returns Dutch inline messages for the fields a 400 or 422 response rejected. */
+export function getFieldErrors(error: unknown): Record<string, string> {
+  if (!(error instanceof ApiError) || !isProblemDetails(error.details)) return {}
+  return fieldErrorsFromProblem(error.details)
+}
+
+/** getUploadFailure explains a failed upload; timeouts and network errors get Dutch copy too. */
+export function getUploadFailure(error: unknown): string {
+  if (!(error instanceof ApiError)) return 'onbekende fout'
+  if (error.status === 0) {
+    return error.message === 'Upload timeout' ? 'upload duurde te lang' : 'geen verbinding'
+  }
+  return error.message
 }
 
 export { ApiError, isProblemDetails }

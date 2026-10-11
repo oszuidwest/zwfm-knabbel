@@ -1,9 +1,8 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation'
-  import { ApiError, isProblemDetails, notifyMutationError } from '$lib/api/client'
   import { deleteUsersId } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { toast } from '$lib/stores/toast'
+  import { deleteWithConfirm } from '$lib/utils/crud'
   import { getRoleLabel } from '$lib/utils/labels'
   import { User } from '$lib/components/icons'
   import { ListPage, TableActions } from '$lib/components/ui'
@@ -14,34 +13,13 @@
 
   const canWrite = $derived(auth.can('users', 'write'))
 
-  async function handleDelete(user: UserType): Promise<void> {
-    if (!confirm(`Weet je zeker dat je "${user.username ?? 'deze gebruiker'}" wilt verwijderen?`)) {
-      return
-    }
-
-    try {
-      await deleteUsersId({ path: { id: user.id } })
-      toast.success('Gebruiker verwijderd')
-      await invalidateAll()
-    } catch (err) {
-      if (
-        err instanceof ApiError &&
-        err.status === 409 &&
-        isProblemDetails(err.details) &&
-        err.details.type === 'https://babbel.api/problems/admin-constraint'
-      ) {
-        toast.error('Kan laatste admin niet verwijderen')
-        return
-      }
-      if (err instanceof ApiError && err.status === 409) {
-        const detail = isProblemDetails(err.details) ? err.details.detail : undefined
-        const message = detail || (err.message !== 'Request failed' ? err.message : undefined)
-        toast.error(message ?? 'Verwijderen mislukt')
-        return
-      }
-      notifyMutationError(err, 'Verwijderen mislukt')
-    }
-  }
+  const handleDelete = (user: UserType) =>
+    deleteWithConfirm({
+      name: user.username ?? 'deze gebruiker',
+      deleteFn: () => deleteUsersId({ path: { id: user.id } }),
+      onSuccess: () => invalidateAll(),
+      successMessage: 'Gebruiker verwijderd',
+    })
 </script>
 
 <ListPage

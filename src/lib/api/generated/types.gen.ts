@@ -16,7 +16,7 @@ export type StringFilterOperators = {
    */
   not?: string
   /**
-   * Case-sensitive literal substring match.
+   * Literal substring match; case sensitivity follows the column collation (case-insensitive by default).
    */
   like?: string
   /**
@@ -33,7 +33,7 @@ export type NullableStringFilterOperators = {
    */
   not?: string
   /**
-   * Case-sensitive literal substring match.
+   * Literal substring match; case sensitivity follows the column collation (case-insensitive by default).
    */
   like?: string
   /**
@@ -170,9 +170,16 @@ export type DateFilterOperators = {
 }
 
 /**
- * RFC 3339 date-time, or a bare date compared as midnight.
+ * RFC 3339 date-time with an uppercase `T` and `Z`, YYYY-MM-DD HH:MM:SS
+ * (optionally with fractional seconds), or a bare YYYY-MM-DD date
+ * compared as midnight. An RFC 3339 offset identifies an instant; the
+ * other forms use the server's local timezone. URL-encode `+` in offsets
+ * as `%2B`. Comma fractions are accepted only in scalar filters; use a
+ * decimal point in `in` and `between`, where commas separate values
+ * even when URL-encoded.
+ *
  */
-export type DateTimeValue = string | string
+export type DateTimeValue = string | string | string
 
 export type DateTimeFilter = DateTimeValue | DateTimeFilterOperators
 
@@ -190,11 +197,11 @@ export type DateTimeFilterOperators = {
   lt?: DateTimeValue
   lte?: DateTimeValue
   /**
-   * Comma-separated date-time values.
+   * Comma-separated date-time values. Fractional seconds must use a decimal point.
    */
   in?: string
   /**
-   * Two comma-separated inclusive date-time bounds.
+   * Two comma-separated inclusive date-time bounds. Fractional seconds must use a decimal point.
    */
   between?: string
 }
@@ -211,11 +218,11 @@ export type NullableDateTimeFilterOperators = {
   lt?: DateTimeValue
   lte?: DateTimeValue
   /**
-   * Comma-separated date-time values.
+   * Comma-separated date-time values. Fractional seconds must use a decimal point.
    */
   in?: string
   /**
-   * Two comma-separated inclusive date-time bounds.
+   * Two comma-separated inclusive date-time bounds. Fractional seconds must use a decimal point.
    */
   between?: string
   /**
@@ -551,11 +558,11 @@ export type Story = {
   duration_seconds: number | null
   status: 'draft' | 'active' | 'expired'
   /**
-   * Start date and time in RFC3339 format
+   * First scheduled calendar day (YYYY-MM-DD)
    */
   start_date: string
   /**
-   * End date and time in RFC3339 format
+   * Last scheduled calendar day (YYYY-MM-DD)
    */
   end_date: string
   /**
@@ -850,10 +857,6 @@ export type BulletinResponse = {
 export type BulletinJob = {
   id: number
   station_id: number
-  /**
-   * Calendar date used when selecting eligible stories
-   */
-  target_date: string
   status: 'queued' | 'running' | 'succeeded' | 'failed'
   /**
    * Number of generation attempts, including the current attempt. Jobs interrupted by restarts are retried a limited number of times
@@ -886,9 +889,10 @@ export type BulletinJob = {
  * ## Problem Types
  *
  * Generic problem type URIs (fixed):
- * - `https://babbel.api/problems/validation-error` - 422 request body or query parameter validation errors
+ * - `https://babbel.api/problems/validation-error` - 422 rejected body, path or query values; has `errors[]`
  * - `https://babbel.api/problems/resource-not-found` - 404 resource not found (generic)
- * - `https://babbel.api/problems/bad-request` - 400 malformed request
+ * - `https://babbel.api/problems/bad-request` - 400 body is not valid JSON (or multipart form data) for the endpoint; has `errors[]`
+ * - `https://babbel.api/problems/request-timeout` - 408 upload did not complete within the time limit
  * - `https://babbel.api/problems/payload-too-large` - 413 request body exceeds the API limit
  * - `https://babbel.api/problems/authentication-required` - 401 authentication required
  * - `https://babbel.api/problems/insufficient-permissions` - 403 insufficient permissions
@@ -897,11 +901,17 @@ export type BulletinJob = {
  * Resource-specific problem type URIs follow the pattern
  * `https://babbel.api/problems/{resource}.{error_type}` where the `code` field
  * contains the `{resource}.{error_type}` value. Examples:
- * - `{resource}.not_found` - 404 typed resource not found
+ * - `{resource}.not_found` - 404 typed resource not found (the resource in the URL path)
+ * - `story.deleted` - 410 write targeted a soft-deleted story; includes `deleted_at`
  * - `{resource}.duplicate` - 409 unique constraint violation
  * - `{resource}.has_dependencies` - 409 cannot delete, has dependent resources
- * - `{resource}.validation_failed` - 400 field-level validation error (also used for the "cannot delete last admin" constraint)
- * - `bulletin.no_stories` - 422 no active stories for bulletin generation
+ * - `{resource}.reference_missing` - 409 a referenced resource was deleted while the request ran
+ * - `user.last_admin` - 409 cannot delete, demote or suspend the last active admin user
+ * - `bulletin.no_stories` - 409 no active stories for bulletin generation
+ * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+ * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - 409 story or voice not ready for TTS
+ * - `tts.upstream_failed` - 502 ElevenLabs failed, rejected the request or returned silent audio
+ * (503 when ElevenLabs rejects the API credentials)
  * - `audio.processing_failed` - 500 FFmpeg processing error
  * - `internal.database_error` - 500 unexpected database error
  * - `internal.timeout` - 504 operation timed out
@@ -941,24 +951,109 @@ export type ProblemDetails = {
    */
   hint?: string
   /**
-   * Field-level errors for validation or strict request-parsing responses (400 and 422)
+   * Original deletion timestamp, present for story.deleted problems
    */
-  errors?: Array<{
-    /**
-     * Field name that failed validation
-     */
-    field?: string
-    /**
-     * Human-readable error message
-     */
-    message?: string
-  }>
+  deleted_at?: string
+  /**
+   * Field-level errors. Present with at least one item on every 400
+   * and 422 response; absent on other statuses.
+   *
+   */
+  errors?: Array<FieldError>
 }
 
+/**
+ * One rejected request value.
+ */
+export type FieldError = {
+  /**
+   * Public name of the rejected value:
+   * - a body path with JSON names, a dot for members and `[n]` for
+   * array indices, such as `title`, `rules[0].ipa` or `rules[1].string_to_replace`
+   * - a query parameter key exactly as sent, such as `limit`, `sort`,
+   * `fields`, `filter[status]` or `filter[status][not]`; see
+   * "Error labels" under "List queries"
+   * - `id` for the path parameter
+   * - the multipart field name of an uploaded file: `audio` (story
+   * audio) or `jingle` (station-voice audio)
+   * - `request` for the body as a whole
+   *
+   */
+  field: string
+  /**
+   * Why the value was rejected. The list is closed; clients can branch on it.
+   * - `required` - a required value or the required body is missing
+   * - `blank` - text is empty or only whitespace
+   * - `too_short` / `too_long` - text or a list is too short or too
+   * long; a password is `too_long` above 72 bytes
+   * - `out_of_range` - a number is outside its bounds, including an ID of 0 or less
+   * - `invalid_format` - a value is malformed: a date, an email, a
+   * non-alphanumeric username, missing password character classes,
+   * an ElevenLabs voice ID, a non-integer path ID or query number,
+   * a non-boolean query flag, a malformed filter key or filter
+   * value, or malformed multipart form data
+   * - `invalid_choice` - a value is not in the allowed set, such as a
+   * status, a role, a sort direction, a filter operator,
+   * `apply_text_normalization` or `trashed`
+   * - `invalid_type` - a body value has the wrong JSON type (400)
+   * - `invalid_json` - the body is malformed JSON or has trailing content (400)
+   * - `unknown_field` - an unknown body member (400), or an unknown
+   * filter, sort or fields name (422)
+   * - `not_found` - a body reference, such as `voice_id` or
+   * `station_id`, names a resource that does not exist
+   * - `date_order` - `end_date` is before `start_date`; `field` is
+   * `start_date` when only `start_date` changed, otherwise `end_date`
+   * - `empty_update` - the update sets no field; `field` is `request`
+   * - `duplicate` - a duplicate JSON member (400), a repeated query
+   * key, or a duplicate or conflicting pronunciation rule (422)
+   * - `unsupported` - a query feature the endpoint does not support,
+   * an operator the filter field does not support, an unsupported
+   * upload file extension, or `status` combined with `deleted_at`
+   * in `PATCH /stories/{id}`
+   * - `silent_audio` - uploaded story audio is silent or below -50 LUFS; `field` is `audio`
+   *
+   */
+  code:
+    | 'required'
+    | 'blank'
+    | 'too_short'
+    | 'too_long'
+    | 'out_of_range'
+    | 'invalid_format'
+    | 'invalid_choice'
+    | 'invalid_type'
+    | 'invalid_json'
+    | 'unknown_field'
+    | 'not_found'
+    | 'date_order'
+    | 'empty_update'
+    | 'duplicate'
+    | 'unsupported'
+    | 'silent_audio'
+  /**
+   * Human-readable explanation. The wording can change; do not parse it.
+   */
+  message: string
+}
+
+/**
+ * 400 problem; `errors[]` names each rejected part of the body.
+ */
+export type BadRequestError = ProblemDetails & {
+  type?: unknown
+  title?: unknown
+  status?: unknown
+  errors: unknown
+}
+
+/**
+ * 422 problem; `errors[]` names each rejected value.
+ */
 export type ValidationError = ProblemDetails & {
   type?: unknown
   title?: unknown
   status?: unknown
+  errors: unknown
 }
 
 export type ConflictError = ProblemDetails & {
@@ -1150,7 +1245,11 @@ export type UserInputWritable = {
   username: string
   full_name: string
   /**
-   * User password. Must satisfy the configured local password policy.
+   * User password. Must satisfy the configured local password policy:
+   * at least `BABBEL_AUTH_MIN_PASSWORD_LENGTH` characters (`too_short`),
+   * at most 72 bytes in UTF-8 (`too_long`), and the configured
+   * character classes (`invalid_format`).
+   *
    */
   password: string
   /**
@@ -1189,7 +1288,10 @@ export type UserUpdateWritable = {
    */
   full_name?: string | null
   /**
-   * New password. Must satisfy the configured local password policy. Null is treated as omit.
+   * New password. Must satisfy the configured local password policy
+   * (see `UserInput.password`); at most 72 bytes in UTF-8. Null is
+   * treated as omit.
+   *
    */
   password?: string | null
   /**
@@ -1213,8 +1315,10 @@ export type UserUpdateWritable = {
 }
 
 /**
- * Resource ID. Must be a positive integer; a malformed, zero, or negative
- * ID is rejected with 400 Bad Request.
+ * Resource ID. Must be a positive integer. A malformed ID is rejected
+ * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+ * `invalid_format`); a zero, negative or too large ID with code
+ * `out_of_range`.
  *
  */
 export type id = number
@@ -1255,6 +1359,13 @@ export type offset = number
  * - `name:asc` or `+name` - ascending
  * - `name:desc` or `-name` - descending
  * - `created_at:desc,name:asc` - multiple fields
+ *
+ * Text fields sort by the database column collation, not by code point.
+ * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
+ * case and accents do not count: `apple` sorts before `Banana`, and
+ * `delta` equals `Delta`. Rows with equal values, also under the default
+ * sort, have no defined order and can repeat or go missing across pages;
+ * add `id` as the last sort field for a stable order.
  *
  */
 export type sort = string
@@ -1312,7 +1423,10 @@ export type voiceFilter = {
 }
 
 /**
- * Typed story filters. `has_audio` replaces empty-string comparisons on `audio_url`.
+ * Typed story filters. Use `has_audio` to filter by audio presence.
+ * The default excludes deleted stories; `deleted_at` conditions other
+ * than `[null]=true` need `trashed=only` or `trashed=with` to match.
+ *
  */
 export type storyFilter = {
   id?: IntegerFilter
@@ -1365,7 +1479,7 @@ export type bulletinFilter = {
 }
 
 /**
- * Typed station-voice filters. `has_audio` replaces empty-string comparisons on `audio_url`.
+ * Typed station-voice filters. Use `has_audio` to filter by audio presence.
  */
 export type stationVoiceFilter = {
   id?: IntegerFilter
@@ -1462,13 +1576,20 @@ export type GetPublicBulletinErrors = {
    */
   404: ProblemDetails
   /**
+   * The station has no eligible stories for a new bulletin (`bulletin.no_stories`)
+   */
+  409: ConflictError
+  /**
    * The requested byte range is invalid or cannot be satisfied.
    */
   416: ProblemDetails
   /**
-   * Invalid parameters
+   * Invalid path or query parameter. `errors[].field` is `id` or
+   * `max_age`; `max_age` fails with `required`, `invalid_format` or
+   * `out_of_range`.
+   *
    */
-  422: ProblemDetails
+  422: ValidationError
   /**
    * Bulletin generation failed
    */
@@ -1536,13 +1657,25 @@ export type PostSessionsData = {
 
 export type PostSessionsErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
   401: ProblemDetails
+  /**
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
+   */
+  413: ProblemDetails
+  /**
+   * A missing or empty `username` or `password` fails with code `required`.
+   */
+  422: ValidationError
 }
 
 export type PostSessionsError = PostSessionsErrors[keyof PostSessionsErrors]
@@ -1574,9 +1707,9 @@ export type GetAuthOauthData = {
 
 export type GetAuthOauthErrors = {
   /**
-   * Bad request
+   * OAuth authentication is disabled
    */
-  400: ProblemDetails
+  404: ProblemDetails
   /**
    * Session storage failed before the redirect
    */
@@ -1702,6 +1835,13 @@ export type GetStationsData = {
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
      *
+     * Text fields sort by the database column collation, not by code point.
+     * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
+     * case and accents do not count: `apple` sorts before `Banana`, and
+     * `delta` equals `Delta`. Rows with equal values, also under the default
+     * sort, have no defined order and can repeat or go missing across pages;
+     * add `id` as the last sort field for a stable order.
+     *
      */
     sort?: string
     /**
@@ -1747,7 +1887,10 @@ export type GetStationsErrors = {
    */
   403: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -1776,9 +1919,13 @@ export type PostStationsData = {
 
 export type PostStationsErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -1788,22 +1935,30 @@ export type PostStationsErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource conflict (duplicate, constraint violation).
+   * The request conflicts with the current server state.
    *
    * 409 responses use resource-specific problem types in the pattern
-   * `https://babbel.api/problems/{resource}.{error_type}`:
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
    * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
    * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
-   * - `{resource}.conflict` - Other resource-state conflicts
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
    *
    */
   409: ConflictError
   /**
-   * Request body too large
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -1827,8 +1982,10 @@ export type DeleteStationsIdData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -1839,10 +1996,6 @@ export type DeleteStationsIdData = {
 
 export type DeleteStationsIdErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -1851,20 +2004,32 @@ export type DeleteStationsIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Resource conflict (duplicate, constraint violation).
+   * The request conflicts with the current server state.
    *
    * 409 responses use resource-specific problem types in the pattern
-   * `https://babbel.api/problems/{resource}.{error_type}`:
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
    * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
    * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
-   * - `{resource}.conflict` - Other resource-state conflicts
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
    *
    */
   409: ConflictError
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -1886,8 +2051,10 @@ export type GetStationsIdData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -1898,10 +2065,6 @@ export type GetStationsIdData = {
 
 export type GetStationsIdErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -1910,9 +2073,16 @@ export type GetStationsIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -1934,8 +2104,10 @@ export type PutStationsIdData = {
   body: StationInput
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -1946,9 +2118,13 @@ export type PutStationsIdData = {
 
 export type PutStationsIdErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -1958,26 +2134,34 @@ export type PutStationsIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Resource conflict (duplicate, constraint violation).
+   * The request conflicts with the current server state.
    *
    * 409 responses use resource-specific problem types in the pattern
-   * `https://babbel.api/problems/{resource}.{error_type}`:
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
    * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
    * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
-   * - `{resource}.conflict` - Other resource-state conflicts
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
    *
    */
   409: ConflictError
   /**
-   * Request body too large
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -2018,6 +2202,13 @@ export type GetVoicesData = {
      * - `name:asc` or `+name` - ascending
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
+     *
+     * Text fields sort by the database column collation, not by code point.
+     * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
+     * case and accents do not count: `apple` sorts before `Banana`, and
+     * `delta` equals `Delta`. Rows with equal values, also under the default
+     * sort, have no defined order and can repeat or go missing across pages;
+     * add `id` as the last sort field for a stable order.
      *
      */
     sort?: string
@@ -2063,7 +2254,10 @@ export type GetVoicesErrors = {
    */
   403: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -2087,7 +2281,10 @@ export type PostVoicesData = {
   body: {
     name: string
     /**
-     * ElevenLabs voice identifier for TTS generation
+     * ElevenLabs voice identifier for TTS generation: 8-64
+     * letters, digits, hyphens or underscores. Other values fail
+     * with 422 (`invalid_format`).
+     *
      */
     elevenlabs_voice_id?: string | null
   }
@@ -2098,9 +2295,13 @@ export type PostVoicesData = {
 
 export type PostVoicesErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -2110,22 +2311,30 @@ export type PostVoicesErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource conflict (duplicate, constraint violation).
+   * The request conflicts with the current server state.
    *
    * 409 responses use resource-specific problem types in the pattern
-   * `https://babbel.api/problems/{resource}.{error_type}`:
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
    * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
    * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
-   * - `{resource}.conflict` - Other resource-state conflicts
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
    *
    */
   409: ConflictError
   /**
-   * Request body too large
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -2149,8 +2358,10 @@ export type DeleteVoicesIdData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -2161,10 +2372,6 @@ export type DeleteVoicesIdData = {
 
 export type DeleteVoicesIdErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -2173,20 +2380,32 @@ export type DeleteVoicesIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Resource conflict (duplicate, constraint violation).
+   * The request conflicts with the current server state.
    *
    * 409 responses use resource-specific problem types in the pattern
-   * `https://babbel.api/problems/{resource}.{error_type}`:
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
    * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
    * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
-   * - `{resource}.conflict` - Other resource-state conflicts
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
    *
    */
   409: ConflictError
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -2208,8 +2427,10 @@ export type GetVoicesIdData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -2220,10 +2441,6 @@ export type GetVoicesIdData = {
 
 export type GetVoicesIdErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -2232,9 +2449,16 @@ export type GetVoicesIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -2256,14 +2480,19 @@ export type PutVoicesIdData = {
   body: {
     name?: string
     /**
-     * ElevenLabs voice identifier for TTS generation (set to null or empty string to clear)
+     * ElevenLabs voice identifier for TTS generation: 8-64
+     * letters, digits, hyphens or underscores. Set to null to
+     * clear it; an empty string fails with 422 (`invalid_format`).
+     *
      */
     elevenlabs_voice_id?: string | null
   }
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -2274,9 +2503,13 @@ export type PutVoicesIdData = {
 
 export type PutVoicesIdErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -2286,26 +2519,34 @@ export type PutVoicesIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Resource conflict (duplicate, constraint violation).
+   * The request conflicts with the current server state.
    *
    * 409 responses use resource-specific problem types in the pattern
-   * `https://babbel.api/problems/{resource}.{error_type}`:
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
    * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
    * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
-   * - `{resource}.conflict` - Other resource-state conflicts
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
    *
    */
   409: ConflictError
   /**
-   * Request body too large
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -2347,6 +2588,13 @@ export type GetStoriesData = {
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
      *
+     * Text fields sort by the database column collation, not by code point.
+     * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
+     * case and accents do not count: `apple` sorts before `Banana`, and
+     * `delta` equals `Delta`. Rows with equal values, also under the default
+     * sort, have no defined order and can repeat or go missing across pages;
+     * add `id` as the last sort field for a stable order.
+     *
      */
     sort?: string
     /**
@@ -2376,7 +2624,10 @@ export type GetStoriesData = {
      */
     trashed?: 'only' | 'with'
     /**
-     * Typed story filters. `has_audio` replaces empty-string comparisons on `audio_url`.
+     * Typed story filters. Use `has_audio` to filter by audio presence.
+     * The default excludes deleted stories; `deleted_at` conditions other
+     * than `[null]=true` need `trashed=only` or `trashed=with` to match.
+     *
      */
     filter?: {
       id?: IntegerFilter
@@ -2414,7 +2665,10 @@ export type GetStoriesErrors = {
    */
   403: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -2443,9 +2697,13 @@ export type PostStoriesData = {
 
 export type PostStoriesErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -2455,15 +2713,30 @@ export type PostStoriesErrors = {
    */
   403: ProblemDetails
   /**
-   * The referenced voice does not exist
+   * The request conflicts with the current server state.
+   *
+   * 409 responses use resource-specific problem types in the pattern
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
+   * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
+   * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   *
    */
-  404: ProblemDetails
+  409: ConflictError
   /**
-   * Request body too large
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -2504,8 +2777,10 @@ export type GetStoriesIdAudioData = {
   }
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -2516,10 +2791,6 @@ export type GetStoriesIdAudioData = {
 
 export type GetStoriesIdAudioErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -2528,13 +2799,20 @@ export type GetStoriesIdAudioErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
    * The requested byte range is invalid or cannot be satisfied.
    */
   416: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -2566,15 +2844,17 @@ export type PostStoriesIdAudioData = {
     /**
      * Audio file (WAV, MP3, M4A, AAC, OGG, FLAC, or Opus).
      * Maximum file size is 100 MB; larger uploads are rejected
-     * with 422 Unprocessable Entity.
+     * with 413 Payload Too Large.
      *
      */
     audio: Blob | File
   }
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -2585,9 +2865,13 @@ export type PostStoriesIdAudioData = {
 
 export type PostStoriesIdAudioErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -2597,11 +2881,32 @@ export type PostStoriesIdAudioErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Validation error
+   * Upload did not complete within the time limit
+   */
+  408: ProblemDetails
+  /**
+   * Story is soft-deleted. Restore it with PATCH {"deleted_at":""} before updating it.
+   */
+  410: ProblemDetails & {
+    code: 'story.deleted'
+    /**
+     * Original deletion timestamp, present for story.deleted problems
+     */
+    deleted_at: string
+  }
+  /**
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
+   */
+  413: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -2628,32 +2933,28 @@ export type PostStoriesIdTtsData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
   }
   query?: {
     /**
-     * Set to "true" to overwrite existing audio. Without this, the request fails if the story already has audio.
+     * Set to `true` to overwrite existing audio. Without it, a story that
+     * already has audio fails with 409 `story.audio_exists`. A value that
+     * is not a boolean fails with 422 (`errors[].field` is `force`, code
+     * `invalid_format`).
+     *
      */
-    force?: 'true'
+    force?: boolean
   }
   url: '/api/v1/stories/{id}/tts'
 }
 
 export type PostStoriesIdTtsErrors = {
-  /**
-   * Validation error. Possible causes:
-   * - Story has no text
-   * - Story has no voice assigned
-   * - Voice has no ElevenLabs voice ID configured
-   * - Story already has audio (use ?force=true to overwrite)
-   * - ElevenLabs voice ID not found
-   *
-   */
-  400: ProblemDetails
   /**
    * Unauthorized
    */
@@ -2663,11 +2964,35 @@ export type PostStoriesIdTtsErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Validation error
+   * The story or its voice is not ready for TTS. `code` is one of:
+   * - `story.audio_exists` - the story already has audio; retry with `?force=true` to overwrite it
+   * - `story.no_text` - the story has no text
+   * - `story.no_voice` - the story has no voice assigned
+   * - `voice.no_elevenlabs_id` - the voice has no ElevenLabs voice ID configured
+   * - `voice.elevenlabs_not_found` - ElevenLabs does not know the configured voice ID
+   * - `story.tts_text_too_long` - the story text with the style prefix is over the ElevenLabs limit
+   *
+   */
+  409: ConflictError
+  /**
+   * Story is soft-deleted. Restore it with PATCH {"deleted_at":""} before updating it.
+   */
+  410: ProblemDetails & {
+    code: 'story.deleted'
+    /**
+     * Original deletion timestamp, present for story.deleted problems
+     */
+    deleted_at: string
+  }
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -2683,7 +3008,9 @@ export type PostStoriesIdTtsErrors = {
    */
   501: ProblemDetails
   /**
-   * Upstream service failed
+   * Upstream service failed (`tts.upstream_failed`): ElevenLabs returned an
+   * error, rejected the generated request, or returned silent audio.
+   *
    */
   502: ProblemDetails
   /**
@@ -2755,9 +3082,13 @@ export type PatchSettingsTtsData = {
 
 export type PatchSettingsTtsErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -2767,11 +3098,14 @@ export type PatchSettingsTtsErrors = {
    */
   403: ProblemDetails
   /**
-   * Request body too large
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -2843,9 +3177,13 @@ export type PutSettingsTtsPronunciationsData = {
 
 export type PutSettingsTtsPronunciationsErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -2855,11 +3193,14 @@ export type PutSettingsTtsPronunciationsErrors = {
    */
   403: ProblemDetails
   /**
-   * Request body too large
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -2889,8 +3230,10 @@ export type DeleteStoriesIdData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -2901,10 +3244,6 @@ export type DeleteStoriesIdData = {
 
 export type DeleteStoriesIdErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -2913,9 +3252,16 @@ export type DeleteStoriesIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -2926,7 +3272,7 @@ export type DeleteStoriesIdError = DeleteStoriesIdErrors[keyof DeleteStoriesIdEr
 
 export type DeleteStoriesIdResponses = {
   /**
-   * Story soft deleted successfully
+   * Story soft deleted successfully, including an already deleted story
    */
   204: void
 }
@@ -2937,8 +3283,10 @@ export type GetStoriesIdData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -2949,10 +3297,6 @@ export type GetStoriesIdData = {
 
 export type GetStoriesIdErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -2961,9 +3305,16 @@ export type GetStoriesIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -2994,8 +3345,10 @@ export type PatchStoriesIdData = {
   }
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -3006,9 +3359,13 @@ export type PatchStoriesIdData = {
 
 export type PatchStoriesIdErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -3018,13 +3375,30 @@ export type PatchStoriesIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Request body too large
+   * Story is soft-deleted. Restore it with PATCH {"deleted_at":""} before updating it.
+   */
+  410: ProblemDetails & {
+    code: 'story.deleted'
+    /**
+     * Original deletion timestamp, present for story.deleted problems
+     */
+    deleted_at: string
+  }
+  /**
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -3039,7 +3413,7 @@ export type PatchStoriesIdResponses = {
    */
   200: Story
   /**
-   * Story soft-deleted successfully (when deleted_at is set to a non-empty value)
+   * Story soft-deleted successfully, including an already deleted story (when deleted_at is non-empty)
    */
   204: void
 }
@@ -3050,8 +3424,10 @@ export type PutStoriesIdData = {
   body: StoryUpdate
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -3062,9 +3438,13 @@ export type PutStoriesIdData = {
 
 export type PutStoriesIdErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -3074,15 +3454,44 @@ export type PutStoriesIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Request body too large
+   * The request conflicts with the current server state.
+   *
+   * 409 responses use resource-specific problem types in the pattern
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
+   * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
+   * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   *
+   */
+  409: ConflictError
+  /**
+   * Story is soft-deleted. Restore it with PATCH {"deleted_at":""} before updating it.
+   */
+  410: ProblemDetails & {
+    code: 'story.deleted'
+    /**
+     * Original deletion timestamp, present for story.deleted problems
+     */
+    deleted_at: string
+  }
+  /**
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -3106,8 +3515,10 @@ export type GetStoriesIdBulletinsData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -3130,6 +3541,13 @@ export type GetStoriesIdBulletinsData = {
      * - `name:asc` or `+name` - ascending
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
+     *
+     * Text fields sort by the database column collation, not by code point.
+     * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
+     * case and accents do not count: `apple` sorts before `Banana`, and
+     * `delta` equals `Delta`. Rows with equal values, also under the default
+     * sort, have no defined order and can repeat or go missing across pages;
+     * add `id` as the last sort field for a stable order.
      *
      */
     sort?: string
@@ -3170,10 +3588,6 @@ export type GetStoriesIdBulletinsData = {
 
 export type GetStoriesIdBulletinsErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -3182,11 +3596,14 @@ export type GetStoriesIdBulletinsErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -3229,6 +3646,13 @@ export type GetUsersData = {
      * - `name:asc` or `+name` - ascending
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
+     *
+     * Text fields sort by the database column collation, not by code point.
+     * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
+     * case and accents do not count: `apple` sorts before `Banana`, and
+     * `delta` equals `Delta`. Rows with equal values, also under the default
+     * sort, have no defined order and can repeat or go missing across pages;
+     * add `id` as the last sort field for a stable order.
      *
      */
     sort?: string
@@ -3284,7 +3708,10 @@ export type GetUsersErrors = {
    */
   403: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -3313,9 +3740,13 @@ export type PostUsersData = {
 
 export type PostUsersErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -3325,22 +3756,30 @@ export type PostUsersErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource conflict (duplicate, constraint violation).
+   * The request conflicts with the current server state.
    *
    * 409 responses use resource-specific problem types in the pattern
-   * `https://babbel.api/problems/{resource}.{error_type}`:
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
    * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
    * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
-   * - `{resource}.conflict` - Other resource-state conflicts
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
    *
    */
   409: ConflictError
   /**
-   * Request body too large
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -3364,8 +3803,10 @@ export type DeleteUsersIdData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -3376,10 +3817,6 @@ export type DeleteUsersIdData = {
 
 export type DeleteUsersIdErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -3388,20 +3825,32 @@ export type DeleteUsersIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Resource conflict (duplicate, constraint violation).
+   * The request conflicts with the current server state.
    *
    * 409 responses use resource-specific problem types in the pattern
-   * `https://babbel.api/problems/{resource}.{error_type}`:
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
    * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
    * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
-   * - `{resource}.conflict` - Other resource-state conflicts
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
    *
    */
   409: ConflictError
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -3423,8 +3872,10 @@ export type GetUsersIdData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -3435,10 +3886,6 @@ export type GetUsersIdData = {
 
 export type GetUsersIdErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -3447,9 +3894,16 @@ export type GetUsersIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -3476,8 +3930,10 @@ export type PatchUsersIdData = {
   }
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -3488,9 +3944,13 @@ export type PatchUsersIdData = {
 
 export type PatchUsersIdErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -3500,13 +3960,36 @@ export type PatchUsersIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Request body too large
+   * The request conflicts with the current server state.
+   *
+   * 409 responses use resource-specific problem types in the pattern
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
+   * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
+   * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   *
+   */
+  409: ConflictError
+  /**
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -3528,8 +4011,10 @@ export type PutUsersIdData = {
   body: UserUpdateWritable
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -3540,9 +4025,13 @@ export type PutUsersIdData = {
 
 export type PutUsersIdErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -3552,26 +4041,34 @@ export type PutUsersIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Resource conflict (duplicate, constraint violation).
+   * The request conflicts with the current server state.
    *
    * 409 responses use resource-specific problem types in the pattern
-   * `https://babbel.api/problems/{resource}.{error_type}`:
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
    * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
    * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
-   * - `{resource}.conflict` - Other resource-state conflicts
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
    *
    */
   409: ConflictError
   /**
-   * Request body too large
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -3612,6 +4109,13 @@ export type GetBulletinsData = {
      * - `name:asc` or `+name` - ascending
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
+     *
+     * Text fields sort by the database column collation, not by code point.
+     * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
+     * case and accents do not count: `apple` sorts before `Banana`, and
+     * `delta` equals `Delta`. Rows with equal values, also under the default
+     * sort, have no defined order and can repeat or go missing across pages;
+     * add `id` as the last sort field for a stable order.
      *
      */
     sort?: string
@@ -3660,7 +4164,10 @@ export type GetBulletinsErrors = {
    */
   403: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -3684,8 +4191,10 @@ export type GetBulletinsIdData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -3696,10 +4205,6 @@ export type GetBulletinsIdData = {
 
 export type GetBulletinsIdErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -3708,9 +4213,16 @@ export type GetBulletinsIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -3732,8 +4244,10 @@ export type GetStationsIdBulletinsData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -3756,6 +4270,13 @@ export type GetStationsIdBulletinsData = {
      * - `name:asc` or `+name` - ascending
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
+     *
+     * Text fields sort by the database column collation, not by code point.
+     * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
+     * case and accents do not count: `apple` sorts before `Banana`, and
+     * `delta` equals `Delta`. Rows with equal values, also under the default
+     * sort, have no defined order and can repeat or go missing across pages;
+     * add `id` as the last sort field for a stable order.
      *
      */
     sort?: string
@@ -3796,10 +4317,6 @@ export type GetStationsIdBulletinsData = {
 
 export type GetStationsIdBulletinsErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -3808,11 +4325,14 @@ export type GetStationsIdBulletinsErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -3835,16 +4355,18 @@ export type GetStationsIdBulletinsResponse =
   GetStationsIdBulletinsResponses[keyof GetStationsIdBulletinsResponses]
 
 export type PostStationsIdBulletinsData = {
+  /**
+   * Empty object; the endpoint takes no options.
+   */
   body?: {
-    /**
-     * Date for bulletin in YYYY-MM-DD format (defaults to today)
-     */
-    date?: string
+    [key: string]: never
   }
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -3855,9 +4377,13 @@ export type PostStationsIdBulletinsData = {
 
 export type PostStationsIdBulletinsErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -3867,7 +4393,7 @@ export type PostStationsIdBulletinsErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
@@ -3875,11 +4401,14 @@ export type PostStationsIdBulletinsErrors = {
    */
   406: ProblemDetails
   /**
-   * Request body too large
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -3909,8 +4438,10 @@ export type GetBulletinJobsIdData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -3921,10 +4452,6 @@ export type GetBulletinJobsIdData = {
 
 export type GetBulletinJobsIdErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -3933,9 +4460,16 @@ export type GetBulletinJobsIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -3961,8 +4495,10 @@ export type GetStationsIdBulletinsLatestData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -3973,10 +4509,6 @@ export type GetStationsIdBulletinsLatestData = {
 
 export type GetStationsIdBulletinsLatestErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -3985,9 +4517,16 @@ export type GetStationsIdBulletinsLatestErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -4032,8 +4571,10 @@ export type GetBulletinsIdAudioData = {
   }
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -4044,10 +4585,6 @@ export type GetBulletinsIdAudioData = {
 
 export type GetBulletinsIdAudioErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -4056,13 +4593,20 @@ export type GetBulletinsIdAudioErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
    * The requested byte range is invalid or cannot be satisfied.
    */
   416: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -4094,8 +4638,10 @@ export type GetBulletinsIdStoriesData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -4119,10 +4665,6 @@ export type GetBulletinsIdStoriesData = {
 
 export type GetBulletinsIdStoriesErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -4131,11 +4673,14 @@ export type GetBulletinsIdStoriesErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -4179,6 +4724,13 @@ export type GetStationVoicesData = {
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
      *
+     * Text fields sort by the database column collation, not by code point.
+     * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
+     * case and accents do not count: `apple` sorts before `Banana`, and
+     * `delta` equals `Delta`. Rows with equal values, also under the default
+     * sort, have no defined order and can repeat or go missing across pages;
+     * add `id` as the last sort field for a stable order.
+     *
      */
     sort?: string
     /**
@@ -4194,7 +4746,7 @@ export type GetStationVoicesData = {
      */
     fields?: string
     /**
-     * Typed station-voice filters. `has_audio` replaces empty-string comparisons on `audio_url`.
+     * Typed station-voice filters. Use `has_audio` to filter by audio presence.
      */
     filter?: {
       id?: IntegerFilter
@@ -4225,7 +4777,10 @@ export type GetStationVoicesErrors = {
    */
   403: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -4254,9 +4809,13 @@ export type PostStationVoicesData = {
 
 export type PostStationVoicesErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -4266,26 +4825,30 @@ export type PostStationVoicesErrors = {
    */
   403: ProblemDetails
   /**
-   * The referenced station or voice does not exist
-   */
-  404: ProblemDetails
-  /**
-   * Resource conflict (duplicate, constraint violation).
+   * The request conflicts with the current server state.
    *
    * 409 responses use resource-specific problem types in the pattern
-   * `https://babbel.api/problems/{resource}.{error_type}`:
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
    * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
    * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
-   * - `{resource}.conflict` - Other resource-state conflicts
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
    *
    */
   409: ConflictError
   /**
-   * Request body too large
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -4326,8 +4889,10 @@ export type GetStationVoicesIdAudioData = {
   }
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -4338,10 +4903,6 @@ export type GetStationVoicesIdAudioData = {
 
 export type GetStationVoicesIdAudioErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -4350,13 +4911,20 @@ export type GetStationVoicesIdAudioErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
    * The requested byte range is invalid or cannot be satisfied.
    */
   416: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -4390,15 +4958,17 @@ export type PostStationVoicesIdAudioData = {
     /**
      * Jingle audio file (WAV, MP3, M4A, AAC, OGG, FLAC, or Opus).
      * Maximum file size is 100 MB; larger uploads are rejected
-     * with 422 Unprocessable Entity.
+     * with 413 Payload Too Large.
      *
      */
     jingle: Blob | File
   }
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -4409,9 +4979,13 @@ export type PostStationVoicesIdAudioData = {
 
 export type PostStationVoicesIdAudioErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -4421,11 +4995,22 @@ export type PostStationVoicesIdAudioErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Validation error
+   * Upload did not complete within the time limit
+   */
+  408: ProblemDetails
+  /**
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
+   */
+  413: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**
@@ -4453,8 +5038,10 @@ export type DeleteStationVoicesIdData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -4465,10 +5052,6 @@ export type DeleteStationVoicesIdData = {
 
 export type DeleteStationVoicesIdErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -4477,9 +5060,16 @@ export type DeleteStationVoicesIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -4503,8 +5093,10 @@ export type GetStationVoicesIdData = {
   body?: never
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -4515,10 +5107,6 @@ export type GetStationVoicesIdData = {
 
 export type GetStationVoicesIdErrors = {
   /**
-   * Bad request
-   */
-  400: ProblemDetails
-  /**
    * Unauthorized
    */
   401: ProblemDetails
@@ -4527,9 +5115,16 @@ export type GetStationVoicesIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -4552,8 +5147,10 @@ export type PutStationVoicesIdData = {
   body: StationVoiceUpdate
   path: {
     /**
-     * Resource ID. Must be a positive integer; a malformed, zero, or negative
-     * ID is rejected with 400 Bad Request.
+     * Resource ID. Must be a positive integer. A malformed ID is rejected
+     * with 422 Unprocessable Entity (`errors[].field` is `id`, code
+     * `invalid_format`); a zero, negative or too large ID with code
+     * `out_of_range`.
      *
      */
     id: number
@@ -4564,9 +5161,13 @@ export type PutStationVoicesIdData = {
 
 export type PutStationVoicesIdErrors = {
   /**
-   * Bad request
+   * The body is not a valid JSON document for this endpoint: malformed
+   * JSON, trailing content, a duplicate member, a wrong JSON type, an
+   * unknown member, a root that is not an object, or a missing body. For
+   * multipart uploads, the body is not valid multipart form data.
+   *
    */
-  400: ProblemDetails
+  400: BadRequestError
   /**
    * Unauthorized
    */
@@ -4576,26 +5177,34 @@ export type PutStationVoicesIdErrors = {
    */
   403: ProblemDetails
   /**
-   * Resource not found
+   * The resource in the URL path does not exist
    */
   404: ProblemDetails
   /**
-   * Resource conflict (duplicate, constraint violation).
+   * The request conflicts with the current server state.
    *
    * 409 responses use resource-specific problem types in the pattern
-   * `https://babbel.api/problems/{resource}.{error_type}`:
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
    * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
    * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
-   * - `{resource}.conflict` - Other resource-state conflicts
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
    *
    */
   409: ConflictError
   /**
-   * Request body too large
+   * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
-   * Validation error
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file.
+   *
    */
   422: ValidationError
   /**

@@ -209,12 +209,14 @@ export const getHealth = <ThrowOnError extends boolean = true>(
  * Configure via `BABBEL_AUTOMATION_KEY` environment variable.
  *
  * **Behavior**:
- * - If `max_age > 0`: Returns cached bulletin if younger than max_age, otherwise generates new
+ * - If `max_age > 0`: Returns cached bulletin if created on the current local day and younger than max_age, otherwise generates new
  * - If `max_age = 0`: Always generates a fresh bulletin
  * - If endpoint is disabled (no API key configured): Returns 404
+ * - If the station has no eligible stories: Returns 409 `bulletin.no_stories`
  *
  * **Concurrency**: Only one bulletin can be generated per station at a time.
- * Concurrent requests for the same station will queue.
+ * Concurrent requests for the same station will queue for up to
+ * `BABBEL_AUTOMATION_TIMEOUT` (default 120s), then return 504.
  *
  * **Compatible systems**: mAirList, RadioDJ, PlayoutONE, StationPlaylist, and any
  * system that supports HTTP audio fetching.
@@ -285,6 +287,8 @@ export const getAuthOauth = <ThrowOnError extends boolean = true>(
  *
  * Handles the OAuth callback from the provider and redirects to the frontend.
  * This endpoint is called by the OAuth provider after user authentication.
+ * Users are bound to the token's issuer and subject (`sub`); a missing
+ * subject is rejected.
  *
  */
 export const getAuthOauthCallback = <ThrowOnError extends boolean = true>(
@@ -577,7 +581,7 @@ export const putVoicesId = <ThrowOnError extends boolean = true>(
  *
  * ## Voice Filtering
  * - `filter[voice_id]=5` - Stories with specific voice
- * - `filter[voice_id][ne]=null` - Stories with any voice assigned
+ * - `filter[voice_id][null]=false` - Stories with any voice assigned
  * - `filter[voice_id][null]=true` - Stories without voice
  *
  * ## Audio Filtering
@@ -593,7 +597,7 @@ export const putVoicesId = <ThrowOnError extends boolean = true>(
  * ## Examples
  * - Active stories on June 15, 2024: `?filter[start_date][lte]=2024-06-15&filter[end_date][gte]=2024-06-15`
  * - Stories that play on Monday: `?filter[weekdays][band]=2`
- * - Weekend stories with voice: `?filter[weekdays][band]=65&filter[voice_id][ne]=null`
+ * - Weekend stories with voice: `?filter[weekdays][band]=65&filter[voice_id][null]=false`
  * - Search with sorting: `?search=breaking&sort=-created_at`
  *
  */
@@ -610,6 +614,8 @@ export const getStories = <ThrowOnError extends boolean = true>(
  * Create a new story
  *
  * Create a new story with JSON body. Audio file must be uploaded separately via POST /stories/{id}/audio.
+ * A `voice_id` that does not exist fails with 422 (`voice_id`, `not_found`).
+ * An `end_date` before `start_date` fails with 422 (`end_date`, `date_order`).
  *
  */
 export const postStories = <ThrowOnError extends boolean = true>(
@@ -653,6 +659,15 @@ export const getStoriesIdAudio = <ThrowOnError extends boolean = true>(
  *
  * Upload audio file for a story. Accepts WAV, MP3, M4A, AAC, OGG, FLAC, and Opus files.
  * Audio duration is automatically calculated and stored.
+ *
+ * Errors:
+ * - 400: the body is not valid multipart form data (`request`, `invalid_format`).
+ * - 408: the upload did not complete within the time limit.
+ * - 413: the file is larger than 100 MB.
+ * - 422: the `audio` file is missing (`required`), has an unsupported
+ * extension (`unsupported`), or is silent or below -50 LUFS
+ * (`silent_audio`). Existing audio is kept.
+ * - 500: the server could not store or process the file.
  *
  */
 export const postStoriesIdAudio = <ThrowOnError extends boolean = true>(
@@ -830,7 +845,8 @@ export const putSettingsTtsPronunciations = <ThrowOnError extends boolean = true
  * Delete story (soft delete)
  *
  * Performs a soft delete by setting deleted_at timestamp.
- * The story will no longer appear in listings unless trashed=with is specified.
+ * The story no longer appears in default listings. List it with
+ * `trashed=only` or `trashed=with`.
  * Story data and audio files are preserved for potential restoration.
  *
  */
@@ -868,6 +884,11 @@ export const getStoriesId = <ThrowOnError extends boolean = true>(
  * - Change story status (draft, active, expired)
  * - Restore a soft-deleted story by setting deleted_at to empty string
  *
+ * Send exactly one of `status` and `deleted_at`. Neither fails with 422
+ * (`request`, `empty_update`); both fail with 422 (`request`,
+ * `unsupported`). An unknown status fails with 422 (`status`,
+ * `invalid_choice`).
+ *
  */
 export const patchStoriesId = <ThrowOnError extends boolean = true>(
   options: Options<PatchStoriesIdData, ThrowOnError>
@@ -892,6 +913,8 @@ export const patchStoriesId = <ThrowOnError extends boolean = true>(
  *
  * Update story with JSON body. All fields are optional - only provided fields will be updated.
  * Audio file must be uploaded separately via POST /stories/{id}/audio.
+ * A body that sets no field fails with 422 (`request`, `empty_update`);
+ * a `voice_id` that does not exist fails with 422 (`voice_id`, `not_found`).
  *
  */
 export const putStoriesId = <ThrowOnError extends boolean = true>(
@@ -999,7 +1022,9 @@ export const postUsers = <ThrowOnError extends boolean = true>(
  * Delete user
  *
  * Soft-deletes a user account. All active sessions for the user will be terminated.
- * Cannot delete the last admin user.
+ * The user no longer appears in default listings. List it with
+ * `trashed=only` or `trashed=with`.
+ * Deleting the last admin user fails with 409 `user.last_admin`.
  *
  */
 export const deleteUsersId = <ThrowOnError extends boolean = true>(
@@ -1034,6 +1059,7 @@ export const getUsersId = <ThrowOnError extends boolean = true>(
  * Update user state (suspend/restore) without requiring full user data.
  * This is an alternative to using PUT /users/{id} with the suspended field.
  * Use this endpoint when you only want to change suspension status without providing other user fields.
+ * Suspending the last active admin fails with 409 `user.last_admin`.
  *
  */
 export const patchUsersId = <ThrowOnError extends boolean = true>(
@@ -1056,6 +1082,11 @@ export const patchUsersId = <ThrowOnError extends boolean = true>(
  *
  * Update user information. All fields are optional - only provided fields will be updated.
  * Can also suspend/restore users by setting the suspended field to true/false.
+ * An empty body or a body with only null values fails with 422
+ * (`request`, `empty_update`). A present empty string is validated like
+ * any other value: `full_name: ""` fails as `blank`, `role: ""` as
+ * `invalid_choice` and `password: ""` as `too_short`.
+ * Demoting or suspending the last active admin fails with 409 `user.last_admin`.
  *
  */
 export const putUsersId = <ThrowOnError extends boolean = true>(
@@ -1220,7 +1251,10 @@ export const getStationsIdBulletins = <ThrowOnError extends boolean = true>(
  * bulletin and its audio through the regular bulletin endpoints.
  *
  * Every request creates a generation job. A single background worker
- * processes jobs one at a time in submission order.
+ * processes jobs one at a time in submission order. Each job generates for
+ * the local day the worker runs it. The request body is optional: only
+ * an empty body or `{}` is accepted. Any member, including `date`,
+ * returns `400` with code `unknown_field`.
  *
  */
 export const postStationsIdBulletins = <ThrowOnError extends boolean = true>(
@@ -1403,6 +1437,8 @@ export const getStationVoices = <ThrowOnError extends boolean = true>(
  * Create a new station-voice relationship
  *
  * Create station-voice relationship with JSON body. Jingle audio file must be uploaded separately via POST /station-voices/{id}/audio.
+ * A `station_id` or `voice_id` that does not exist fails with 422
+ * (`errors[].code` is `not_found`).
  *
  */
 export const postStationVoices = <ThrowOnError extends boolean = true>(
@@ -1455,6 +1491,14 @@ export const getStationVoicesIdAudio = <ThrowOnError extends boolean = true>(
  * Upload station-voice jingle file
  *
  * Upload jingle audio file for a station-voice relationship. Accepts WAV, MP3, M4A, AAC, OGG, FLAC, and Opus files.
+ *
+ * Errors:
+ * - 400: the body is not valid multipart form data (`request`, `invalid_format`).
+ * - 408: the upload did not complete within the time limit.
+ * - 413: the file is larger than 100 MB.
+ * - 422: the `jingle` file is missing (`required`) or has an unsupported
+ * extension (`unsupported`).
+ * - 500: the server could not store or process the file.
  *
  */
 export const postStationVoicesIdAudio = <ThrowOnError extends boolean = true>(
@@ -1525,6 +1569,9 @@ export const getStationVoicesId = <ThrowOnError extends boolean = true>(
  *
  * Update station-voice relationship properties with JSON body. All fields are optional - only provided fields will be updated.
  * When updating station_id or voice_id, the system checks for duplicate combinations.
+ * A `station_id` or `voice_id` that does not exist fails with 422
+ * (`errors[].code` is `not_found`); 404 means only that the station-voice
+ * in the path does not exist.
  * Jingle audio file must be uploaded separately via POST /station-voices/{id}/audio.
  *
  */

@@ -1,5 +1,5 @@
 import { error, redirect } from '@sveltejs/kit'
-import { ApiError } from '$lib/api/client'
+import { ApiError, getFieldErrors } from '$lib/api/client'
 import { resolveInternalHref } from '$lib/utils/routes'
 
 interface ResourceLoadErrorOptions {
@@ -37,7 +37,8 @@ export function throwResourceLoadError(
     redirect(303, resolveInternalHref('/stories?denied=1'))
   }
 
-  if (err.status === 404) {
+  // Babbel rejects a malformed, zero or negative path ID with 422 on field `id`.
+  if (err.status === 404 || (err.status === 422 && 'id' in getFieldErrors(err))) {
     error(404, notFound)
   }
 

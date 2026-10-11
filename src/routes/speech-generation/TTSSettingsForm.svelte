@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation'
-  import { ApiError, notifyMutationError } from '$lib/api/client'
+  import { getFieldErrors, notifyMutationError } from '$lib/api/client'
   import { patchSettingsTts } from '$lib/api/generated/sdk.gen'
   import {
     textNormalizationOptions,
@@ -13,7 +13,7 @@
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
   import { MaybeTooltip, SelectInput, TextareaInput, TextInput } from '$lib/components/ui'
-  import type { TTSSettings, ValidationError } from '$lib/types'
+  import type { TTSSettings } from '$lib/types'
 
   interface Props {
     settings: TTSSettings
@@ -45,21 +45,6 @@
   const reloadLabel = $derived(isDirty ? 'Wijzigingen verwerpen' : 'Herladen')
   const formDisabled = $derived(submitting || !canEdit)
 
-  function isValidationErrorDetails(value: unknown): value is ValidationError {
-    return typeof value === 'object' && value !== null && 'errors' in value
-  }
-
-  function validationErrorsFromDetails(details: unknown): Record<string, string> {
-    if (!isValidationErrorDetails(details) || !Array.isArray(details.errors)) return {}
-
-    return details.errors.reduce<Record<string, string>>((result, error) => {
-      if (error.field && error.message && !result[error.field]) {
-        result[error.field] = error.message
-      }
-      return result
-    }, {})
-  }
-
   async function reloadSettings(): Promise<void> {
     if (isDirty && !confirm('Onopgeslagen wijzigingen verwerpen en opnieuw laden?')) return
 
@@ -88,13 +73,11 @@
       try {
         await patchSettingsTts({ body: toTTSSettingsUpdate(result.data) })
       } catch (err) {
-        if (err instanceof ApiError && (err.status === 400 || err.status === 422)) {
-          const validationErrors = validationErrorsFromDetails(err.details)
-          if (Object.keys(validationErrors).length > 0) {
-            errors = validationErrors
-            toast.error('Controleer de velden')
-            return
-          }
+        const fieldErrors = getFieldErrors(err)
+        if (Object.keys(fieldErrors).length > 0) {
+          errors = fieldErrors
+          toast.error('Controleer de velden')
+          return
         }
 
         notifyMutationError(err, 'Opslaan mislukt')

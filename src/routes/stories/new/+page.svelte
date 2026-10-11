@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { ApiError, notifyMutationError } from '$lib/api/client'
+  import { ApiError, getFieldErrors, getUploadFailure, notifyMutationError } from '$lib/api/client'
   import { storySchema, type StoryFormData } from '$lib/schemas/story'
   import { postStories, postStoriesIdAudio, postStoriesIdTts } from '$lib/api/generated/sdk.gen'
   import { toStoryApiFormat } from '$lib/api/stories'
@@ -103,9 +103,11 @@
           await postStoriesIdAudio({ path: { id: story.id }, body: { audio: audioFile } })
         } catch (err) {
           if (!(err instanceof ApiError && err.notified)) {
-            toast.warning('Bericht aangemaakt, maar audio upload mislukt')
+            const reason = getFieldErrors(err).audio ?? getUploadFailure(err)
+            toast.warning(`Bericht aangemaakt, maar audio upload mislukt: ${reason}`)
           }
-          goto(resolveInternalHref('/stories'))
+          // Open the saved story so the user can retry the upload.
+          goto(resolveInternalHref(`/stories/${story.id}/edit`))
           return
         }
       }
@@ -113,6 +115,7 @@
       toast.success('Bericht aangemaakt')
       goto(resolveInternalHref('/stories'))
     } catch (err) {
+      errors = getFieldErrors(err)
       notifyMutationError(err, 'Aanmaken mislukt')
     } finally {
       submitting = false
@@ -158,6 +161,7 @@
             label="Stem"
             bind:value={() => form.voice_id, setVoiceId}
             options={voiceOptions}
+            error={errors.voice_id}
             emptyOption="Geen stem geselecteerd"
             disabled={formDisabled}
           />

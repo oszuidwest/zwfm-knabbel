@@ -1,4 +1,5 @@
 import { ApiError } from './client'
+import { describeProblemCode } from './problems'
 import { getBulletinJobsId, postStationsIdBulletins } from './generated/sdk.gen'
 import type { GetBulletinsData } from './generated/types.gen'
 
@@ -16,7 +17,10 @@ export async function generateBulletin(stationId: number, signal?: AbortSignal):
   }
 
   if (job.status === 'failed') {
-    throw new ApiError(0, job.error_detail ?? 'Bulletin genereren mislukt')
+    throw new ApiError(
+      0,
+      describeProblemCode(job.error_code) ?? job.error_detail ?? 'Bulletin genereren mislukt'
+    )
   }
 
   if (job.bulletin_id === null) {

@@ -11,7 +11,6 @@ export type {
   TTSSettingsUpdate,
   User,
   UserUpdateWritable as UserUpdate,
-  ValidationError,
   Voice,
 } from '$lib/api/generated/types.gen'
 

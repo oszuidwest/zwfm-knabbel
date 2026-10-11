@@ -4,7 +4,7 @@
   import { deleteStoriesId } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { deleteWithConfirm } from '$lib/utils/crud'
-  import { formatDate } from '$lib/utils/format'
+  import { formatDate, parseDate } from '$lib/utils/format'
   import { resolveInternalHref } from '$lib/utils/routes'
   import { statusLabels, statusColors, statusOptions } from '$lib/utils/labels'
   import {
@@ -70,8 +70,7 @@
   ): string {
     const formatCompact = (dateStr: string | undefined) => {
       if (!dateStr) return ''
-      const date = new Date(dateStr)
-      return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+      return parseDate(dateStr).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
     }
     const start = formatCompact(startDate)
     const end = formatCompact(endDate)
