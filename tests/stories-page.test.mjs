@@ -56,3 +56,17 @@ test('sorts by broadcast start date and keeps filters and pagination', async t =
 test('"Alle statussen" sorts without a status filter', async () => {
   assert.deepEqual(await storiesQuery('?status='), { sort, limit: '20', offset: '0' })
 })
+
+test('the trash lists deleted stories, most recently deleted first', async () => {
+  assert.deepEqual(await storiesQuery('?trashed=only&status=active'), {
+    sort: 'deleted_at:desc,id:desc',
+    limit: '20',
+    offset: '0',
+    trashed: 'only',
+    'filter[status]': 'active',
+  })
+})
+
+test('an unknown trashed value lists active stories', async () => {
+  assert.deepEqual(await storiesQuery('?trashed=with'), { sort, limit: '20', offset: '0' })
+})

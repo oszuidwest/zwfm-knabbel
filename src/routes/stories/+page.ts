@@ -27,12 +27,14 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
   const dateFilter = url.searchParams.get('date') ?? ''
   const audioFilter = url.searchParams.get('audio') ?? ''
   const searchQuery = url.searchParams.get('q') ?? ''
+  const trashed = url.searchParams.get('trashed') === 'only'
 
   const { page, limit, offset } = getPaginationParams(url.searchParams)
 
   const filter: NonNullable<StoryFilters['filter']> = {}
   const params: StoryFilters = {
-    sort: 'start_date:desc,created_at:desc,id:desc',
+    // The trash lists the most recently deleted story first.
+    sort: trashed ? 'deleted_at:desc,id:desc' : 'start_date:desc,created_at:desc,id:desc',
     limit,
     offset,
     filter,
@@ -41,6 +43,10 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
   const status = storySchema.shape.status.safeParse(statusFilter)
   if (status.success) {
     filter.status = status.data
+  }
+
+  if (trashed) {
+    params.trashed = 'only'
   }
 
   if (searchQuery) {
