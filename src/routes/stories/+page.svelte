@@ -266,14 +266,16 @@
                   {@render cardSummary(story)}
                 </a>
               {/if}
-              <div class="flex shrink-0 gap-1">
+              {#if trashView}
+                {@render restoreButton(story, 'h-5 w-5')}
+              {:else}
                 <div
                   class="tooltip tooltip-left"
                   data-tip="Leesmodus"
                 >
                   <button
                     type="button"
-                    class="btn btn-square btn-ghost btn-sm"
+                    class="btn btn-square shrink-0 btn-ghost btn-sm"
                     onclick={() => (readModeStory = story)}
                     aria-label="Open leesmodus voor {story.title}"
                   >
@@ -283,10 +285,7 @@
                     />
                   </button>
                 </div>
-                {#if trashView}
-                  {@render restoreButton(story, 'h-5 w-5')}
-                {/if}
-              </div>
+              {/if}
             </div>
           </div>
         </div>
@@ -354,33 +353,33 @@
                   <td class="whitespace-nowrap">{@render deletedAt(story)}</td>
                 {/if}
                 <td>
-                  <div class="flex gap-1">
-                    <div
-                      class="tooltip tooltip-left"
-                      data-tip="Leesmodus"
-                    >
-                      <button
-                        class="btn btn-square btn-ghost btn-sm"
-                        onclick={() => (readModeStory = story)}
-                        aria-label="Open leesmodus voor {story.title}"
+                  {#if trashView}
+                    {@render restoreButton(story, 'h-4 w-4')}
+                  {:else}
+                    <div class="flex gap-1">
+                      <div
+                        class="tooltip tooltip-left"
+                        data-tip="Leesmodus"
                       >
-                        <CassetteTape
-                          aria-hidden="true"
-                          class="h-4 w-4"
-                        />
-                      </button>
-                    </div>
-                    {#if trashView}
-                      {@render restoreButton(story, 'h-4 w-4')}
-                    {:else}
+                        <button
+                          class="btn btn-square btn-ghost btn-sm"
+                          onclick={() => (readModeStory = story)}
+                          aria-label="Open leesmodus voor {story.title}"
+                        >
+                          <CassetteTape
+                            aria-hidden="true"
+                            class="h-4 w-4"
+                          />
+                        </button>
+                      </div>
                       <TableActions
                         editHref="/stories/{story.id}/edit"
                         onDelete={() => handleDelete(story)}
                         canEdit={canWrite}
                         canDelete={canWrite}
                       />
-                    {/if}
-                  </div>
+                    </div>
+                  {/if}
                 </td>
               </tr>
             {/each}
