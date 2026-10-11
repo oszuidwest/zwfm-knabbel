@@ -2,6 +2,7 @@
   import { tick } from 'svelte'
   import { beforeNavigate, invalidateAll } from '$app/navigation'
   import { ApiError, isProblemDetails, notifyMutationError } from '$lib/api/client'
+  import { describeFieldError } from '$lib/api/problems'
   import { putSettingsTtsPronunciations } from '$lib/api/generated/sdk.gen'
   import {
     isPronunciationRuleField,
@@ -256,7 +257,8 @@
         }
       }
       for (const e of details.errors) {
-        const message = e.message ?? details.detail ?? 'De server heeft een veldfout teruggegeven'
+        const message =
+          describeFieldError(e) ?? details.detail ?? 'De server heeft een veldfout teruggegeven'
         if (!e.field) {
           addGlobalMessage(message)
           continue

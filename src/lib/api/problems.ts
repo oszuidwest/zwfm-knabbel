@@ -30,7 +30,7 @@ const problemMessages: Record<string, string> = {
   'story.no_voice': 'Het bericht heeft geen stem',
   'story.tts_text_too_long': 'De tekst is te lang voor spraakgeneratie',
   'tts.not_configured': 'Spraakgeneratie is niet geconfigureerd',
-  'tts.rate_limited': 'ElevenLabs is overbelast, probeer het later opnieuw',
+  'tts.rate_limited': 'Limiet van ElevenLabs bereikt, probeer het later opnieuw',
   'tts.upstream_failed': 'ElevenLabs gaf een fout, probeer het later opnieuw',
   'user.last_admin': 'De laatste beheerder kan niet worden verwijderd, gedegradeerd of geschorst',
   'voice.elevenlabs_not_found': 'ElevenLabs kent de voice ID van deze stem niet',

@@ -14,7 +14,8 @@ export const userSchema = z
     email: z.string().email('Ongeldig e-mailadres').optional().or(z.literal('')),
     password: z
       .string()
-      .refine(value => !value || value.length >= 8, 'Minimaal 8 tekens')
+      // Babbel counts characters as code points, not UTF-16 units.
+      .refine(value => !value || [...value].length >= 8, 'Minimaal 8 tekens')
       .refine(
         value => new TextEncoder().encode(value).length <= PASSWORD_MAX_BYTES,
         `Maximaal ${PASSWORD_MAX_BYTES} tekens (minder met speciale tekens)`

@@ -6,6 +6,7 @@ let server
 let sdk
 let api
 let format
+let userSchema
 
 before(async () => {
   server = await createServer({
@@ -15,6 +16,7 @@ before(async () => {
   api = await server.ssrLoadModule('/src/lib/api/client.ts')
   sdk = await server.ssrLoadModule('/src/lib/api/generated/sdk.gen.ts')
   format = await server.ssrLoadModule('/src/lib/utils/format.ts')
+  ;({ userSchema } = await server.ssrLoadModule('/src/lib/schemas/user.ts'))
   const { client } = await server.ssrLoadModule('/src/lib/api/generated/client.gen.ts')
   client.setConfig({ baseUrl: 'https://api.example.test' })
 })
@@ -131,4 +133,21 @@ test('plain API dates are local calendar days', () => {
   const date = format.parseDate('2026-10-01')
   assert.deepEqual([date.getFullYear(), date.getMonth(), date.getDate()], [2026, 9, 1])
   assert.equal(date.getHours(), 0)
+})
+
+test('password length follows Babbel: 8 code points minimum, 72 UTF-8 bytes maximum', () => {
+  const valid = password =>
+    userSchema.safeParse({
+      username: 'editor1',
+      full_name: 'Ed',
+      email: '',
+      password,
+      confirmPassword: password,
+      role: 'editor',
+    }).success
+
+  assert.equal(valid('😀'.repeat(4)), false)
+  assert.equal(valid('😀'.repeat(8)), true)
+  assert.equal(valid('é'.repeat(36)), true)
+  assert.equal(valid('é'.repeat(37)), false)
 })
