@@ -96,7 +96,7 @@
     try {
       await putVoicesId({ path: { id: data.voice.id }, body: toVoiceApiFormat(result.data) })
       toast.success('Stem bijgewerkt')
-      goto(resolveInternalHref('/voices'))
+      await goto(resolveInternalHref('/voices'))
     } catch (err) {
       errors = getFieldErrors(err)
       notifyMutationError(err, 'Bijwerken mislukt')

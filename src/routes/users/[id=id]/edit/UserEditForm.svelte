@@ -64,7 +64,7 @@
         const refreshed = await auth.checkAuth({ force: true })
         if (!refreshed) {
           toast.warning('Je rol is bijgewerkt, maar je sessie kon niet opnieuw worden geladen.')
-          goto(resolveInternalHref('/login'))
+          await goto(resolveInternalHref('/login'))
           return
         }
 
@@ -74,7 +74,7 @@
       }
 
       toast.success('Gebruiker bijgewerkt')
-      goto(resolveInternalHref('/users'))
+      await goto(resolveInternalHref('/users'))
     } catch (err) {
       errors = getFieldErrors(err)
       notifyMutationError(err, 'Bijwerken mislukt')

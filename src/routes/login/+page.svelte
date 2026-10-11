@@ -12,12 +12,16 @@
   }
 </script>
 
+<svelte:head>
+  <title>Inloggen · Babbel</title>
+</svelte:head>
+
 <div class="flex min-h-screen items-center justify-center bg-base-200 p-4">
   <div class="card w-full max-w-md bg-base-100">
     <div class="card-body">
       <div class="mb-6 flex flex-col items-center">
         <div
-          class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80"
+          class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary/80"
         >
           <AudioWaveform
             aria-hidden="true"

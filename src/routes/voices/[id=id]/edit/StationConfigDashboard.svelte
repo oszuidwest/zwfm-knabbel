@@ -109,7 +109,7 @@
 </script>
 
 {#if configs.length === 0}
-  <div class="flex flex-col items-center justify-center gap-3 py-12 text-base-content/50">
+  <div class="flex flex-col items-center justify-center gap-3 py-12 text-base-content/70">
     <Radio
       class="h-8 w-8"
       aria-hidden="true"
@@ -144,12 +144,15 @@
               <div>
                 <h3 class="font-semibold">{config.station.name}</h3>
                 {#if config.enabled}
-                  <span class="flex items-center gap-1 text-xs text-success">
-                    <span class="h-1.5 w-1.5 rounded-full bg-success"></span>
+                  <span class="flex items-center gap-1 text-xs text-base-content/70">
+                    <span
+                      class="h-1.5 w-1.5 rounded-full bg-success"
+                      aria-hidden="true"
+                    ></span>
                     Gekoppeld
                   </span>
                 {:else}
-                  <span class="text-xs text-base-content/40">Niet gekoppeld</span>
+                  <span class="text-xs text-base-content/70">Niet gekoppeld</span>
                 {/if}
               </div>
             </div>
@@ -160,6 +163,7 @@
               <input
                 type="checkbox"
                 class="toggle toggle-primary"
+                aria-label="{config.station.name} koppelen"
                 checked={config.enabled}
                 onchange={e => onToggle(index, e)}
                 disabled={effectiveDisabled || config.saving}
@@ -193,7 +197,7 @@
                 onchange={() => onMixPointSave(index)}
                 disabled={effectiveDisabled || config.saving}
               />
-              <p class="text-xs text-base-content/50">Wanneer de stem begint over de jingle</p>
+              <p class="text-xs text-base-content/70">Wanneer de stem begint over de jingle</p>
             </div>
 
             <div class="space-y-3">
@@ -229,12 +233,20 @@
                   </button>
                   <div class="min-w-0 flex-1">
                     <div class="truncate text-sm font-medium">Jingle geladen</div>
-                    <div class="text-xs text-base-content/50">Klik om af te spelen</div>
+                    <div class="text-xs text-base-content/70">Klik om af te spelen</div>
                   </div>
+                  <input
+                    id="jingle-replace-{config.station.id}"
+                    type="file"
+                    accept="audio/wav,audio/*"
+                    onchange={e => handleFileInput(e, index)}
+                    disabled={effectiveDisabled || config.saving}
+                    class="peer sr-only"
+                  />
                   <label
                     for="jingle-replace-{config.station.id}"
                     class={[
-                      'btn btn-ghost btn-sm',
+                      'btn btn-ghost btn-sm peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary',
                       effectiveDisabled
                         ? 'pointer-events-none cursor-not-allowed opacity-50'
                         : 'cursor-pointer',
@@ -243,14 +255,6 @@
                   >
                     Vervang
                   </label>
-                  <input
-                    id="jingle-replace-{config.station.id}"
-                    type="file"
-                    accept="audio/wav,audio/*"
-                    onchange={e => handleFileInput(e, index)}
-                    disabled={effectiveDisabled || config.saving}
-                    class="hidden"
-                  />
                 </div>
               {/if}
 
@@ -308,7 +312,7 @@
                     class="mx-auto mb-2 h-8 w-8 text-base-content/30"
                     aria-hidden="true"
                   />
-                  <p class="text-sm text-base-content/50">
+                  <p class="text-sm text-base-content/70">
                     Sleep een audiobestand of klik om te selecteren
                   </p>
                 </label>

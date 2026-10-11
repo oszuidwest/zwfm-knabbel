@@ -36,7 +36,7 @@
     try {
       await postStations({ body: form })
       toast.success('Zender aangemaakt')
-      goto(resolveInternalHref('/stations'))
+      await goto(resolveInternalHref('/stations'))
     } catch (err) {
       errors = getFieldErrors(err)
       notifyMutationError(err, 'Aanmaken mislukt')

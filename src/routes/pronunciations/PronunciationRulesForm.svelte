@@ -502,7 +502,7 @@
                       type="checkbox"
                       class="checkbox"
                       bind:checked={row.case_sensitive}
-                      aria-label="Hoofdlettergevoelig regel {index + 1}"
+                      aria-label="Hoofdlettergevoelig, regel {index + 1}"
                       disabled={!editable}
                     />
                   </td>
@@ -511,7 +511,7 @@
                       type="checkbox"
                       class="checkbox"
                       bind:checked={row.word_boundaries}
-                      aria-label="Woordgrenzen regel {index + 1}"
+                      aria-label="Alleen hele woorden, regel {index + 1}"
                       disabled={!editable}
                     />
                   </td>
@@ -607,7 +607,7 @@
                     type="checkbox"
                     class="checkbox checkbox-sm"
                     bind:checked={row.case_sensitive}
-                    aria-label="Hoofdlettergevoelig regel {index + 1}"
+                    aria-label="Hoofdlettergevoelig, regel {index + 1}"
                     disabled={!editable}
                   />
                   <span class="text-sm">Hoofdlettergevoelig</span>
@@ -617,7 +617,7 @@
                     type="checkbox"
                     class="checkbox checkbox-sm"
                     bind:checked={row.word_boundaries}
-                    aria-label="Woordgrenzen regel {index + 1}"
+                    aria-label="Alleen hele woorden, regel {index + 1}"
                     disabled={!editable}
                   />
                   <span class="text-sm">Alleen hele woorden</span>
@@ -650,7 +650,7 @@
         </div>
       {/if}
 
-      <div class="flex justify-end gap-2 pt-2">
+      <div class="flex flex-wrap justify-end gap-2 pt-2">
         <button
           type="button"
           class="btn btn-ghost"

@@ -39,7 +39,7 @@
         generationController.signal
       )
       toast.success('Bulletin gegenereerd')
-      goto(resolveInternalHref(`/bulletins/${bulletinId}`))
+      await goto(resolveInternalHref(`/bulletins/${bulletinId}`))
     } catch (err) {
       if (!generationController?.signal.aborted) {
         notifyMutationError(err, 'Genereren mislukt')

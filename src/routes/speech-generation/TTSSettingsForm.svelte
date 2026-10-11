@@ -201,7 +201,7 @@
       disabled={formDisabled}
     />
 
-    <div class="flex justify-end gap-2 pt-2">
+    <div class="flex flex-wrap justify-end gap-2 pt-2">
       <button
         type="button"
         class="btn btn-ghost"

@@ -1,19 +1,31 @@
 @import 'tailwindcss';
+/* app.html sets data-theme; the flags keep a theme on :root without it. */
 @plugin 'daisyui' {
-  themes: corporate, business;
+  themes:
+    corporate --default,
+    business --prefersdark;
 }
 
-/* Theme blocks set browser color-scheme while preserving the brand primary. */
+/*
+ * Theme overrides keep the brand primary (#d20072) and bring text to WCAG AA
+ * (4.5:1) on base-100: the stock error colours are 2.7 to 2.9:1 there, and
+ * business draws its primary-content at 3.7:1 on this primary.
+ */
 [data-theme='corporate'] {
   color-scheme: light;
   --radius-selector: 0.25rem;
-  --color-primary: oklch(54.8% 0.245 357.3); /* #e6007e */
+  --color-primary: oklch(54.8% 0.245 357.3);
+  --color-error: oklch(55% 0.2 25);
+  --color-error-content: oklch(100% 0 0);
 }
 
 [data-theme='business'] {
   color-scheme: dark;
   --radius-selector: 0.25rem;
-  --color-primary: oklch(54.8% 0.245 357.3); /* #e6007e */
+  --color-primary: oklch(54.8% 0.245 357.3);
+  --color-primary-content: oklch(100% 0 0);
+  --color-error: oklch(70% 0.16 25);
+  --color-error-content: oklch(14% 0.02 25);
 }
 
 /* Shared page typography uses daisyUI theme variables for contrast. */

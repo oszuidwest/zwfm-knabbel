@@ -42,16 +42,12 @@
           <span class="hidden sm:inline">Vorige</span>
         </a>
       {:else}
-        <span
-          class="btn btn-disabled join-item btn-sm md:btn-md"
-          aria-disabled="true"
-          aria-label="Vorige pagina"
-        >
+        <span class="btn btn-disabled join-item btn-sm md:btn-md">
           <ChevronLeft
             aria-hidden="true"
             class="h-4 w-4"
           />
-          <span class="hidden sm:inline">Vorige</span>
+          <span class="max-sm:sr-only">Vorige</span>
         </span>
       {/if}
 
@@ -92,12 +88,8 @@
           />
         </a>
       {:else}
-        <span
-          class="btn btn-disabled join-item btn-sm md:btn-md"
-          aria-disabled="true"
-          aria-label="Volgende pagina"
-        >
-          <span class="hidden sm:inline">Volgende</span>
+        <span class="btn btn-disabled join-item btn-sm md:btn-md">
+          <span class="max-sm:sr-only">Volgende</span>
           <ChevronRight
             aria-hidden="true"
             class="h-4 w-4"

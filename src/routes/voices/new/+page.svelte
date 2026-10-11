@@ -36,7 +36,7 @@
     try {
       await postVoices({ body: toVoiceApiFormat(result.data) })
       toast.success('Stem aangemaakt')
-      goto(resolveInternalHref('/voices'))
+      await goto(resolveInternalHref('/voices'))
     } catch (err) {
       errors = getFieldErrors(err)
       notifyMutationError(err, 'Aanmaken mislukt')

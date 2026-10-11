@@ -20,6 +20,7 @@
     FileInput,
     FormActions,
     FormField,
+    fieldA11y,
     PageHeader,
     WeekdayCheckboxGroup,
   } from '$lib/components/ui'
@@ -94,7 +95,7 @@
         } catch (err) {
           notifyMutationError(err, 'Bericht aangemaakt, maar audio genereren mislukt')
         }
-        goto(resolveInternalHref(`/stories/${story.id}/edit`))
+        await goto(resolveInternalHref(`/stories/${story.id}/edit`))
         return
       }
 
@@ -107,13 +108,13 @@
             toast.warning(`Bericht aangemaakt, maar audio upload mislukt: ${reason}`)
           }
           // Open the saved story so the user can retry the upload.
-          goto(resolveInternalHref(`/stories/${story.id}/edit`))
+          await goto(resolveInternalHref(`/stories/${story.id}/edit`))
           return
         }
       }
 
       toast.success('Bericht aangemaakt')
-      goto(resolveInternalHref('/stories'))
+      await goto(resolveInternalHref('/stories'))
     } catch (err) {
       errors = getFieldErrors(err)
       notifyMutationError(err, 'Aanmaken mislukt')
@@ -174,6 +175,7 @@
             <div class="join w-full">
               <select
                 id="status"
+                {...fieldA11y('status', errors.status)}
                 class={['select join-item flex-1', errors.status && 'select-error']}
                 bind:value={form.status}
                 disabled={formDisabled}

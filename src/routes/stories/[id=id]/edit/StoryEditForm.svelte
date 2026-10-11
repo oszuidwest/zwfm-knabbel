@@ -31,6 +31,7 @@
     FileInput,
     FormActions,
     FormField,
+    fieldA11y,
     PageHeader,
     WeekdayCheckboxGroup,
   } from '$lib/components/ui'
@@ -147,7 +148,7 @@
       }
 
       toast.success('Bericht bijgewerkt')
-      goto(resolveInternalHref('/stories'))
+      await goto(resolveInternalHref('/stories'))
     } catch (err) {
       errors = getFieldErrors(err)
       notifyMutationError(err, 'Bijwerken mislukt')
@@ -250,6 +251,7 @@
             <div class="join w-full">
               <select
                 id="status"
+                {...fieldA11y('status', errors.status)}
                 class={['select join-item flex-1', errors.status && 'select-error']}
                 bind:value={form.status}
                 disabled={formDisabled}

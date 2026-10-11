@@ -1,5 +1,5 @@
 <script lang="ts">
-  import FormField from './FormField.svelte'
+  import FormField, { fieldA11y } from './FormField.svelte'
 
   interface Props {
     id: string
@@ -52,6 +52,7 @@
   {/if}
   <input
     {id}
+    {...fieldA11y(id, error, hint)}
     type="file"
     {accept}
     onchange={handleChange}

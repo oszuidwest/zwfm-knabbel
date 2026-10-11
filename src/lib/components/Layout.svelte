@@ -59,9 +59,10 @@
     id="drawer-toggle"
     type="checkbox"
     class="drawer-toggle"
+    aria-label="Menu"
   />
 
-  <div class="drawer-content flex flex-col">
+  <div class="drawer-content flex min-h-screen flex-col">
     <div class="navbar bg-base-100 lg:hidden">
       <div class="flex-none">
         <label
@@ -78,10 +79,10 @@
       <div class="flex-1">
         <a
           href={resolveInternalHref('/')}
-          class="btn gap-2 btn-ghost text-xl font-bold normal-case"
+          class="btn gap-2 btn-ghost text-xl font-bold"
         >
           <div
-            class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80"
+            class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-primary to-primary/80"
           >
             <AudioWaveform
               aria-hidden="true"
@@ -93,7 +94,7 @@
       </div>
     </div>
 
-    <main class="min-h-screen flex-1 bg-base-200">
+    <main class="flex-1 bg-base-200">
       <div class="p-4 lg:p-8">
         {@render children()}
       </div>
@@ -113,7 +114,7 @@
           class="flex items-center gap-4"
         >
           <div
-            class="flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80"
+            class="flex h-14 w-14 items-center justify-center rounded-lg bg-linear-to-br from-primary to-primary/80"
           >
             <AudioWaveform
               aria-hidden="true"
@@ -136,6 +137,7 @@
               <a
                 href={resolveInternalHref(item.path)}
                 class={{ 'menu-active': isActive(item.path) }}
+                aria-current={isActive(item.path) ? 'page' : undefined}
               >
                 <Icon
                   aria-hidden="true"
@@ -154,6 +156,7 @@
                 <a
                   href={resolveInternalHref(item.path)}
                   class={{ 'menu-active': isActive(item.path) }}
+                  aria-current={isActive(item.path) ? 'page' : undefined}
                 >
                   <Icon
                     aria-hidden="true"
@@ -173,6 +176,7 @@
                 <a
                   href={resolveInternalHref(item.path)}
                   class={{ 'menu-active': isActive(item.path) }}
+                  aria-current={isActive(item.path) ? 'page' : undefined}
                 >
                   <Icon
                     aria-hidden="true"

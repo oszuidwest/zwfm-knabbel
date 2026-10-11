@@ -1,5 +1,5 @@
 <script lang="ts">
-  import FormField from './FormField.svelte'
+  import FormField, { fieldA11y } from './FormField.svelte'
 
   interface Props {
     id: string
@@ -32,6 +32,7 @@
 >
   <input
     {id}
+    {...fieldA11y(id, error, hint)}
     {type}
     bind:value
     class={['input w-full', error && 'input-error']}

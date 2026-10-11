@@ -16,10 +16,18 @@
   let wakeLock: WakeLockSentinel | null = null
 
   $effect(() => {
+    let disposed = false
+
     async function requestWakeLock(): Promise<void> {
       if ('wakeLock' in navigator) {
         try {
-          wakeLock = await navigator.wakeLock.request('screen')
+          const sentinel = await navigator.wakeLock.request('screen')
+          // The overlay may have closed while the request was pending.
+          if (disposed) {
+            sentinel.release()
+            return
+          }
+          wakeLock = sentinel
         } catch {
           // Some browsers deny wake lock while hidden, low on power, or unsupported.
         }
@@ -37,6 +45,7 @@
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
+      disposed = true
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       wakeLock?.release()
       wakeLock = null
@@ -57,12 +66,28 @@
   const readingTimeSeconds = $derived(Math.ceil((wordCount / 150) * 60))
   const readingTimeFormatted = $derived(formatDuration(readingTimeSeconds))
 
+  // A modal <dialog> makes the page behind it inert and keeps Tab inside. Focus
+  // the dialog itself, not its close button, so Space keeps scrolling the script.
+  // The dialog is removed rather than closed, so return focus to the opener here.
+  function showModal(dialog: HTMLDialogElement): () => void {
+    const opener = document.activeElement
+    dialog.showModal()
+    dialog.focus()
+    return () => {
+      dialog.close()
+      if (opener instanceof HTMLElement) opener.focus()
+    }
+  }
+
   function handleKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault()
       onclose()
       return
     }
+
+    // Space scrolls the script, but must still activate a focused button.
+    if (event.key === ' ' && event.target instanceof HTMLButtonElement) return
 
     if (!scrollContainer) return
 
@@ -100,11 +125,15 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div
-  class="fixed inset-0 z-50 flex flex-col overflow-hidden bg-black transition-opacity duration-200 before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,oklch(from_var(--color-primary)_l_c_h/0.08),transparent_50%)] starting:opacity-0"
-  role="dialog"
-  aria-modal="true"
+<dialog
+  class="fixed inset-0 m-0 flex h-full max-h-none w-full max-w-none flex-col overflow-hidden border-0 bg-black transition-opacity duration-200 before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,oklch(from_var(--color-primary)_l_c_h/0.08),transparent_50%)] focus:outline-hidden starting:opacity-0"
   aria-label="Leesmodus"
+  tabindex="-1"
+  oncancel={e => {
+    e.preventDefault()
+    onclose()
+  }}
+  {@attach showModal}
 >
   <div class="absolute top-0 right-0 left-0 z-10 h-[3px] bg-white/5">
     <div
@@ -127,11 +156,11 @@
     <div
       bind:this={scrollContainer}
       onscroll={handleScroll}
-      class="relative flex-1 overflow-x-hidden overflow-y-auto scroll-smooth before:pointer-events-none before:sticky before:top-0 before:right-0 before:left-0 before:z-[5] before:-mb-8 before:block before:h-8 before:bg-linear-to-b before:from-black before:to-transparent"
+      class="relative flex-1 overflow-x-hidden overflow-y-auto scroll-smooth before:pointer-events-none before:sticky before:top-0 before:right-0 before:left-0 before:z-5 before:-mb-8 before:block before:h-8 before:bg-linear-to-b before:from-black before:to-transparent"
     >
       <div class="mx-auto max-w-5xl px-5 pt-4 pb-24 md:px-12 md:pt-8 lg:px-16">
         <p
-          class="font-mono text-[clamp(1.125rem,2.5vw+0.5rem,2rem)] leading-[1.9] tracking-wide break-words whitespace-pre-wrap text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.3)] first-letter:float-left first-letter:mt-[0.05em] first-letter:mr-[0.08em] first-letter:text-[3.5em] first-letter:leading-[0.8] first-letter:font-semibold first-letter:text-primary"
+          class="font-mono text-[clamp(1.125rem,2.5vw+0.5rem,2rem)] leading-[1.9] tracking-wide wrap-break-word whitespace-pre-wrap text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.3)] first-letter:float-left first-letter:mt-[0.05em] first-letter:mr-[0.08em] first-letter:text-[3.5em] first-letter:leading-[0.8] first-letter:font-semibold first-letter:text-primary"
         >
           {text}
         </p>
@@ -149,18 +178,18 @@
       />
     </button>
   {:else}
-    <div class="flex flex-1 flex-col items-center justify-center gap-4 text-white/40">
+    <div class="flex flex-1 flex-col items-center justify-center gap-4 text-white/60">
       <TriangleAlert
         aria-hidden="true"
         class="size-12 text-primary opacity-60"
       />
       <p class="font-mono text-lg">Geen tekst beschikbaar</p>
       <button
-        class="mt-4 cursor-pointer border-none bg-transparent font-mono text-sm text-white/30 transition-colors hover:text-white/50"
+        class="mt-4 cursor-pointer border-none bg-transparent font-mono text-sm text-white/60 transition-colors hover:text-white/80"
         onclick={onclose}
       >
         SLUITEN
       </button>
     </div>
   {/if}
-</div>
+</dialog>

@@ -48,7 +48,7 @@
         },
       })
       toast.success('Gebruiker aangemaakt')
-      goto(resolveInternalHref('/users'))
+      await goto(resolveInternalHref('/users'))
     } catch (err) {
       errors = getFieldErrors(err)
       notifyMutationError(err, 'Aanmaken mislukt')

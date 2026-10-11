@@ -27,12 +27,12 @@
     <span
       class="shrink-0 text-info"
       title="AI-stem"
-      aria-label="AI-stem"
     >
       <Sparkles
         aria-hidden="true"
         class="h-4 w-4"
       />
+      <span class="sr-only">AI-stem</span>
     </span>
   {/if}
 {/snippet}

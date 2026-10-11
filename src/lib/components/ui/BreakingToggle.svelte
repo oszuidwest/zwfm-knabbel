@@ -23,6 +23,7 @@
     class="btn join-item {checked ? 'btn-primary' : 'btn-soft'}"
     onclick={toggle}
     {disabled}
+    aria-pressed={checked}
     aria-label="Schakel breaking nieuws in/uit"
   >
     <Zap

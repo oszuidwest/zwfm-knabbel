@@ -18,6 +18,8 @@
     data-tip={tip}
   >
     {@render children()}
+    <!-- Tooltips only show on hover or focus, and disabled controls get neither. -->
+    <span class="sr-only">{tip}</span>
   </div>
 {:else if wrapperClass}
   <div class={wrapperClass}>
