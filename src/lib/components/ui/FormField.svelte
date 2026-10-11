@@ -2,11 +2,12 @@
   lang="ts"
   module
 >
-  /** fieldA11y links a control to the error or hint FormField renders below it. */
+  /** fieldA11y links a control to the error and hint FormField renders below it. */
   export function fieldA11y(id: string, error?: string, hint?: string) {
     return {
       'aria-invalid': error ? true : undefined,
-      'aria-describedby': error || hint ? `${id}-msg` : undefined,
+      'aria-describedby':
+        [error && `${id}-error`, hint && `${id}-hint`].filter(Boolean).join(' ') || undefined,
     }
   }
 </script>
@@ -33,15 +34,20 @@
     {label}
   </label>
   {@render children()}
-  {#if error || hint}
+  {#if error}
     <p
-      id="{id}-msg"
-      class={[
-        'fieldset-label text-sm leading-relaxed',
-        error ? 'text-error' : 'text-base-content/70',
-      ]}
+      id="{id}-error"
+      class="fieldset-label text-sm leading-relaxed text-error"
     >
-      {error || hint}
+      {error}
+    </p>
+  {/if}
+  {#if hint}
+    <p
+      id="{id}-hint"
+      class="fieldset-label text-sm leading-relaxed text-base-content/70"
+    >
+      {hint}
     </p>
   {/if}
 </fieldset>
