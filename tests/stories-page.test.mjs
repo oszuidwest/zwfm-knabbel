@@ -9,7 +9,7 @@ let load
 
 before(async () => {
   server = await createServer({
-    server: { middlewareMode: true, watch: null },
+    server: { middlewareMode: true, watch: null, ws: false },
     appType: 'custom',
   })
   ;({ load } = await server.ssrLoadModule('/src/routes/stories/+page.ts'))
@@ -21,14 +21,14 @@ after(async () => {
   await server?.close()
 })
 
-async function storiesQuery(search) {
+async function storiesQuery(search, total = 100) {
   let query
   await load({
     url: new URL(`https://example.test/stories${search}`),
     parent: async () => ({ user: { permissions: { stories: ['read'] } } }),
     fetch: async request => {
       query = new URL(request.url).searchParams
-      return Response.json({ data: [], total: 0 })
+      return Response.json({ data: [], total })
     },
   })
   return Object.fromEntries(query)
@@ -69,4 +69,33 @@ test('the trash lists deleted stories, most recently deleted first', async () =>
 
 test('an unknown trashed value lists active stories', async () => {
   assert.deepEqual(await storiesQuery('?trashed=with'), { sort, limit: '20', offset: '0' })
+})
+
+test('unknown date filters do not silently filter by today', async () => {
+  assert.deepEqual(await storiesQuery('?date=invalid'), { sort, limit: '20', offset: '0' })
+})
+
+test('invalid page numbers never reach the API offset', async () => {
+  for (const page of ['-1', '0', '1.5', 'Infinity', 'NaN', '9007199254740991']) {
+    assert.deepEqual(await storiesQuery(`?page=${page}`), { sort, limit: '20', offset: '0' })
+  }
+})
+
+test('restoring the last item on a trash page redirects without losing filters', async () => {
+  await assert.rejects(
+    storiesQuery('?trashed=only&page=2&status=draft&q=oud#lijst', 20),
+    err => err.status === 307 && err.location === '/stories?trashed=only&status=draft&q=oud#lijst'
+  )
+})
+
+test('out-of-range pages redirect to the last remaining page', async () => {
+  await assert.rejects(
+    storiesQuery('?page=9&trashed=only', 41),
+    err => err.status === 307 && err.location === '/stories?page=3&trashed=only'
+  )
+  await assert.rejects(
+    storiesQuery('?page=2&trashed=only', 0),
+    err => err.status === 307 && err.location === '/stories?trashed=only'
+  )
+  assert.equal((await storiesQuery('?trashed=only', 0)).offset, '0')
 })

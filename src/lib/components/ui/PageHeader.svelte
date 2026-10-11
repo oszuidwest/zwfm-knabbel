@@ -6,7 +6,7 @@
 
   interface Props {
     title: string
-    /** documentTitle overrides the browser tab title when `title` is not a page name. */
+    /** Overrides the browser tab title. */
     documentTitle?: string
     subtitle?: string
     actionHref?: string

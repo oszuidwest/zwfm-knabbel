@@ -30,8 +30,7 @@
     'Leeg is willekeurig. Een vaste seed helpt herhalen, maar garandeert geen gelijke audio.'
   const stylePrefixHint = 'Vaste audiotags voor elke story, bijvoorbeeld [calm] of [whispers].'
 
-  // Svelte warns when prop values are captured directly into state initializers.
-  // This lazy reader makes the keyed component's one-time form initialization explicit.
+  // The keyed parent remounts this form when settings change.
   function initialForm(): TTSSettingsFormData {
     return toTTSSettingsFormData(settings)
   }

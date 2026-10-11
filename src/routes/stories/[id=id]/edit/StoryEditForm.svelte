@@ -138,7 +138,7 @@
         try {
           await postStoriesIdAudio({ path: { id: data.story.id }, body: { audio: audioFile } })
         } catch (err) {
-          // The story is saved. Stay on the page so the upload error shows under the file input for a retry.
+          // The story is saved; keep the form open to retry the upload.
           if (!(err instanceof ApiError && err.notified)) {
             errors = { audio: getUploadFailure(err) }
             toast.warning('Bericht bijgewerkt, maar audio upload mislukt')

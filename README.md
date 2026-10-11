@@ -14,7 +14,7 @@ Three user roles: admin, editor, viewer. Login goes through Microsoft Entra ID (
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 24 LTS (used in CI)
 - Access to a running [Babbel API](https://github.com/oszuidwest/zwfm-babbel) instance (or use local development defaults)
 
 ## Installation
@@ -49,12 +49,13 @@ The app is a SPA, so no server-side rendering. Everything runs client-side.
 ```bash
 # Development
 npm run dev              # Start development server
-npm run build            # Build for production (static files)
+npm run build            # Build for Cloudflare Workers
 npm run preview          # Preview production build
+npm run deploy           # Build and deploy to Cloudflare Workers
 
 # Code Quality
 npm run check            # Svelte type checking
-npm test                 # Page loader regression tests
+npm test                 # Regression tests
 npm run lint             # ESLint
 npm run format           # Prettier (write)
 npm run format:check     # Prettier (check only)
@@ -80,16 +81,16 @@ The `types:check` command verifies that all generated API code is in sync with t
 ## Deployment
 
 ```bash
-npm run build
+npm run deploy
 ```
 
-This outputs static files to `build/`. You'll need to configure your web server to serve `index.html` for all routes (SPA fallback).
+The Cloudflare adapter writes the worker and assets to `.svelte-kit/cloudflare/`. Wrangler deploys them using `wrangler.jsonc`, which configures the SPA fallback. Set `PUBLIC_API_URL` before building; Vite embeds it in the client bundle.
 
 ## Tech Stack
 
 | Technology                                    | Purpose                                                    |
 | --------------------------------------------- | ---------------------------------------------------------- |
-| [SvelteKit](https://svelte.dev/docs/kit)      | Application framework (SPA mode with `adapter-static`)     |
+| [SvelteKit](https://svelte.dev/docs/kit)      | Application framework (SPA mode with `adapter-cloudflare`) |
 | [Svelte 5](https://svelte.dev/)               | UI framework with runes (`$state`, `$derived`, `$effect`)  |
 | [TypeScript](https://www.typescriptlang.org/) | Strict type checking                                       |
 | [Tailwind CSS 4](https://tailwindcss.com/)    | Utility-first CSS                                          |

@@ -8,7 +8,6 @@
     error?: string
     hint?: string
     disabled?: boolean
-    /** existingAudioUrl shows the current audio until the user selects a replacement. */
     existingAudioUrl?: string
     onchange?: (file: File | null) => void
   }
@@ -30,7 +29,7 @@
     onchange?.(file)
   }
 
-  // showExistingAudio hides the old audio after a replacement file is selected.
+  // Callers use hint for the selected replacement's filename.
   const showExistingAudio = $derived(existingAudioUrl && !hint)
 </script>
 

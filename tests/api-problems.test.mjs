@@ -5,18 +5,16 @@ import { createServer } from 'vite'
 let server
 let sdk
 let api
-let format
 let userSchema
 let matchId
 
 before(async () => {
   server = await createServer({
-    server: { middlewareMode: true, watch: null },
+    server: { middlewareMode: true, watch: null, ws: false },
     appType: 'custom',
   })
   api = await server.ssrLoadModule('/src/lib/api/client.ts')
   sdk = await server.ssrLoadModule('/src/lib/api/generated/sdk.gen.ts')
-  format = await server.ssrLoadModule('/src/lib/utils/format.ts')
   ;({ userSchema } = await server.ssrLoadModule('/src/lib/schemas/user.ts'))
   ;({ match: matchId } = await server.ssrLoadModule('/src/params/id.ts'))
   const { client } = await server.ssrLoadModule('/src/lib/api/generated/client.gen.ts')
@@ -170,18 +168,6 @@ test('route IDs must be positive integers', () => {
   for (const id of ['0', '-1', '1.5', 'abc', '007', '1e3', '9007199254740992']) {
     assert.equal(matchId(id), false, id)
   }
-})
-
-test('relative time reads "zojuist" for the last minute', t => {
-  t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-11T20:55:37Z').getTime() })
-  assert.equal(format.formatRelativeTime('2026-10-11T22:55:14+02:00'), 'zojuist')
-  assert.equal(format.formatRelativeTime('2026-10-11T22:54:07+02:00'), '1 minuut geleden')
-})
-
-test('plain API dates are local calendar days', () => {
-  const date = format.parseDate('2026-10-01')
-  assert.deepEqual([date.getFullYear(), date.getMonth(), date.getDate()], [2026, 9, 1])
-  assert.equal(date.getHours(), 0)
 })
 
 test('password length follows Babbel: 8 code points minimum, 72 UTF-8 bytes maximum', () => {

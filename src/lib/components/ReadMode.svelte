@@ -13,7 +13,6 @@
   let scrollContainer = $state<HTMLDivElement | null>(null)
   let scrollProgress = $state(0)
 
-  // wakeLock keeps the script readable during recording sessions when available.
   let wakeLock: WakeLockSentinel | null = null
 
   $effect(() => {
@@ -64,7 +63,7 @@
   const hasText = $derived(!!text?.trim())
 
   const wordCount = $derived(text?.trim().split(/\s+/).filter(Boolean).length ?? 0)
-  // Broadcast scripts are read slower than casual prose, around 150 words per minute.
+  // Broadcast reading pace: 150 words per minute.
   const readingTimeSeconds = $derived(Math.ceil((wordCount / 150) * 60))
   const readingTimeFormatted = $derived(formatDuration(readingTimeSeconds))
 

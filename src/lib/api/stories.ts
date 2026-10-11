@@ -6,7 +6,6 @@ import { toNumberOrNull } from '$lib/utils/form'
 export type StoryFilters = NonNullable<GetStoriesData['query']>
 export type StoryCreateInput = PostStoriesData['body']
 
-// toStoryApiFormat keeps select-string and weekday-object UI state at the API boundary.
 export const toStoryApiFormat = (data: StoryFormData): StoryCreateInput => ({
   title: data.title,
   text: data.text,

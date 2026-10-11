@@ -6,7 +6,6 @@
       name="viewport"
       content="width=device-width, initial-scale=1"
     />
-    <!-- Fallback for pages that set no <title> of their own. -->
     <title>Babbel</title>
     <script>
       // Set the daisyUI theme before Svelte mounts to avoid a light/dark flash.
@@ -15,7 +14,6 @@
           ? 'business'
           : 'corporate'
         document.documentElement.setAttribute('data-theme', theme)
-        // Keep the theme aligned when the OS preference changes.
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
           document.documentElement.setAttribute('data-theme', e.matches ? 'business' : 'corporate')
         })

@@ -12,7 +12,6 @@
   interface Props {
     story: Story
     onclose: () => void
-    /** ondone runs after a restore; `edit` asks to continue on the edit page. */
     ondone: (edit: boolean) => void | Promise<void>
   }
 
@@ -20,7 +19,7 @@
 
   type RestoreMode = 'as-is' | 'draft' | 'edit'
 
-  // The last action is the primary one: the safer way to restore.
+  // The primary action comes last so mobile can stack it on top.
   const ACTIONS: Record<'draft' | 'edit' | 'none', { mode: RestoreMode; label: string }[]> = {
     draft: [
       { mode: 'as-is', label: 'Actief herstellen' },
@@ -51,20 +50,15 @@
     } catch (err) {
       pending = null
       notifyMutationError(err, 'Herstellen mislukt')
-      // The story is gone for good, so refresh the trash.
       if (err instanceof ApiError && err.status === 404) await ondone(false)
       return
     }
-    // From here on every path ends in ondone, which removes the dialog.
-
     if (mode === 'draft') {
-      // Babbel rejects status changes on a deleted story and cannot combine
-      // them with a restore, so the status follows in a second request.
+      // Babbel requires separate restore and status updates; the story is active in between.
       try {
         await patchStoriesId({ path: { id: story.id }, body: { status: 'draft' } })
       } catch (err) {
         console.error('[stories] set restored story to draft failed', err)
-        // The story is live again, so this message must not slip by.
         toast.error('Bericht hersteld, maar nog actief: zet het zelf op concept', 10_000)
         await ondone(true)
         return
@@ -80,8 +74,7 @@
   class="modal modal-bottom sm:modal-middle"
   aria-labelledby="restore-story-title"
   onkeydown={e => {
-    // Chrome lets a page cancel only one Escape per user activation, so stop the
-    // request at the key while a restore runs.
+    // Chrome can bypass repeated cancel events; block Escape at the key while restoring.
     if (e.key === 'Escape' && restoring) e.preventDefault()
   }}
   oncancel={e => {
@@ -89,8 +82,7 @@
     close()
   }}
   onclose={e => {
-    // A close the page could not cancel (Android back) still unmounts the dialog.
-    // The teardown's own close() fires after removal and is ignored.
+    // Handle native closes (Android back), but ignore the teardown's close event.
     if (e.currentTarget.isConnected) onclose()
   }}
   {@attach showModal}
@@ -160,7 +152,6 @@
       </div>
     {/if}
 
-    <!-- Phones stack the actions, primary on top; wider screens put them in a row, primary last. -->
     <div class="modal-action flex-col-reverse sm:flex-row">
       <button
         type="button"

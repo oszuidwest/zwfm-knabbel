@@ -8,7 +8,7 @@ let formatWeekdays
 
 before(async () => {
   server = await createServer({
-    server: { middlewareMode: true, watch: null },
+    server: { middlewareMode: true, watch: null, ws: false },
     appType: 'custom',
   })
   ;({ assessRestore } = await server.ssrLoadModule('/src/lib/utils/story-restore.ts'))

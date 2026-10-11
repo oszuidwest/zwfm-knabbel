@@ -44,7 +44,6 @@ export const weekdayLabels: Record<string, string> = {
   sunday: 'Zo',
 }
 
-/** formatWeekdays renders a weekday bitmask as Dutch day abbreviations, Monday first. */
 export function formatWeekdays(mask: number): string {
   if ((mask & 127) === 127) return 'Elke dag'
   const days = Object.entries(weekdayLabels)

@@ -22,13 +22,11 @@
     pagination?: PaginationInfo
     headerActions?: Snippet
     cardContent: Snippet<[T]>
-    /** cardActions overrides the default edit/delete buttons on mobile cards. */
+    /** Overrides the default mobile edit/delete buttons. */
     cardActions?: Snippet<[T]>
     tableHeader: Snippet
     tableRow: Snippet<[T]>
-    /** onDelete enables the default delete button when custom card actions are absent. */
     onDelete?: (item: T, e?: Event) => void
-    /** deleteLabel provides the item name used in the delete button aria-label. */
     deleteLabel?: (item: T) => string
     canCreate?: boolean
     canEdit?: boolean

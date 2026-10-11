@@ -20,7 +20,6 @@
 <div class="toast toast-end z-50">
   {#each $toast as t (t.id)}
     {@const Icon = iconMap[t.type]}
-    <!-- Errors and warnings interrupt; success and info wait their turn. -->
     <div
       role={t.type === 'error' || t.type === 'warning' ? 'alert' : 'status'}
       class="alert {alertClass[t.type]}"

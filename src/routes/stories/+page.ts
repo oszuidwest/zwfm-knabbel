@@ -1,15 +1,17 @@
 import type { PageLoad } from './$types'
+import { redirect } from '@sveltejs/kit'
 import { requirePermission } from '$lib/auth/guard'
 import { getStories } from '$lib/api/generated/sdk.gen'
 import type { StoryFilters } from '$lib/api/stories'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
 import { toLocalDateString } from '$lib/utils/format'
 import { getPaginationParams, getPaginationInfo } from '$lib/utils/pagination'
+import { resolveInternalHref } from '$lib/utils/routes'
 import { storySchema } from '$lib/schemas/story'
 import { WEEKDAY_BITS_BY_DAY } from '$lib/types'
 
 function getDateAndWeekdayBit(dateFilter: string): { date: string; weekdayBit: number } | null {
-  if (!dateFilter) return null
+  if (dateFilter !== 'today' && dateFilter !== 'tomorrow') return null
 
   const targetDate = new Date()
   if (dateFilter === 'tomorrow') {
@@ -74,9 +76,18 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
     notFound: 'Berichten niet gevonden',
     failed: 'Berichten laden mislukt',
   })
+  const pagination = getPaginationInfo(response.total, page, limit)
+
+  // Deleting or restoring the last item can remove the current page.
+  if (page > pagination.totalPages) {
+    const target = new URL(url)
+    if (pagination.totalPages === 1) target.searchParams.delete('page')
+    else target.searchParams.set('page', String(pagination.totalPages))
+    redirect(307, resolveInternalHref(`${target.pathname}${target.search}${target.hash}`))
+  }
 
   return {
     stories: response.data,
-    pagination: getPaginationInfo(response.total, page, limit),
+    pagination,
   }
 }

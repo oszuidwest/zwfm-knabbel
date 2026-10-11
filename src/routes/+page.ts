@@ -27,8 +27,7 @@ export const load: PageLoad = async ({ fetch, parent }) => {
   const canBulletins = can(user, 'bulletins', 'read')
   const canStations = can(user, 'stations', 'read')
 
-  // Counts come from the paginated `total` field; limit=1 with a sparse
-  // fieldset keeps these requests as light as the API allows.
+  // Only total is needed; request the smallest payload.
   const storyCount = (filter: NonNullable<StoryFilters['filter']>): Promise<number> =>
     canStories
       ? getStories({ query: { limit: 1, fields: 'id', filter }, fetch }).then(res => res.total)

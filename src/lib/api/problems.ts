@@ -1,7 +1,6 @@
 import type { FieldError, ProblemDetails as ApiProblemDetails } from './generated/types.gen'
 
-// Response bodies are untrusted, so every member is optional and `code` stays
-// a plain string until it is looked up.
+// Untrusted responses may omit fields or introduce unknown codes.
 type ProblemFieldError = Partial<Pick<FieldError, 'field' | 'message'>> & { code?: string }
 
 type ProblemDetails = Partial<Pick<ApiProblemDetails, 'code' | 'detail' | 'hint'>> & {
@@ -10,8 +9,7 @@ type ProblemDetails = Partial<Pick<ApiProblemDetails, 'code' | 'detail' | 'hint'
 
 export const UPLOAD_TIMEOUT_MESSAGE = 'Upload duurde te lang'
 
-// Problem `code` values and bulletin job error codes share this table. Babbel's
-// detail text is English and meant for logs, so the UI shows its own copy per code.
+// Localize problem and job codes; Babbel's detail text is English.
 const problemMessages: Record<string, string> = {
   'audio.processing_failed': 'Audio verwerken mislukt',
   'bulletin.no_stories': 'Geen actieve berichten met audio voor deze zender',
@@ -114,13 +112,11 @@ export function isProblemDetails(value: unknown): value is ProblemDetails {
   )
 }
 
-/** describeProblemCode returns Dutch copy for a Babbel problem or job error code. */
 export function describeProblemCode(code: string | undefined): string | undefined {
   if (!code) return undefined
   return problemMessages[code] ?? problemSuffixMessages[code.slice(code.lastIndexOf('.') + 1)]
 }
 
-/** describeFieldError returns Dutch copy for one `errors[]` item, without a field label. */
 export function describeFieldError(error: ProblemFieldError): string | undefined {
   if (error.field === 'password' && error.code === 'invalid_format') {
     // The password policy is server configuration; its message names the missing class.
@@ -129,7 +125,6 @@ export function describeFieldError(error: ProblemFieldError): string | undefined
   return fieldErrorMessages[error.code as FieldError['code']] ?? error.message
 }
 
-/** describeProblem turns Problem Details into a Dutch message, or undefined when nothing fits. */
 export function describeProblem(status: number, problem: ProblemDetails): string | undefined {
   // tts.upstream_failed is a 502, except a 503 when ElevenLabs rejects the API credentials.
   if (problem.code === 'tts.upstream_failed' && status === 503) {
@@ -152,10 +147,6 @@ export function describeProblem(status: number, problem: ProblemDetails): string
   return undefined
 }
 
-/**
- * fieldErrorsFromProblem maps `errors[]` to one Dutch message per form field.
- * Forms show them in the same inline slots as their own Zod errors.
- */
 export function fieldErrorsFromProblem(problem: ProblemDetails): Record<string, string> {
   const result: Record<string, string> = {}
   for (const error of problem.errors ?? []) {

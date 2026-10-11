@@ -4,22 +4,13 @@ import { formatDate, parseDate, toLocalDateString } from './format'
 type RestoreStory = Pick<Story, 'status' | 'start_date' | 'end_date' | 'weekdays' | 'audio_file'>
 
 interface RestoreAssessment {
-  /**
-   * The safer way to restore, offered as the primary action: `edit` when the
-   * planning is over, `draft` when the story would reach bulletins.
-   */
   suggestion: 'edit' | 'draft' | null
   notice?: { tone: 'warning' | 'info'; message: string }
 }
 
-/**
- * firstBroadcastDay returns the first day from `today` on which Babbel's
- * bulletin selection matches the story's period and weekdays, or null.
- */
 function firstBroadcastDay(story: RestoreStory, today: string): string | null {
   if (!story.start_date || !story.end_date) return null
   const date = parseDate(story.start_date > today ? story.start_date : today)
-  // Seven consecutive days cover every weekday once.
   for (let i = 0; i < 7; i++, date.setDate(date.getDate() + 1)) {
     const day = toLocalDateString(date)
     if (day > story.end_date) return null
@@ -37,10 +28,8 @@ function formatDay(date: string): string {
 }
 
 /**
- * assessRestore explains what restoring a deleted story does. Babbel restores
- * it with its old status and planning, so an active story is eligible for
- * bulletins again at once: an embargoed story can leak that way.
- * `today` is a local YYYY-MM-DD date.
+ * Babbel preserves status and planning on restore; active stories may air immediately.
+ * `today` is local YYYY-MM-DD.
  */
 export function assessRestore(
   story: RestoreStory,

@@ -491,7 +491,7 @@
       />
     </button>
     {#if !canWrite}
-      <!-- Disabled controls cannot take focus, so the tooltip never reaches assistive tech. -->
+      <!-- Expose the tooltip to screen readers when the control cannot take focus. -->
       <span class="sr-only">Geen rechten</span>
     {/if}
   </div>

@@ -1,5 +1,4 @@
-// Importing the client module registers its timeout and error interceptors
-// before any SDK call; keep this import even if ApiError moves elsewhere.
+// This import registers timeout/error interceptors before any SDK call.
 import { ApiError } from '$lib/api/client'
 import { getSessionsCurrent } from '$lib/api/generated/sdk.gen'
 import { AUTH_DEPENDENCY } from '$lib/auth/session'
@@ -17,7 +16,7 @@ export const load: LayoutLoad = async ({ fetch, depends }) => {
   try {
     user = await getSessionsCurrent({ fetch })
   } catch (err) {
-    // Only 401 means anonymous; network errors, timeouts, and 5xx stay load errors.
+    // Only 401 means anonymous.
     if (!(err instanceof ApiError) || err.status !== 401) {
       throw err
     }

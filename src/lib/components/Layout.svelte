@@ -57,7 +57,6 @@
 {#snippet navLink(item: NavItem)}
   {@const Icon = item.icon}
   <li>
-    <!-- daisyUI's menu highlights the aria-current link. -->
     <a
       href={resolveInternalHref(item.path)}
       aria-current={isActive(item.path) ? 'page' : undefined}
