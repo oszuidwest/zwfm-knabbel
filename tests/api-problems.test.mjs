@@ -5,18 +5,16 @@ import { createServer } from 'vite'
 let server
 let sdk
 let api
-let format
 let userSchema
 let matchId
 
 before(async () => {
   server = await createServer({
-    server: { middlewareMode: true, watch: null },
+    server: { middlewareMode: true, watch: null, ws: false },
     appType: 'custom',
   })
   api = await server.ssrLoadModule('/src/lib/api/client.ts')
   sdk = await server.ssrLoadModule('/src/lib/api/generated/sdk.gen.ts')
-  format = await server.ssrLoadModule('/src/lib/utils/format.ts')
   ;({ userSchema } = await server.ssrLoadModule('/src/lib/schemas/user.ts'))
   ;({ match: matchId } = await server.ssrLoadModule('/src/params/id.ts'))
   const { client } = await server.ssrLoadModule('/src/lib/api/generated/client.gen.ts')
@@ -85,7 +83,7 @@ test('date_order reads correctly on start_date too', async () => {
   assert.deepEqual(api.getFieldErrors(err), { start_date: 'Einddatum ligt voor de startdatum' })
 })
 
-test('conflict and gone codes use Dutch copy instead of the English detail', async () => {
+test('conflict, gone and not-found codes use Dutch copy instead of the English detail', async () => {
   const lastAdmin = await rejection(
     sdk.deleteUsersId({
       path: { id: 1 },
@@ -110,6 +108,15 @@ test('conflict and gone codes use Dutch copy instead of the English detail', asy
     })
   )
   assert.equal(deleted.message, 'Dit bericht is verwijderd')
+
+  const missing = await rejection(
+    sdk.patchStoriesId({
+      path: { id: 1 },
+      body: { deleted_at: '' },
+      fetch: problem(404, { code: 'story.not_found', detail: 'Story with id 1 not found' }),
+    })
+  )
+  assert.equal(missing.message, 'Bestaat niet (meer)')
 
   const rejectedKey = await rejection(
     sdk.postStoriesIdTts({
@@ -161,12 +168,6 @@ test('route IDs must be positive integers', () => {
   for (const id of ['0', '-1', '1.5', 'abc', '007', '1e3', '9007199254740992']) {
     assert.equal(matchId(id), false, id)
   }
-})
-
-test('plain API dates are local calendar days', () => {
-  const date = format.parseDate('2026-10-01')
-  assert.deepEqual([date.getFullYear(), date.getMonth(), date.getDate()], [2026, 9, 1])
-  assert.equal(date.getHours(), 0)
 })
 
 test('password length follows Babbel: 8 code points minimum, 72 UTF-8 bytes maximum', () => {

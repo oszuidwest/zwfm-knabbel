@@ -35,8 +35,7 @@ export default tseslint.config(
       'dist/',
       'node_modules/',
       'src/lib/api/generated/',
-      // .svelte.ts files use Svelte 5 runes which ESLint's TS parser can't parse.
-      // These files are still type-checked by `svelte-check` which understands runes.
+      // Runes in .svelte.ts are checked by svelte-check.
       '**/*.svelte.ts',
     ],
   },
@@ -53,7 +52,6 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'warn',
       // Route helpers resolve internal hrefs at render/navigation boundaries.
       'svelte/no-navigation-without-resolve': 'off',
-      // Keep unkeyed each blocks visible without failing CI during incremental cleanup.
       'svelte/require-each-key': 'warn',
       // Plain Map instances are allowed outside reactive Svelte state.
       'svelte/prefer-svelte-reactivity': 'off',

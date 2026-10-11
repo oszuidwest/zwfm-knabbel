@@ -24,7 +24,7 @@ class ApiError extends Error {
   }
 }
 
-// Returns '' when the body has nothing usable, so each caller's Dutch fallback takes over.
+// Empty messages let callers supply their Dutch fallback.
 function getErrorMessage(error: unknown, status: number): string {
   if (typeof error === 'string' && error) return error
   if (isProblemDetails(error)) {
@@ -45,9 +45,7 @@ function isUpload(request: Request | undefined): boolean {
   return request?.headers.get('content-type')?.startsWith('multipart/form-data') ?? false
 }
 
-// Timeouts live on the client so no SDK call site can forget them.
-// Interceptor registration is a side effect of importing this module; the root
-// +layout.ts imports it explicitly so it runs before any SDK call.
+// Registered by the root layout import before any SDK calls.
 client.interceptors.request.use(
   request =>
     new Request(request, {
@@ -93,20 +91,17 @@ export function getMediaUrl(path: string | undefined | null): string | undefined
 
 export function notifyMutationError(error: unknown, fallbackMessage: string): void {
   if (error instanceof ApiError) {
-    // The error interceptor already extracted the ProblemDetails message.
     if (!error.notified) toast.error(error.message || fallbackMessage)
     return
   }
   toast.error(fallbackMessage)
 }
 
-/** getFieldErrors returns Dutch inline messages for the fields a 400 or 422 response rejected. */
 export function getFieldErrors(error: unknown): Record<string, string> {
   if (!(error instanceof ApiError) || !isProblemDetails(error.details)) return {}
   return fieldErrorsFromProblem(error.details)
 }
 
-/** getUploadFailure explains why an upload failed, without the field label. */
 export function getUploadFailure(error: unknown): string {
   return (
     getFieldErrors(error).audio || (error instanceof ApiError && error.message) || 'Upload mislukt'

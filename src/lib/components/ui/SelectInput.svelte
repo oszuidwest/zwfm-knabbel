@@ -1,11 +1,4 @@
 <script lang="ts">
-  /**
-   * SelectInput keeps HTML select values explicitly typed as strings.
-   *
-   * Use the form helpers from $lib/utils/form.ts for number ↔ string conversion
-   * at API boundaries.
-   */
-
   import FormField, { fieldA11y } from './FormField.svelte'
 
   interface Option {
@@ -16,21 +9,12 @@
   interface Props {
     id: string
     label: string
-    /** value stays string-compatible because HTML select values are strings. */
     value: string | null | undefined
     options: readonly Option[]
     error?: string
-    /**
-     * Disabled placeholder option shown when no value is selected.
-     * Cannot be re-selected after choosing another option.
-     * Use for required fields.
-     */
+    /** Disabled option for required fields. */
     placeholder?: string
-    /**
-     * Selectable option that sets value to empty string.
-     * Can be selected/deselected at any time.
-     * Use for optional fields where "no selection" is valid.
-     */
+    /** Selectable empty value for optional fields. */
     emptyOption?: string
     hint?: string
     disabled?: boolean

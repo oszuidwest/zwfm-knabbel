@@ -20,22 +20,22 @@ export interface VisiblePage {
   page: number | null
 }
 
-/**
- * getPaginationParams reads the current page from URL params and derives API offsets.
- */
 export function getPaginationParams(
   searchParams: URLSearchParams,
   defaultLimit = DEFAULT_PAGE_SIZE
 ): PaginationParams {
-  const page = Math.max(1, Number(searchParams.get('page')) || 1)
   const limit = defaultLimit
+  const requestedPage = Number(searchParams.get('page'))
+  const page =
+    Number.isSafeInteger(requestedPage) &&
+    requestedPage > 0 &&
+    Number.isSafeInteger((requestedPage - 1) * limit)
+      ? requestedPage
+      : 1
   const offset = (page - 1) * limit
   return { page, limit, offset }
 }
 
-/**
- * getPaginationInfo converts API totals into the pagination state used by the UI.
- */
 export function getPaginationInfo(total: number, page: number, limit: number): PaginationInfo {
   const totalPages = Math.max(1, Math.ceil(total / limit))
   return {
@@ -48,10 +48,7 @@ export function getPaginationInfo(total: number, page: number, limit: number): P
   }
 }
 
-/**
- * getVisiblePages returns a compact page list that keeps endpoints visible.
- * Ellipsis tokens are represented with page set to null.
- */
+/** Keeps endpoints visible; null page tokens render as ellipses. */
 export function getVisiblePages(
   currentPage: number,
   totalPages: number,

@@ -14,7 +14,6 @@ export type {
   Voice,
 } from '$lib/api/generated/types.gen'
 
-/** Weekdays stores schedule state in the shape forms can bind directly. */
 export interface Weekdays {
   monday: boolean
   tuesday: boolean
@@ -25,7 +24,6 @@ export interface Weekdays {
   sunday: boolean
 }
 
-/** WEEKDAY_BITS maps form weekday keys to the API bitmask contract. */
 export const WEEKDAY_BITS = {
   sunday: 1,
   monday: 2,
@@ -36,7 +34,7 @@ export const WEEKDAY_BITS = {
   saturday: 64,
 } as const
 
-/** WEEKDAY_BITS_BY_DAY is indexed by JavaScript day number, where Sunday is 0. */
+/** Indexed by Date.getDay(): Sunday is 0. */
 export const WEEKDAY_BITS_BY_DAY: Record<number, number> = {
   0: WEEKDAY_BITS.sunday,
   1: WEEKDAY_BITS.monday,

@@ -21,7 +21,6 @@
   const canCreateStory = $derived(auth.can('stories', 'write'))
   const canGenerate = $derived(auth.can('bulletins', 'generate'))
 
-  // Dry time-of-day greetings; every entry addresses the user by {name}.
   const GREETINGS: Record<
     'night' | 'morning' | 'afternoon' | 'early_evening' | 'late_evening',
     string[]

@@ -2,7 +2,6 @@
   lang="ts"
   module
 >
-  /** fieldA11y links a control to the error and hint FormField renders below it. */
   export function fieldA11y(id: string, error?: string, hint?: string) {
     return {
       'aria-invalid': error ? true : undefined,

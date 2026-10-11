@@ -1,15 +1,17 @@
 import type { PageLoad } from './$types'
+import { redirect } from '@sveltejs/kit'
 import { requirePermission } from '$lib/auth/guard'
 import { getStories } from '$lib/api/generated/sdk.gen'
 import type { StoryFilters } from '$lib/api/stories'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
 import { toLocalDateString } from '$lib/utils/format'
 import { getPaginationParams, getPaginationInfo } from '$lib/utils/pagination'
+import { resolveInternalHref } from '$lib/utils/routes'
 import { storySchema } from '$lib/schemas/story'
 import { WEEKDAY_BITS_BY_DAY } from '$lib/types'
 
 function getDateAndWeekdayBit(dateFilter: string): { date: string; weekdayBit: number } | null {
-  if (!dateFilter) return null
+  if (dateFilter !== 'today' && dateFilter !== 'tomorrow') return null
 
   const targetDate = new Date()
   if (dateFilter === 'tomorrow') {
@@ -27,12 +29,13 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
   const dateFilter = url.searchParams.get('date') ?? ''
   const audioFilter = url.searchParams.get('audio') ?? ''
   const searchQuery = url.searchParams.get('q') ?? ''
+  const trashed = url.searchParams.get('trashed') === 'only'
 
   const { page, limit, offset } = getPaginationParams(url.searchParams)
 
   const filter: NonNullable<StoryFilters['filter']> = {}
   const params: StoryFilters = {
-    sort: 'start_date:desc,created_at:desc,id:desc',
+    sort: trashed ? 'deleted_at:desc,id:desc' : 'start_date:desc,created_at:desc,id:desc',
     limit,
     offset,
     filter,
@@ -41,6 +44,10 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
   const status = storySchema.shape.status.safeParse(statusFilter)
   if (status.success) {
     filter.status = status.data
+  }
+
+  if (trashed) {
+    params.trashed = 'only'
   }
 
   if (searchQuery) {
@@ -69,9 +76,18 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
     notFound: 'Berichten niet gevonden',
     failed: 'Berichten laden mislukt',
   })
+  const pagination = getPaginationInfo(response.total, page, limit)
+
+  // Deleting or restoring the last item can remove the current page.
+  if (page > pagination.totalPages) {
+    const target = new URL(url)
+    if (pagination.totalPages === 1) target.searchParams.delete('page')
+    else target.searchParams.set('page', String(pagination.totalPages))
+    redirect(307, resolveInternalHref(`${target.pathname}${target.search}${target.hash}`))
+  }
 
   return {
     stories: response.data,
-    pagination: getPaginationInfo(response.total, page, limit),
+    pagination,
   }
 }

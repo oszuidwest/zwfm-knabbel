@@ -2,6 +2,7 @@ export {
   CircleAlert,
   TriangleAlert,
   Zap,
+  ArchiveRestore,
   ArchiveX,
   AudioWaveform,
   BookOpen,
