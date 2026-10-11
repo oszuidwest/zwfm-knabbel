@@ -289,7 +289,7 @@
                   </button>
                 </div>
                 {#if trashView}
-                  {@render restoreButton(story, true)}
+                  {@render restoreButton(story, 'h-5 w-5')}
                 {/if}
               </div>
             </div>
@@ -384,7 +384,7 @@
                       </button>
                     </div>
                     {#if trashView}
-                      {@render restoreButton(story, false)}
+                      {@render restoreButton(story, 'h-4 w-4')}
                     {:else}
                       <TableActions
                         editHref="/stories/{story.id}/edit"
@@ -497,24 +497,24 @@
   {/if}
 {/snippet}
 
-{#snippet restoreButton(story: Story, compact: boolean)}
+{#snippet restoreButton(story: Story, iconClass: string)}
   {#snippet button()}
     <button
       type="button"
-      class={['btn btn-ghost btn-sm', compact && 'btn-square']}
+      class="btn btn-square btn-ghost btn-sm"
       onclick={() => (restoreStory = story)}
       disabled={!canWrite}
       aria-label="Herstellen: {story.title}"
     >
       <ArchiveRestore
         aria-hidden="true"
-        class={compact ? 'h-5 w-5' : 'h-4 w-4'}
+        class={iconClass}
       />
-      {#if !compact}Herstellen{/if}
     </button>
   {/snippet}
 
-  {#if compact && canWrite}
+  <!-- Like the read mode button: icon only, named by its tooltip. -->
+  {#if canWrite}
     <div
       class="tooltip tooltip-left"
       data-tip="Herstellen"
@@ -523,7 +523,7 @@
     </div>
   {:else}
     <MaybeTooltip
-      when={!canWrite}
+      when
       tip="Geen rechten"
       placement="tooltip-left"
     >
