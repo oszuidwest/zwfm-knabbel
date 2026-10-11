@@ -245,12 +245,7 @@
                   />
                   <label
                     for="jingle-replace-{config.station.id}"
-                    class={[
-                      'btn btn-ghost btn-sm peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary',
-                      effectiveDisabled
-                        ? 'pointer-events-none cursor-not-allowed opacity-50'
-                        : 'cursor-pointer',
-                    ]}
+                    class="btn btn-ghost btn-sm peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary"
                     aria-disabled={effectiveDisabled}
                   >
                     Vervang

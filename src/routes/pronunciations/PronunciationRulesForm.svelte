@@ -292,7 +292,6 @@
     }
 
     if (err.status === 413) {
-      // The shared 413 copy is about audio files; this request is a rule list.
       globalError = 'De lijst met uitspraakregels is te groot.'
       toast.error(globalError)
       return

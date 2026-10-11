@@ -54,6 +54,23 @@
   }
 </script>
 
+{#snippet navLink(item: NavItem)}
+  {@const Icon = item.icon}
+  <li>
+    <!-- daisyUI's menu highlights the aria-current link. -->
+    <a
+      href={resolveInternalHref(item.path)}
+      aria-current={isActive(item.path) ? 'page' : undefined}
+    >
+      <Icon
+        aria-hidden="true"
+        class="h-6 w-6"
+      />
+      {item.label}
+    </a>
+  </li>
+{/snippet}
+
 <div class="drawer lg:drawer-open">
   <input
     id="drawer-toggle"
@@ -132,59 +149,20 @@
         <ul class="menu gap-2 menu-md [&_a]:rounded-lg">
           <li class="menu-title tracking-widest uppercase">Menu</li>
           {#each mainNavItems as item (item.path)}
-            {@const Icon = item.icon}
-            <li>
-              <a
-                href={resolveInternalHref(item.path)}
-                class={{ 'menu-active': isActive(item.path) }}
-                aria-current={isActive(item.path) ? 'page' : undefined}
-              >
-                <Icon
-                  aria-hidden="true"
-                  class="h-6 w-6"
-                />
-                {item.label}
-              </a>
-            </li>
+            {@render navLink(item)}
           {/each}
 
           {#if auth.can('pronunciation_rules', 'read') || auth.can('settings:tts', 'read')}
             <li class="mt-4 menu-title tracking-widest uppercase">AI</li>
             {#each aiNavItems as item (item.path)}
-              {@const Icon = item.icon}
-              <li>
-                <a
-                  href={resolveInternalHref(item.path)}
-                  class={{ 'menu-active': isActive(item.path) }}
-                  aria-current={isActive(item.path) ? 'page' : undefined}
-                >
-                  <Icon
-                    aria-hidden="true"
-                    class="h-6 w-6"
-                  />
-                  {item.label}
-                </a>
-              </li>
+              {@render navLink(item)}
             {/each}
           {/if}
 
           {#if auth.can('users', 'read')}
             <li class="mt-4 menu-title tracking-widest uppercase">Beheer</li>
             {#each adminNavItems as item (item.path)}
-              {@const Icon = item.icon}
-              <li>
-                <a
-                  href={resolveInternalHref(item.path)}
-                  class={{ 'menu-active': isActive(item.path) }}
-                  aria-current={isActive(item.path) ? 'page' : undefined}
-                >
-                  <Icon
-                    aria-hidden="true"
-                    class="h-6 w-6"
-                  />
-                  {item.label}
-                </a>
-              </li>
+              {@render navLink(item)}
             {/each}
           {/if}
         </ul>

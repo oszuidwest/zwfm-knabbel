@@ -18,7 +18,7 @@
     data-tip={tip}
   >
     {@render children()}
-    <!-- Tooltips only show on hover or focus, and disabled controls get neither. -->
+    <!-- Disabled controls cannot take focus, so keyboard and screen reader users never see the tooltip. -->
     <span class="sr-only">{tip}</span>
   </div>
 {:else if wrapperClass}

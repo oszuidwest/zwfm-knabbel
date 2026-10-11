@@ -27,6 +27,7 @@
             sentinel.release()
             return
           }
+          wakeLock?.release()
           wakeLock = sentinel
         } catch {
           // Some browsers deny wake lock while hidden, low on power, or unsupported.

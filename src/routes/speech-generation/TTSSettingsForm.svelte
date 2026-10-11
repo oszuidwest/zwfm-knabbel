@@ -73,13 +73,7 @@
       try {
         await patchSettingsTts({ body: toTTSSettingsUpdate(result.data) })
       } catch (err) {
-        const fieldErrors = getFieldErrors(err)
-        if (Object.keys(fieldErrors).length > 0) {
-          errors = fieldErrors
-          toast.error('Controleer de velden')
-          return
-        }
-
+        errors = getFieldErrors(err)
         notifyMutationError(err, 'Opslaan mislukt')
         return
       }

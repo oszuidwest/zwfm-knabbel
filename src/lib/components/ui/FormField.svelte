@@ -33,19 +33,15 @@
     {label}
   </label>
   {@render children()}
-  {#if error}
+  {#if error || hint}
     <p
       id="{id}-msg"
-      class="fieldset-label text-sm leading-relaxed text-error"
+      class={[
+        'fieldset-label text-sm leading-relaxed',
+        error ? 'text-error' : 'text-base-content/70',
+      ]}
     >
-      {error}
-    </p>
-  {:else if hint}
-    <p
-      id="{id}-msg"
-      class="fieldset-label text-sm leading-relaxed text-base-content/70"
-    >
-      {hint}
+      {error || hint}
     </p>
   {/if}
 </fieldset>

@@ -10,8 +10,8 @@ type ProblemDetails = Partial<Pick<ApiProblemDetails, 'code' | 'detail' | 'hint'
 
 export const UPLOAD_TIMEOUT_MESSAGE = 'Upload duurde te lang'
 
-// Babbel's `code` member names conflicts and failed jobs. The detail text is
-// English and meant for logs, so the UI shows its own copy per code.
+// Problem `code` values and bulletin job error codes share this table. Babbel's
+// detail text is English and meant for logs, so the UI shows its own copy per code.
 const problemMessages: Record<string, string> = {
   'audio.processing_failed': 'Audio verwerken mislukt',
   'bulletin.no_stories': 'Geen actieve berichten met audio voor deze zender',
@@ -40,9 +40,11 @@ const problemSuffixMessages: Record<string, string> = {
 
 const statusMessages: Record<number, string> = {
   408: UPLOAD_TIMEOUT_MESSAGE,
-  413: 'Bestand of verzoek is te groot (audio maximaal 100 MB)',
+  413: 'Bestand of verzoek is te groot',
 }
 
+// Field copy leaves out the field name; toasts add it as a label. date_order names
+// both dates instead, because Babbel reports it on start_date or end_date.
 const fieldErrorMessages: Record<FieldError['code'], string> = {
   required: 'Verplicht',
   blank: 'Mag niet leeg zijn',
@@ -59,7 +61,7 @@ const fieldErrorMessages: Record<FieldError['code'], string> = {
   empty_update: 'Geen wijzigingen',
   duplicate: 'Dubbele invoer',
   unsupported: 'Niet ondersteund',
-  silent_audio: 'Audio is stil of te zacht, controleer het opnameniveau',
+  silent_audio: 'Stil of te zacht, controleer het opnameniveau',
 }
 
 const fieldLabels: Record<string, string> = {
@@ -128,7 +130,7 @@ export function describeFieldError(error: ProblemFieldError): string | undefined
 
 /** describeProblem turns Problem Details into a Dutch message, or undefined when nothing fits. */
 export function describeProblem(status: number, problem: ProblemDetails): string | undefined {
-  // Babbel sends 503 instead of 502 when ElevenLabs rejects the API credentials.
+  // tts.upstream_failed is a 502, except a 503 when ElevenLabs rejects the API credentials.
   if (problem.code === 'tts.upstream_failed' && status === 503) {
     return 'ElevenLabs weigert de API-sleutel, controleer de configuratie'
   }
@@ -151,7 +153,7 @@ export function describeProblem(status: number, problem: ProblemDetails): string
 
 /**
  * fieldErrorsFromProblem maps `errors[]` to one Dutch message per form field.
- * Forms can show these inline next to their own Zod errors.
+ * Forms show them in the same inline slots as their own Zod errors.
  */
 export function fieldErrorsFromProblem(problem: ProblemDetails): Record<string, string> {
   const result: Record<string, string> = {}

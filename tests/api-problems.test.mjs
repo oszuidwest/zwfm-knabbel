@@ -69,6 +69,22 @@ test('422 field errors become Dutch inline messages and a toast', async () => {
   })
 })
 
+test('date_order reads correctly on start_date too', async () => {
+  const err = await rejection(
+    sdk.putStoriesId({
+      path: { id: 1 },
+      body: { start_date: '2026-12-01' },
+      fetch: problem(422, {
+        errors: [
+          { field: 'start_date', code: 'date_order', message: 'end_date before start_date' },
+        ],
+      }),
+    })
+  )
+  assert.equal(err.message, 'Einddatum ligt voor de startdatum')
+  assert.deepEqual(api.getFieldErrors(err), { start_date: 'Einddatum ligt voor de startdatum' })
+})
+
 test('conflict and gone codes use Dutch copy instead of the English detail', async () => {
   const lastAdmin = await rejection(
     sdk.deleteUsersId({
@@ -117,7 +133,7 @@ test('silent story audio keeps its reason', async () => {
       }),
     })
   )
-  assert.equal(err.message, 'Audiobestand: audio is stil of te zacht, controleer het opnameniveau')
+  assert.equal(err.message, 'Audiobestand: stil of te zacht, controleer het opnameniveau')
 })
 
 test('unknown problems fall back to the server detail', async () => {

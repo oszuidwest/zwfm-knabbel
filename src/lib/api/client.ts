@@ -24,20 +24,21 @@ class ApiError extends Error {
   }
 }
 
-function getErrorMessage(error: unknown, status: number, fallbackMessage: string): string {
+// Returns '' when the body has nothing usable, so each caller's Dutch fallback takes over.
+function getErrorMessage(error: unknown, status: number): string {
   if (typeof error === 'string' && error) return error
   if (isProblemDetails(error)) {
     const message = describeProblem(status, error)
     if (message) return message
   }
-  if (typeof error !== 'object' || error === null) return fallbackMessage
+  if (typeof error !== 'object' || error === null) return ''
 
   const candidate = error as Record<string, unknown>
   for (const key of ['detail', 'message', 'title', 'error']) {
     if (typeof candidate[key] === 'string' && candidate[key]) return candidate[key]
   }
 
-  return fallbackMessage
+  return ''
 }
 
 function isUpload(request: Request | undefined): boolean {
@@ -71,12 +72,7 @@ client.interceptors.error.use((error, response, request) => {
     return error
   }
 
-  const apiError = new ApiError(
-    response.status,
-    // An empty message lets each caller's Dutch fallback take over.
-    getErrorMessage(error, response.status, ''),
-    error
-  )
+  const apiError = new ApiError(response.status, getErrorMessage(error, response.status), error)
   if (response.status === 403 && request?.method !== 'GET') {
     toast.error('Geen rechten voor deze actie')
     apiError.notified = true

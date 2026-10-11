@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-// Babbel stores bcrypt hashes, which only use the first 72 bytes of a password.
+// Babbel rejects passwords over 72 UTF-8 bytes, the most bcrypt hashes.
 const PASSWORD_MAX_BYTES = 72
 
 export const userSchema = z
