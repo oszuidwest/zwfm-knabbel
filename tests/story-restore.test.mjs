@@ -38,26 +38,25 @@ function story(overrides = {}) {
 test('an active story with audio and a running period goes on air at once', () => {
   const result = assessRestore(story(), today)
   assert.equal(result.suggestion, 'draft')
-  assert.equal(result.notices.length, 1)
-  assert.equal(result.notices[0].tone, 'warning')
-  assert.match(result.notices[0].message, /direct na herstellen/)
+  assert.equal(result.notice.tone, 'warning')
+  assert.match(result.notice.message, /direct na herstellen/)
 })
 
 test('an active story names the first day it can go on air', () => {
   const result = assessRestore(story({ weekdays: MONDAY }), today)
   assert.equal(result.suggestion, 'draft')
-  assert.match(result.notices[0].message, /vanaf maandag 12 oktober/)
+  assert.match(result.notice.message, /vanaf maandag 12 oktober/)
 
   const future = assessRestore(story({ start_date: '2026-10-29', end_date: '2026-10-30' }), today)
   assert.equal(future.suggestion, 'draft')
-  assert.match(future.notices[0].message, /vanaf donderdag 29 oktober/)
+  assert.match(future.notice.message, /vanaf donderdag 29 oktober/)
 
   // The search crosses the end of summer time (25 October).
   const acrossDst = assessRestore(
     story({ start_date: '2026-10-24', end_date: '2026-10-30', weekdays: MONDAY }),
     today
   )
-  assert.match(acrossDst.notices[0].message, /vanaf maandag 26 oktober/)
+  assert.match(acrossDst.notice.message, /vanaf maandag 26 oktober/)
 })
 
 test('an active story whose weekdays never fall in the period is not eligible', () => {
@@ -65,25 +64,25 @@ test('an active story whose weekdays never fall in the period is not eligible', 
     story({ start_date: '2026-10-12', end_date: '2026-10-13', weekdays: SUNDAY }),
     today
   )
-  assert.deepEqual(result, { suggestion: null, notices: [] })
-  assert.deepEqual(assessRestore(story({ weekdays: 0 }), today), { suggestion: null, notices: [] })
+  assert.deepEqual(result, { suggestion: null })
+  assert.deepEqual(assessRestore(story({ weekdays: 0 }), today), { suggestion: null })
 })
 
 test('an active story without audio only gets an info notice', () => {
   const result = assessRestore(story({ audio_file: '' }), today)
   assert.equal(result.suggestion, null)
-  assert.equal(result.notices[0].tone, 'info')
-  assert.match(result.notices[0].message, /geen audio/)
+  assert.equal(result.notice.tone, 'info')
+  assert.match(result.notice.message, /geen audio/)
 })
 
 test('a past period or expired status asks to edit the planning', () => {
   const ended = assessRestore(story({ end_date: '2026-10-10' }), today)
   assert.equal(ended.suggestion, 'edit')
-  assert.match(ended.notices[0].message, /voorbij \(laatste dag 10-10-2026\)/)
+  assert.match(ended.notice.message, /voorbij \(laatste dag 10-10-2026\)/)
 
   const expired = assessRestore(story({ status: 'expired' }), today)
   assert.equal(expired.suggestion, 'edit')
-  assert.match(expired.notices[0].message, /verlopen/)
+  assert.match(expired.notice.message, /verlopen/)
 
   const draftEnded = assessRestore(story({ status: 'draft', end_date: '2026-09-25' }), today)
   assert.equal(draftEnded.suggestion, 'edit')
@@ -97,7 +96,7 @@ test('the last day of the period still counts as running', () => {
 test('a draft is safe to restore', () => {
   const result = assessRestore(story({ status: 'draft' }), today)
   assert.equal(result.suggestion, null)
-  assert.equal(result.notices[0].tone, 'info')
+  assert.equal(result.notice.tone, 'info')
 })
 
 test('formatWeekdays lists days from Monday', () => {

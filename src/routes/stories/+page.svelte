@@ -258,6 +258,7 @@
                 <div class="min-w-0 flex-1">
                   {@render cardSummary(story)}
                 </div>
+                {@render restoreButton(story, 'h-5 w-5')}
               {:else}
                 <a
                   href={resolveInternalHref(`/stories/${story.id}/edit`)}
@@ -265,26 +266,7 @@
                 >
                   {@render cardSummary(story)}
                 </a>
-              {/if}
-              {#if trashView}
-                {@render restoreButton(story, 'h-5 w-5')}
-              {:else}
-                <div
-                  class="tooltip tooltip-left"
-                  data-tip="Leesmodus"
-                >
-                  <button
-                    type="button"
-                    class="btn btn-square shrink-0 btn-ghost btn-sm"
-                    onclick={() => (readModeStory = story)}
-                    aria-label="Open leesmodus voor {story.title}"
-                  >
-                    <CassetteTape
-                      aria-hidden="true"
-                      class="h-5 w-5"
-                    />
-                  </button>
-                </div>
+                {@render readModeButton(story, 'h-5 w-5')}
               {/if}
             </div>
           </div>
@@ -357,21 +339,7 @@
                     {@render restoreButton(story, 'h-4 w-4')}
                   {:else}
                     <div class="flex gap-1">
-                      <div
-                        class="tooltip tooltip-left"
-                        data-tip="Leesmodus"
-                      >
-                        <button
-                          class="btn btn-square btn-ghost btn-sm"
-                          onclick={() => (readModeStory = story)}
-                          aria-label="Open leesmodus voor {story.title}"
-                        >
-                          <CassetteTape
-                            aria-hidden="true"
-                            class="h-4 w-4"
-                          />
-                        </button>
-                      </div>
+                      {@render readModeButton(story, 'h-4 w-4')}
                       <TableActions
                         editHref="/stories/{story.id}/edit"
                         onDelete={() => handleDelete(story)}
@@ -472,7 +440,7 @@
       <span>{formatCompactDateRange(story.start_date, story.end_date)}</span>
     {/if}
   </div>
-  {#if trashView && story.deleted_at}
+  {#if story.deleted_at}
     <p class="mt-1 text-sm text-base-content/60">Verwijderd {@render deletedAt(story)}</p>
   {/if}
 {/snippet}
@@ -486,8 +454,26 @@
   {/if}
 {/snippet}
 
+{#snippet readModeButton(story: Story, iconClass: string)}
+  <div
+    class="tooltip tooltip-left"
+    data-tip="Leesmodus"
+  >
+    <button
+      type="button"
+      class="btn btn-square btn-ghost btn-sm"
+      onclick={() => (readModeStory = story)}
+      aria-label="Open leesmodus voor {story.title}"
+    >
+      <CassetteTape
+        aria-hidden="true"
+        class={iconClass}
+      />
+    </button>
+  </div>
+{/snippet}
+
 {#snippet restoreButton(story: Story, iconClass: string)}
-  <!-- Like the read mode button: icon only, named by its tooltip. -->
   <div
     class="tooltip tooltip-left"
     data-tip={canWrite ? 'Herstellen' : 'Geen rechten'}

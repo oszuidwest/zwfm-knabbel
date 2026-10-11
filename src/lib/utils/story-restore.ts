@@ -9,7 +9,7 @@ interface RestoreAssessment {
    * planning is over, `draft` when the story would reach bulletins.
    */
   suggestion: 'edit' | 'draft' | null
-  notices: { tone: 'warning' | 'info'; message: string }[]
+  notice?: { tone: 'warning' | 'info'; message: string }
 }
 
 /**
@@ -46,45 +46,52 @@ export function assessRestore(
   story: RestoreStory,
   today: string = toLocalDateString()
 ): RestoreAssessment {
-  const notices: RestoreAssessment['notices'] = []
-  let suggestion: RestoreAssessment['suggestion'] = null
-
-  const ended = !!story.end_date && story.end_date < today
-
-  if (ended || story.status === 'expired') {
-    suggestion = 'edit'
-    notices.push({
-      tone: 'warning',
-      message: ended
-        ? `De uitzendperiode is voorbij (laatste dag ${formatDate(story.end_date)}). Pas de planning aan om het bericht weer te gebruiken.`
-        : 'Het bericht staat op verlopen. Pas de planning en status aan om het weer te gebruiken.',
-    })
-  } else if (story.status === 'active') {
-    const day = firstBroadcastDay(story, today)
-    if (day && story.audio_file) {
-      suggestion = 'draft'
-      notices.push({
+  if (story.end_date && story.end_date < today) {
+    return {
+      suggestion: 'edit',
+      notice: {
         tone: 'warning',
-        message: `${
-          day === today
-            ? 'Het bericht is actief en kan direct na herstellen weer in bulletins komen'
-            : `Het bericht is actief en kan vanaf ${formatDay(day)} weer in bulletins komen`
-        }, met de planning van vóór het verwijderen. Controleer of die en een eventueel embargo nog kloppen, of herstel het als concept.`,
-      })
-    } else if (day) {
-      notices.push({
-        tone: 'info',
-        message: `Het bericht is actief maar heeft geen audio. Zodra er audio is, kan het ${
-          day === today ? 'direct' : `vanaf ${formatDay(day)}`
-        } in bulletins komen.`,
-      })
+        message: `De uitzendperiode is voorbij (laatste dag ${formatDate(story.end_date)}). Pas de planning aan om het bericht weer te gebruiken.`,
+      },
     }
-  } else if (story.status === 'draft') {
-    notices.push({
-      tone: 'info',
-      message: 'Het bericht is een concept en komt pas in bulletins als je het op actief zet.',
-    })
+  }
+  if (story.status === 'expired') {
+    return {
+      suggestion: 'edit',
+      notice: {
+        tone: 'warning',
+        message:
+          'Het bericht staat op verlopen. Pas de planning en status aan om het weer te gebruiken.',
+      },
+    }
+  }
+  if (story.status === 'draft') {
+    return {
+      suggestion: null,
+      notice: {
+        tone: 'info',
+        message: 'Het bericht is een concept en komt pas in bulletins als je het op actief zet.',
+      },
+    }
   }
 
-  return { suggestion, notices }
+  const day = firstBroadcastDay(story, today)
+  if (!day) return { suggestion: null }
+  const when = day === today ? 'direct' : `vanaf ${formatDay(day)}`
+  if (!story.audio_file) {
+    return {
+      suggestion: null,
+      notice: {
+        tone: 'info',
+        message: `Het bericht is actief maar heeft geen audio. Zodra er audio is, kan het ${when} in bulletins komen.`,
+      },
+    }
+  }
+  return {
+    suggestion: 'draft',
+    notice: {
+      tone: 'warning',
+      message: `Het bericht is actief en kan ${day === today ? 'direct na herstellen' : when} weer in bulletins komen, met de planning van vóór het verwijderen. Controleer of die en een eventueel embargo nog kloppen, of herstel het als concept.`,
+    },
+  }
 }

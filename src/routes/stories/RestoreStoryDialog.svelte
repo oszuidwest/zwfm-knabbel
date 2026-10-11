@@ -3,6 +3,7 @@
   import { patchStoriesId } from '$lib/api/generated/sdk.gen'
   import { ArchiveRestore, Info, TriangleAlert, X } from '$lib/components/icons'
   import { toast } from '$lib/stores/toast'
+  import { showModal } from '$lib/utils/dialog'
   import { formatDate, formatDateTime, formatDuration } from '$lib/utils/format'
   import { formatWeekdays, statusColors, statusLabels } from '$lib/utils/labels'
   import { assessRestore } from '$lib/utils/story-restore'
@@ -37,16 +38,6 @@
 
   const assessment = $derived(assessRestore(story))
   const actions = $derived(ACTIONS[assessment.suggestion ?? 'none'])
-
-  // Like ReadMode, the dialog is removed rather than closed, so focus returns to the opener here.
-  function showModal(dialog: HTMLDialogElement): () => void {
-    const opener = document.activeElement
-    dialog.showModal()
-    return () => {
-      dialog.close()
-      if (opener instanceof HTMLElement && opener.isConnected) opener.focus()
-    }
-  }
 
   function close(): void {
     if (!restoring) onclose()
@@ -154,22 +145,19 @@
       Herstellen zet het bericht terug met deze status en planning.
     </p>
 
-    {#if assessment.notices.length > 0}
-      <ul class="mt-3 space-y-2">
-        {#each assessment.notices as notice (notice.message)}
-          {@const Icon = notice.tone === 'warning' ? TriangleAlert : Info}
-          <li class={['alert items-start text-sm', notice.tone === 'warning' && 'alert-warning']}>
-            <Icon
-              aria-hidden="true"
-              class="h-5 w-5 shrink-0"
-            />
-            {#if notice.tone === 'warning'}
-              <span class="sr-only">Let op:</span>
-            {/if}
-            <span>{notice.message}</span>
-          </li>
-        {/each}
-      </ul>
+    {#if assessment.notice}
+      {@const { tone, message } = assessment.notice}
+      {@const Icon = tone === 'warning' ? TriangleAlert : Info}
+      <div class={['mt-3 alert items-start text-sm', tone === 'warning' && 'alert-warning']}>
+        <Icon
+          aria-hidden="true"
+          class="h-5 w-5 shrink-0"
+        />
+        {#if tone === 'warning'}
+          <span class="sr-only">Let op:</span>
+        {/if}
+        <span>{message}</span>
+      </div>
     {/if}
 
     <!-- Phones stack the actions, primary on top; wider screens put them in a row, primary last. -->
@@ -203,10 +191,7 @@
       {/each}
     </div>
   </div>
-  <form
-    method="dialog"
-    class="modal-backdrop"
-  >
+  <div class="modal-backdrop">
     <button
       type="button"
       onclick={close}
@@ -215,5 +200,5 @@
     >
       Sluiten
     </button>
-  </form>
+  </div>
 </dialog>

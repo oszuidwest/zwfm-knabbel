@@ -1,5 +1,6 @@
 <script lang="ts">
   import { X, TriangleAlert } from './icons'
+  import { showModal } from '$lib/utils/dialog'
   import { formatDuration } from '$lib/utils/format'
 
   interface Props {
@@ -67,17 +68,11 @@
   const readingTimeSeconds = $derived(Math.ceil((wordCount / 150) * 60))
   const readingTimeFormatted = $derived(formatDuration(readingTimeSeconds))
 
-  // A modal <dialog> makes the page behind it inert and keeps Tab inside. Focus
-  // the dialog itself, not its close button, so Space keeps scrolling the script.
-  // The dialog is removed rather than closed, so return focus to the opener here.
-  function showModal(dialog: HTMLDialogElement): () => void {
-    const opener = document.activeElement
-    dialog.showModal()
+  // Focus the dialog itself, not its close button, so Space keeps scrolling the script.
+  function openFocused(dialog: HTMLDialogElement): () => void {
+    const teardown = showModal(dialog)
     dialog.focus()
-    return () => {
-      dialog.close()
-      if (opener instanceof HTMLElement) opener.focus()
-    }
+    return teardown
   }
 
   function handleKeydown(event: KeyboardEvent): void {
@@ -134,7 +129,7 @@
     e.preventDefault()
     onclose()
   }}
-  {@attach showModal}
+  {@attach openFocused}
 >
   <div class="absolute top-0 right-0 left-0 z-10 h-[3px] bg-white/5">
     <div
