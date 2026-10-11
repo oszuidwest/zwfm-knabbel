@@ -139,7 +139,7 @@
         } catch (err) {
           // The story is saved. Stay so the reason (such as silent audio) stays visible for a retry.
           if (!(err instanceof ApiError && err.notified)) {
-            errors = { audio: getFieldErrors(err).audio ?? getUploadFailure(err) }
+            errors = { audio: getUploadFailure(err) }
             toast.warning('Bericht bijgewerkt, maar audio upload mislukt')
           }
           return

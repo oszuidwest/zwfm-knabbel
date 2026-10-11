@@ -2,14 +2,9 @@ import type { PageLoad } from './$types'
 import { getStationVoices, getStations, getVoicesId } from '$lib/api/generated/sdk.gen'
 import { requirePermission } from '$lib/auth/guard'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
-import { error } from '@sveltejs/kit'
 
 export const load: PageLoad = async ({ params, fetch, parent }) => {
   const voiceId = Number(params.id)
-
-  if (isNaN(voiceId)) {
-    error(400, 'Ongeldige stem ID')
-  }
 
   const responseResult = settleLoad(
     Promise.all([

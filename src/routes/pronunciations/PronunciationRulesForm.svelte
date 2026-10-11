@@ -292,13 +292,13 @@
     }
 
     if (err.status === 413) {
-      globalError = details?.detail ?? 'De lijst met uitspraakregels is te groot.'
+      // The shared 413 copy is about audio files; this request is a rule list.
+      globalError = 'De lijst met uitspraakregels is te groot.'
       toast.error(globalError)
       return
     }
     if (err.status === 503) {
-      globalError =
-        details?.detail ?? details?.hint ?? 'Uitspraakregels zijn tijdelijk niet beschikbaar'
+      globalError = 'Uitspraakregels zijn tijdelijk niet beschikbaar'
       toast.error(globalError)
       return
     }

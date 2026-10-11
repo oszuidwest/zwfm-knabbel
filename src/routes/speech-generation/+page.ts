@@ -15,7 +15,7 @@ function toSettingsLoadError(err: unknown): SettingsLoadError {
     const details = isProblemDetails(err.details) ? err.details : undefined
     return {
       status: err.status || undefined,
-      message: details?.detail ?? details?.title ?? err.message,
+      message: err.message || 'Spraakgeneratie laden mislukt',
       hint: details?.hint,
     }
   }

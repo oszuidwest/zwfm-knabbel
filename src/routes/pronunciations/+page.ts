@@ -18,17 +18,12 @@ const emptyRules: PronunciationRulesList = {
 
 function toLoadError(err: ApiError): PronunciationsLoadError {
   const details = isProblemDetails(err.details) ? err.details : undefined
-  if (err.status === 403) {
-    return {
-      status: err.status,
-      message: details?.detail ?? 'Geen toegang tot uitspraakregels.',
-      hint: details?.hint,
-    }
-  }
-
   return {
     status: err.status || undefined,
-    message: details?.detail ?? details?.title ?? err.message,
+    message:
+      err.status === 403
+        ? 'Geen toegang tot uitspraakregels.'
+        : err.message || 'Uitspraakregels laden mislukt',
     hint: details?.hint,
   }
 }

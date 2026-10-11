@@ -7,6 +7,7 @@ let sdk
 let api
 let format
 let userSchema
+let matchId
 
 before(async () => {
   server = await createServer({
@@ -17,6 +18,7 @@ before(async () => {
   sdk = await server.ssrLoadModule('/src/lib/api/generated/sdk.gen.ts')
   format = await server.ssrLoadModule('/src/lib/utils/format.ts')
   ;({ userSchema } = await server.ssrLoadModule('/src/lib/schemas/user.ts'))
+  ;({ match: matchId } = await server.ssrLoadModule('/src/params/id.ts'))
   const { client } = await server.ssrLoadModule('/src/lib/api/generated/client.gen.ts')
   client.setConfig({ baseUrl: 'https://api.example.test' })
 })
@@ -33,14 +35,11 @@ function problem(status, body) {
     })
 }
 
-async function rejection(promise) {
-  try {
-    await promise
-  } catch (err) {
-    return err
-  }
-  assert.fail('expected the request to fail')
-}
+const rejection = promise =>
+  promise.then(
+    () => assert.fail('expected the request to fail'),
+    err => err
+  )
 
 test('422 field errors become Dutch inline messages and a toast', async () => {
   const err = await rejection(
@@ -127,6 +126,25 @@ test('unknown problems fall back to the server detail', async () => {
   )
   assert.equal(err.message, 'database exploded')
   assert.deepEqual(api.getFieldErrors(err), {})
+})
+
+test('connection failures get Dutch copy', async () => {
+  const err = await rejection(
+    sdk.getStations({
+      fetch: async () => {
+        throw new TypeError('fetch failed')
+      },
+    })
+  )
+  assert.equal(err.status, 0)
+  assert.equal(err.message, 'Geen verbinding met de server')
+})
+
+test('route IDs must be positive integers', () => {
+  for (const id of ['1', '42', '9007199254740991']) assert.equal(matchId(id), true, id)
+  for (const id of ['0', '-1', '1.5', 'abc', '007', '1e3', '9007199254740992']) {
+    assert.equal(matchId(id), false, id)
+  }
 })
 
 test('plain API dates are local calendar days', () => {

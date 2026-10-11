@@ -1,20 +1,14 @@
-import type { FieldError } from './generated/types.gen'
+import type { FieldError, ProblemDetails as ApiProblemDetails } from './generated/types.gen'
 
-interface ProblemFieldError {
-  field?: string
-  code?: string
-  message?: string
-}
+// Response bodies are untrusted, so every member is optional and `code` stays
+// a plain string until it is looked up.
+type ProblemFieldError = Partial<Pick<FieldError, 'field' | 'message'>> & { code?: string }
 
-interface ProblemDetails {
-  code?: string
-  type?: string
-  title?: string
-  status?: number
-  detail?: string
-  hint?: string
+type ProblemDetails = Partial<Pick<ApiProblemDetails, 'code' | 'detail' | 'hint'>> & {
   errors?: ProblemFieldError[]
 }
+
+export const UPLOAD_TIMEOUT_MESSAGE = 'Upload duurde te lang'
 
 // Babbel's `code` member names conflicts and failed jobs. The detail text is
 // English and meant for logs, so the UI shows its own copy per code.
@@ -45,7 +39,7 @@ const problemSuffixMessages: Record<string, string> = {
 }
 
 const statusMessages: Record<number, string> = {
-  408: 'Upload duurde te lang',
+  408: UPLOAD_TIMEOUT_MESSAGE,
   413: 'Bestand of verzoek is te groot (audio maximaal 100 MB)',
 }
 
@@ -110,9 +104,6 @@ export function isProblemDetails(value: unknown): value is ProblemDetails {
   const candidate = value as Record<string, unknown>
   return (
     isOptionalString(candidate.code) &&
-    isOptionalString(candidate.type) &&
-    isOptionalString(candidate.title) &&
-    (candidate.status === undefined || typeof candidate.status === 'number') &&
     isOptionalString(candidate.detail) &&
     isOptionalString(candidate.hint) &&
     (candidate.errors === undefined ||
@@ -131,9 +122,6 @@ export function describeFieldError(error: ProblemFieldError): string | undefined
   if (error.field === 'password' && error.code === 'invalid_format') {
     // The password policy is server configuration; its message names the missing class.
     return `Voldoet niet aan het wachtwoordbeleid${error.message ? ` (${error.message})` : ''}`
-  }
-  if (error.field === 'elevenlabs_voice_id' && error.code === 'invalid_format') {
-    return '8 tot 64 letters, cijfers, - of _'
   }
   return fieldErrorMessages[error.code as FieldError['code']] ?? error.message
 }

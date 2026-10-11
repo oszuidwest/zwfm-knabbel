@@ -103,7 +103,7 @@
           await postStoriesIdAudio({ path: { id: story.id }, body: { audio: audioFile } })
         } catch (err) {
           if (!(err instanceof ApiError && err.notified)) {
-            const reason = getFieldErrors(err).audio ?? getUploadFailure(err)
+            const reason = getUploadFailure(err)
             toast.warning(`Bericht aangemaakt, maar audio upload mislukt: ${reason}`)
           }
           // Open the saved story so the user can retry the upload.

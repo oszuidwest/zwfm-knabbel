@@ -1,7 +1,12 @@
 import { PUBLIC_API_URL } from '$env/static/public'
 import { client } from './generated/client.gen'
 import { toast } from '$lib/stores/toast'
-import { describeProblem, fieldErrorsFromProblem, isProblemDetails } from './problems'
+import {
+  UPLOAD_TIMEOUT_MESSAGE,
+  describeProblem,
+  fieldErrorsFromProblem,
+  isProblemDetails,
+} from './problems'
 
 const REQUEST_TIMEOUT_MS = 30_000
 const UPLOAD_TIMEOUT_MS = 120_000
@@ -57,15 +62,19 @@ client.interceptors.error.use((error, response, request) => {
 
   if (!response) {
     if (request?.signal.reason?.name === 'TimeoutError') {
-      return new ApiError(0, isUpload(request) ? 'Upload timeout' : 'Request timeout')
+      return new ApiError(
+        0,
+        isUpload(request) ? UPLOAD_TIMEOUT_MESSAGE : 'De server reageerde niet op tijd'
+      )
     }
-    if (error instanceof TypeError) return new ApiError(0, 'Network error')
+    if (error instanceof TypeError) return new ApiError(0, 'Geen verbinding met de server')
     return error
   }
 
   const apiError = new ApiError(
     response.status,
-    getErrorMessage(error, response.status, 'Request failed'),
+    // An empty message lets each caller's Dutch fallback take over.
+    getErrorMessage(error, response.status, ''),
     error
   )
   if (response.status === 403 && request?.method !== 'GET') {
@@ -101,13 +110,11 @@ export function getFieldErrors(error: unknown): Record<string, string> {
   return fieldErrorsFromProblem(error.details)
 }
 
-/** getUploadFailure explains a failed upload; timeouts and network errors get Dutch copy too. */
+/** getUploadFailure explains why an upload failed, without the field label. */
 export function getUploadFailure(error: unknown): string {
-  if (!(error instanceof ApiError)) return 'onbekende fout'
-  if (error.status === 0) {
-    return error.message === 'Upload timeout' ? 'upload duurde te lang' : 'geen verbinding'
-  }
-  return error.message
+  return (
+    getFieldErrors(error).audio || (error instanceof ApiError && error.message) || 'Upload mislukt'
+  )
 }
 
 export { ApiError, isProblemDetails }
