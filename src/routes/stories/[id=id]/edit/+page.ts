@@ -2,16 +2,11 @@ import type { PageLoad } from './$types'
 import { getStoriesId, getStoriesIdBulletins, getVoices } from '$lib/api/generated/sdk.gen'
 import { requirePermission } from '$lib/auth/guard'
 import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
-import { error } from '@sveltejs/kit'
 
 const BULLETINS_PAGE_SIZE = 20
 
 export const load: PageLoad = async ({ params, fetch, parent }) => {
   const storyId = Number(params.id)
-
-  if (isNaN(storyId)) {
-    error(400, 'Ongeldige bericht ID')
-  }
 
   const responseResult = settleLoad(
     Promise.all([

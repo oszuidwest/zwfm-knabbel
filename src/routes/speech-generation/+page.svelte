@@ -22,7 +22,7 @@
 
   {#if data.loadError}
     <div
-      class="alert alert-warning"
+      class="alert alert-vertical alert-warning sm:alert-horizontal"
       role="alert"
     >
       <TriangleAlert

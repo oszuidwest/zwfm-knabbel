@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { notifyMutationError } from '$lib/api/client'
+  import { getFieldErrors, notifyMutationError } from '$lib/api/client'
   import { stationSchema, type StationFormData } from '$lib/schemas/station'
   import { putStationsId } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
@@ -45,8 +45,9 @@
     try {
       await putStationsId({ path: { id: data.station.id }, body: form })
       toast.success('Zender bijgewerkt')
-      goto(resolveInternalHref('/stations'))
+      await goto(resolveInternalHref('/stations'))
     } catch (err) {
+      errors = getFieldErrors(err)
       notifyMutationError(err, 'Bijwerken mislukt')
     } finally {
       submitting = false

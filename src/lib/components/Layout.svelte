@@ -54,14 +54,32 @@
   }
 </script>
 
+{#snippet navLink(item: NavItem)}
+  {@const Icon = item.icon}
+  <li>
+    <!-- daisyUI's menu highlights the aria-current link. -->
+    <a
+      href={resolveInternalHref(item.path)}
+      aria-current={isActive(item.path) ? 'page' : undefined}
+    >
+      <Icon
+        aria-hidden="true"
+        class="h-6 w-6"
+      />
+      {item.label}
+    </a>
+  </li>
+{/snippet}
+
 <div class="drawer lg:drawer-open">
   <input
     id="drawer-toggle"
     type="checkbox"
     class="drawer-toggle"
+    aria-label="Menu"
   />
 
-  <div class="drawer-content flex flex-col">
+  <div class="drawer-content flex min-h-screen flex-col">
     <div class="navbar bg-base-100 lg:hidden">
       <div class="flex-none">
         <label
@@ -78,10 +96,10 @@
       <div class="flex-1">
         <a
           href={resolveInternalHref('/')}
-          class="btn gap-2 btn-ghost text-xl font-bold normal-case"
+          class="btn gap-2 btn-ghost text-xl font-bold"
         >
           <div
-            class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80"
+            class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-primary to-primary/80"
           >
             <AudioWaveform
               aria-hidden="true"
@@ -93,7 +111,7 @@
       </div>
     </div>
 
-    <main class="min-h-screen flex-1 bg-base-200">
+    <main class="flex-1 bg-base-200">
       <div class="p-4 lg:p-8">
         {@render children()}
       </div>
@@ -113,7 +131,7 @@
           class="flex items-center gap-4"
         >
           <div
-            class="flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80"
+            class="flex h-14 w-14 items-center justify-center rounded-lg bg-linear-to-br from-primary to-primary/80"
           >
             <AudioWaveform
               aria-hidden="true"
@@ -131,56 +149,20 @@
         <ul class="menu gap-2 menu-md [&_a]:rounded-lg">
           <li class="menu-title tracking-widest uppercase">Menu</li>
           {#each mainNavItems as item (item.path)}
-            {@const Icon = item.icon}
-            <li>
-              <a
-                href={resolveInternalHref(item.path)}
-                class={{ 'menu-active': isActive(item.path) }}
-              >
-                <Icon
-                  aria-hidden="true"
-                  class="h-6 w-6"
-                />
-                {item.label}
-              </a>
-            </li>
+            {@render navLink(item)}
           {/each}
 
           {#if auth.can('pronunciation_rules', 'read') || auth.can('settings:tts', 'read')}
             <li class="mt-4 menu-title tracking-widest uppercase">AI</li>
             {#each aiNavItems as item (item.path)}
-              {@const Icon = item.icon}
-              <li>
-                <a
-                  href={resolveInternalHref(item.path)}
-                  class={{ 'menu-active': isActive(item.path) }}
-                >
-                  <Icon
-                    aria-hidden="true"
-                    class="h-6 w-6"
-                  />
-                  {item.label}
-                </a>
-              </li>
+              {@render navLink(item)}
             {/each}
           {/if}
 
           {#if auth.can('users', 'read')}
             <li class="mt-4 menu-title tracking-widest uppercase">Beheer</li>
             {#each adminNavItems as item (item.path)}
-              {@const Icon = item.icon}
-              <li>
-                <a
-                  href={resolveInternalHref(item.path)}
-                  class={{ 'menu-active': isActive(item.path) }}
-                >
-                  <Icon
-                    aria-hidden="true"
-                    class="h-6 w-6"
-                  />
-                  {item.label}
-                </a>
-              </li>
+              {@render navLink(item)}
             {/each}
           {/if}
         </ul>

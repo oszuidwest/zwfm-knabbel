@@ -4,7 +4,7 @@
   import { deleteStoriesId } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { deleteWithConfirm } from '$lib/utils/crud'
-  import { formatDate } from '$lib/utils/format'
+  import { formatDate, parseDate } from '$lib/utils/format'
   import { resolveInternalHref } from '$lib/utils/routes'
   import { statusLabels, statusColors, statusOptions } from '$lib/utils/labels'
   import {
@@ -70,8 +70,7 @@
   ): string {
     const formatCompact = (dateStr: string | undefined) => {
       if (!dateStr) return ''
-      const date = new Date(dateStr)
-      return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+      return parseDate(dateStr).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
     }
     const start = formatCompact(startDate)
     const end = formatCompact(endDate)
@@ -99,12 +98,14 @@
     <div class="tabs tabs-box tabs-sm md:tabs-md">
       <button
         class={['tab', dateFilter === '' && 'tab-active']}
+        aria-pressed={dateFilter === ''}
         onclick={() => updateFilters({ date: '', status: '' })}
       >
         Alle
       </button>
       <button
         class={['tab', dateFilter === 'today' && 'tab-active']}
+        aria-pressed={dateFilter === 'today'}
         onclick={() => updateFilters({ date: 'today' })}
       >
         Vandaag
@@ -112,6 +113,7 @@
       </button>
       <button
         class={['tab', dateFilter === 'tomorrow' && 'tab-active']}
+        aria-pressed={dateFilter === 'tomorrow'}
         onclick={() => updateFilters({ date: 'tomorrow' })}
       >
         Morgen
@@ -190,13 +192,13 @@
   {:else}
     <div class="space-y-2 md:hidden">
       {#each data.stories as story (story.id)}
-        <a
-          href={resolveInternalHref(`/stories/${story.id}/edit`)}
-          class="card bg-base-100 transition-shadow hover:shadow-md active:bg-base-200"
-        >
+        <div class="card bg-base-100 transition-shadow hover:shadow-md">
           <div class="card-body p-4">
             <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0 flex-1">
+              <a
+                href={resolveInternalHref(`/stories/${story.id}/edit`)}
+                class="min-w-0 flex-1 rounded-field active:bg-base-200"
+              >
                 <div class="flex items-center gap-2">
                   <h3 class="truncate font-medium">{story.title}</h3>
                   {#if story.is_breaking}
@@ -230,18 +232,15 @@
                     <span>{formatCompactDateRange(story.start_date, story.end_date)}</span>
                   {/if}
                 </div>
-              </div>
+              </a>
               <div
                 class="tooltip tooltip-left"
                 data-tip="Leesmodus"
               >
                 <button
+                  type="button"
                   class="btn btn-square shrink-0 btn-ghost btn-sm"
-                  onclick={e => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    readModeStory = story
-                  }}
+                  onclick={() => (readModeStory = story)}
                   aria-label="Open leesmodus voor {story.title}"
                 >
                   <CassetteTape
@@ -252,7 +251,7 @@
               </div>
             </div>
           </div>
-        </a>
+        </div>
       {/each}
     </div>
 

@@ -6,6 +6,8 @@
 
   interface Props {
     title: string
+    /** documentTitle overrides the browser tab title when `title` is not a page name. */
+    documentTitle?: string
     subtitle?: string
     actionHref?: string
     actionLabel?: string
@@ -16,6 +18,7 @@
 
   let {
     title,
+    documentTitle = title,
     subtitle,
     actionHref,
     actionLabel,
@@ -32,6 +35,10 @@
     }
   }
 </script>
+
+<svelte:head>
+  <title>{documentTitle} · Babbel</title>
+</svelte:head>
 
 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
   <div>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { ApiError, notifyMutationError } from '$lib/api/client'
+  import { ApiError, getFieldErrors, getUploadFailure, notifyMutationError } from '$lib/api/client'
   import { storySchema, type StoryFormData } from '$lib/schemas/story'
   import { postStories, postStoriesIdAudio, postStoriesIdTts } from '$lib/api/generated/sdk.gen'
   import { toStoryApiFormat } from '$lib/api/stories'
@@ -20,6 +20,7 @@
     FileInput,
     FormActions,
     FormField,
+    fieldA11y,
     PageHeader,
     WeekdayCheckboxGroup,
   } from '$lib/components/ui'
@@ -94,7 +95,7 @@
         } catch (err) {
           notifyMutationError(err, 'Bericht aangemaakt, maar audio genereren mislukt')
         }
-        goto(resolveInternalHref(`/stories/${story.id}/edit`))
+        await goto(resolveInternalHref(`/stories/${story.id}/edit`))
         return
       }
 
@@ -103,16 +104,19 @@
           await postStoriesIdAudio({ path: { id: story.id }, body: { audio: audioFile } })
         } catch (err) {
           if (!(err instanceof ApiError && err.notified)) {
-            toast.warning('Bericht aangemaakt, maar audio upload mislukt')
+            const reason = getUploadFailure(err)
+            toast.warning(`Bericht aangemaakt, maar audio upload mislukt: ${reason}`)
           }
-          goto(resolveInternalHref('/stories'))
+          // Open the saved story so the user can retry the upload.
+          await goto(resolveInternalHref(`/stories/${story.id}/edit`))
           return
         }
       }
 
       toast.success('Bericht aangemaakt')
-      goto(resolveInternalHref('/stories'))
+      await goto(resolveInternalHref('/stories'))
     } catch (err) {
+      errors = getFieldErrors(err)
       notifyMutationError(err, 'Aanmaken mislukt')
     } finally {
       submitting = false
@@ -158,6 +162,7 @@
             label="Stem"
             bind:value={() => form.voice_id, setVoiceId}
             options={voiceOptions}
+            error={errors.voice_id}
             emptyOption="Geen stem geselecteerd"
             disabled={formDisabled}
           />
@@ -170,6 +175,7 @@
             <div class="join w-full">
               <select
                 id="status"
+                {...fieldA11y('status', errors.status)}
                 class={['select join-item flex-1', errors.status && 'select-error']}
                 bind:value={form.status}
                 disabled={formDisabled}

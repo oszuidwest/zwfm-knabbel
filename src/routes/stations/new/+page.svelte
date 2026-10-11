@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { notifyMutationError } from '$lib/api/client'
+  import { getFieldErrors, notifyMutationError } from '$lib/api/client'
   import { stationSchema, type StationFormData } from '$lib/schemas/station'
   import { postStations } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
@@ -36,8 +36,9 @@
     try {
       await postStations({ body: form })
       toast.success('Zender aangemaakt')
-      goto(resolveInternalHref('/stations'))
+      await goto(resolveInternalHref('/stations'))
     } catch (err) {
+      errors = getFieldErrors(err)
       notifyMutationError(err, 'Aanmaken mislukt')
     } finally {
       submitting = false

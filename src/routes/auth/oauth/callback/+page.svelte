@@ -62,6 +62,10 @@
   })
 </script>
 
+<svelte:head>
+  <title>Inloggen · Babbel</title>
+</svelte:head>
+
 <div class="flex min-h-screen items-center justify-center bg-base-200 p-4">
   <div class="card w-full max-w-md bg-base-100">
     <div class="card-body items-center text-center">

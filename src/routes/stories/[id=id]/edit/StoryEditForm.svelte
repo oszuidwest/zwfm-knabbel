@@ -1,6 +1,12 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { ApiError, getMediaUrl, notifyMutationError } from '$lib/api/client'
+  import {
+    ApiError,
+    getFieldErrors,
+    getMediaUrl,
+    getUploadFailure,
+    notifyMutationError,
+  } from '$lib/api/client'
   import { storySchema, type StoryFormData } from '$lib/schemas/story'
   import {
     getStoriesIdBulletins,
@@ -25,6 +31,7 @@
     FileInput,
     FormActions,
     FormField,
+    fieldA11y,
     PageHeader,
     WeekdayCheckboxGroup,
   } from '$lib/components/ui'
@@ -49,8 +56,8 @@
       text: data.story.text ?? '',
       voice_id: toStringOrEmpty(data.story.voice_id),
       status: data.story.status ?? 'draft',
-      start_date: data.story.start_date?.split('T')[0] ?? '',
-      end_date: data.story.end_date?.split('T')[0] ?? '',
+      start_date: data.story.start_date,
+      end_date: data.story.end_date,
       weekdays: maskToWeekdays(data.story.weekdays ?? 127),
       is_breaking: data.story.is_breaking ?? false,
     }
@@ -131,17 +138,19 @@
         try {
           await postStoriesIdAudio({ path: { id: data.story.id }, body: { audio: audioFile } })
         } catch (err) {
+          // The story is saved. Stay on the page so the upload error shows under the file input for a retry.
           if (!(err instanceof ApiError && err.notified)) {
+            errors = { audio: getUploadFailure(err) }
             toast.warning('Bericht bijgewerkt, maar audio upload mislukt')
           }
-          goto(resolveInternalHref('/stories'))
           return
         }
       }
 
       toast.success('Bericht bijgewerkt')
-      goto(resolveInternalHref('/stories'))
+      await goto(resolveInternalHref('/stories'))
     } catch (err) {
+      errors = getFieldErrors(err)
       notifyMutationError(err, 'Bijwerken mislukt')
     } finally {
       submitting = false
@@ -166,12 +175,13 @@
       await putStoriesId({ path: { id: data.story.id }, body: toStoryApiFormat(result.data) })
       await postStoriesIdTts({
         path: { id: data.story.id },
-        query: currentAudioUrl ? { force: 'true' } : undefined,
+        query: { force: !!currentAudioUrl },
       })
 
       currentAudioUrl = cacheBust(getMediaUrl(data.story.audio_url))
       toast.success('Audio gegenereerd')
     } catch (err) {
+      errors = getFieldErrors(err)
       notifyMutationError(err, 'Audio genereren mislukt')
     } finally {
       generating = false
@@ -228,6 +238,7 @@
             label="Stem"
             bind:value={() => form.voice_id, setVoiceId}
             options={voiceOptions}
+            error={errors.voice_id}
             emptyOption="Geen stem geselecteerd"
             disabled={formDisabled}
           />
@@ -240,6 +251,7 @@
             <div class="join w-full">
               <select
                 id="status"
+                {...fieldA11y('status', errors.status)}
                 class={['select join-item flex-1', errors.status && 'select-error']}
                 bind:value={form.status}
                 disabled={formDisabled}
@@ -296,6 +308,7 @@
             label="Audiobestand"
             accept="audio/wav,audio/*"
             existingAudioUrl={currentAudioUrl}
+            error={errors.audio}
             hint={audioFile?.name}
             onchange={file => (audioFile = file)}
             disabled={formDisabled}

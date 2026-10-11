@@ -6,7 +6,7 @@
    * at API boundaries.
    */
 
-  import FormField from './FormField.svelte'
+  import FormField, { fieldA11y } from './FormField.svelte'
 
   interface Option {
     value: string
@@ -57,6 +57,7 @@
 >
   <select
     {id}
+    {...fieldA11y(id, error, hint)}
     bind:value
     class={['select w-full', error && 'select-error']}
     {disabled}

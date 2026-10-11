@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { notifyMutationError } from '$lib/api/client'
+  import { getFieldErrors, notifyMutationError } from '$lib/api/client'
   import { voiceSchema, type VoiceFormData } from '$lib/schemas/voice'
   import {
     deleteStationVoicesId,
@@ -96,8 +96,9 @@
     try {
       await putVoicesId({ path: { id: data.voice.id }, body: toVoiceApiFormat(result.data) })
       toast.success('Stem bijgewerkt')
-      goto(resolveInternalHref('/voices'))
+      await goto(resolveInternalHref('/voices'))
     } catch (err) {
+      errors = getFieldErrors(err)
       notifyMutationError(err, 'Bijwerken mislukt')
     } finally {
       submitting = false

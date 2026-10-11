@@ -1,24 +1,15 @@
 import { PUBLIC_API_URL } from '$env/static/public'
 import { client } from './generated/client.gen'
 import { toast } from '$lib/stores/toast'
+import {
+  UPLOAD_TIMEOUT_MESSAGE,
+  describeProblem,
+  fieldErrorsFromProblem,
+  isProblemDetails,
+} from './problems'
 
 const REQUEST_TIMEOUT_MS = 30_000
 const UPLOAD_TIMEOUT_MS = 120_000
-
-export interface ProblemFieldError {
-  field?: string
-  message?: string
-}
-
-export interface ProblemDetails {
-  code?: string
-  type?: string
-  title?: string
-  status?: number
-  detail?: string
-  hint?: string
-  errors?: ProblemFieldError[]
-}
 
 class ApiError extends Error {
   notified = false
@@ -33,42 +24,21 @@ class ApiError extends Error {
   }
 }
 
-function isOptionalString(value: unknown): value is string | undefined {
-  return value === undefined || typeof value === 'string'
-}
-
-function isProblemFieldError(value: unknown): value is ProblemFieldError {
-  if (typeof value !== 'object' || value === null) return false
-  const candidate = value as Record<string, unknown>
-  return isOptionalString(candidate.field) && isOptionalString(candidate.message)
-}
-
-function isProblemDetails(value: unknown): value is ProblemDetails {
-  if (typeof value !== 'object' || value === null) return false
-
-  const candidate = value as Record<string, unknown>
-  return (
-    isOptionalString(candidate.code) &&
-    isOptionalString(candidate.type) &&
-    isOptionalString(candidate.title) &&
-    (candidate.status === undefined || typeof candidate.status === 'number') &&
-    isOptionalString(candidate.detail) &&
-    isOptionalString(candidate.hint) &&
-    (candidate.errors === undefined ||
-      (Array.isArray(candidate.errors) && candidate.errors.every(isProblemFieldError)))
-  )
-}
-
-function getErrorMessage(error: unknown, fallbackMessage: string): string {
+// Returns '' when the body has nothing usable, so each caller's Dutch fallback takes over.
+function getErrorMessage(error: unknown, status: number): string {
   if (typeof error === 'string' && error) return error
-  if (typeof error !== 'object' || error === null) return fallbackMessage
+  if (isProblemDetails(error)) {
+    const message = describeProblem(status, error)
+    if (message) return message
+  }
+  if (typeof error !== 'object' || error === null) return ''
 
   const candidate = error as Record<string, unknown>
   for (const key of ['detail', 'message', 'title', 'error']) {
     if (typeof candidate[key] === 'string' && candidate[key]) return candidate[key]
   }
 
-  return fallbackMessage
+  return ''
 }
 
 function isUpload(request: Request | undefined): boolean {
@@ -93,13 +63,16 @@ client.interceptors.error.use((error, response, request) => {
 
   if (!response) {
     if (request?.signal.reason?.name === 'TimeoutError') {
-      return new ApiError(0, isUpload(request) ? 'Upload timeout' : 'Request timeout')
+      return new ApiError(
+        0,
+        isUpload(request) ? UPLOAD_TIMEOUT_MESSAGE : 'De server reageerde niet op tijd'
+      )
     }
-    if (error instanceof TypeError) return new ApiError(0, 'Network error')
+    if (error instanceof TypeError) return new ApiError(0, 'Geen verbinding met de server')
     return error
   }
 
-  const apiError = new ApiError(response.status, getErrorMessage(error, 'Request failed'), error)
+  const apiError = new ApiError(response.status, getErrorMessage(error, response.status), error)
   if (response.status === 403 && request?.method !== 'GET') {
     toast.error('Geen rechten voor deze actie')
     apiError.notified = true
@@ -125,6 +98,19 @@ export function notifyMutationError(error: unknown, fallbackMessage: string): vo
     return
   }
   toast.error(fallbackMessage)
+}
+
+/** getFieldErrors returns Dutch inline messages for the fields a 400 or 422 response rejected. */
+export function getFieldErrors(error: unknown): Record<string, string> {
+  if (!(error instanceof ApiError) || !isProblemDetails(error.details)) return {}
+  return fieldErrorsFromProblem(error.details)
+}
+
+/** getUploadFailure explains why an upload failed, without the field label. */
+export function getUploadFailure(error: unknown): string {
+  return (
+    getFieldErrors(error).audio || (error instanceof ApiError && error.message) || 'Upload mislukt'
+  )
 }
 
 export { ApiError, isProblemDetails }

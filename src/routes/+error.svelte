@@ -3,6 +3,10 @@
   import { resolveInternalHref } from '$lib/utils/routes'
 </script>
 
+<svelte:head>
+  <title>{page.status} · Babbel</title>
+</svelte:head>
+
 <div class="flex min-h-screen items-center justify-center bg-base-200 p-4">
   <div class="card w-full max-w-md bg-base-100 shadow-xl">
     <div class="card-body items-center text-center">

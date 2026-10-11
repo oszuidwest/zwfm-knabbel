@@ -164,6 +164,7 @@
 <div class="space-y-6">
   <PageHeader
     title={greeting}
+    documentTitle="Overzicht"
     subtitle={todayLabel}
     actionHref="/stories/new"
     actionLabel="Nieuw bericht"
@@ -226,10 +227,7 @@
                 </div>
 
                 {#if bulletin.file_purged_at}
-                  <div
-                    role="alert"
-                    class="alert"
-                  >
+                  <div class="alert">
                     <ArchiveX
                       aria-hidden="true"
                       class="h-4 w-4 shrink-0"

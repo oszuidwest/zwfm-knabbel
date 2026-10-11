@@ -67,10 +67,6 @@
   })
 </script>
 
-<svelte:head>
-  <title>Babbel - Nieuwsbulletinsysteem</title>
-</svelte:head>
-
 {#if auth.loading || isAuthenticatedLoginRedirect}
   <div class="flex min-h-screen items-center justify-center bg-base-200">
     <span class="loading loading-lg loading-spinner text-primary"></span>

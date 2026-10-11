@@ -18,6 +18,8 @@
     data-tip={tip}
   >
     {@render children()}
+    <!-- Disabled controls cannot take focus, so keyboard and screen reader users never see the tooltip. -->
+    <span class="sr-only">{tip}</span>
   </div>
 {:else if wrapperClass}
   <div class={wrapperClass}>

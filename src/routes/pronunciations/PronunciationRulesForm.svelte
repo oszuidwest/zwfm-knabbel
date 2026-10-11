@@ -2,6 +2,7 @@
   import { tick } from 'svelte'
   import { beforeNavigate, invalidateAll } from '$app/navigation'
   import { ApiError, isProblemDetails, notifyMutationError } from '$lib/api/client'
+  import { describeFieldError } from '$lib/api/problems'
   import { putSettingsTtsPronunciations } from '$lib/api/generated/sdk.gen'
   import {
     isPronunciationRuleField,
@@ -256,7 +257,8 @@
         }
       }
       for (const e of details.errors) {
-        const message = e.message ?? details.detail ?? 'De server heeft een veldfout teruggegeven'
+        const message =
+          describeFieldError(e) ?? details.detail ?? 'De server heeft een veldfout teruggegeven'
         if (!e.field) {
           addGlobalMessage(message)
           continue
@@ -290,13 +292,12 @@
     }
 
     if (err.status === 413) {
-      globalError = details?.detail ?? 'De lijst met uitspraakregels is te groot.'
+      globalError = 'De lijst met uitspraakregels is te groot.'
       toast.error(globalError)
       return
     }
     if (err.status === 503) {
-      globalError =
-        details?.detail ?? details?.hint ?? 'Uitspraakregels zijn tijdelijk niet beschikbaar'
+      globalError = 'Uitspraakregels zijn tijdelijk niet beschikbaar'
       toast.error(globalError)
       return
     }
@@ -500,7 +501,7 @@
                       type="checkbox"
                       class="checkbox"
                       bind:checked={row.case_sensitive}
-                      aria-label="Hoofdlettergevoelig regel {index + 1}"
+                      aria-label="Hoofdlettergevoelig, regel {index + 1}"
                       disabled={!editable}
                     />
                   </td>
@@ -509,7 +510,7 @@
                       type="checkbox"
                       class="checkbox"
                       bind:checked={row.word_boundaries}
-                      aria-label="Woordgrenzen regel {index + 1}"
+                      aria-label="Alleen hele woorden, regel {index + 1}"
                       disabled={!editable}
                     />
                   </td>
@@ -605,7 +606,7 @@
                     type="checkbox"
                     class="checkbox checkbox-sm"
                     bind:checked={row.case_sensitive}
-                    aria-label="Hoofdlettergevoelig regel {index + 1}"
+                    aria-label="Hoofdlettergevoelig, regel {index + 1}"
                     disabled={!editable}
                   />
                   <span class="text-sm">Hoofdlettergevoelig</span>
@@ -615,7 +616,7 @@
                     type="checkbox"
                     class="checkbox checkbox-sm"
                     bind:checked={row.word_boundaries}
-                    aria-label="Woordgrenzen regel {index + 1}"
+                    aria-label="Alleen hele woorden, regel {index + 1}"
                     disabled={!editable}
                   />
                   <span class="text-sm">Alleen hele woorden</span>
@@ -648,7 +649,7 @@
         </div>
       {/if}
 
-      <div class="flex justify-end gap-2 pt-2">
+      <div class="flex flex-wrap justify-end gap-2 pt-2">
         <button
           type="button"
           class="btn btn-ghost"

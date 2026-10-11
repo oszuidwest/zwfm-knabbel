@@ -57,6 +57,7 @@ export {
   putVoicesId,
 } from './sdk.gen'
 export type {
+  BadRequestError,
   BitmaskFilter,
   BooleanFilter,
   bulletinFilter,
@@ -102,6 +103,7 @@ export type {
   DeleteVoicesIdErrors,
   DeleteVoicesIdResponse,
   DeleteVoicesIdResponses,
+  FieldError,
   fields,
   GetAuthConfigData,
   GetAuthConfigResponse,

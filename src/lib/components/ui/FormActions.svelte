@@ -27,7 +27,7 @@
   const resolvedCancelHref = $derived(resolveInternalHref(cancelHref))
 </script>
 
-<div class="flex justify-end gap-2 pt-4">
+<div class="flex flex-wrap justify-end gap-2 pt-4">
   <a
     href={resolvedCancelHref}
     class="btn btn-ghost"

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { notifyMutationError } from '$lib/api/client'
+  import { getFieldErrors, notifyMutationError } from '$lib/api/client'
   import { userSchema, type UserFormData } from '$lib/schemas/user'
   import { putUsersId } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
@@ -64,7 +64,7 @@
         const refreshed = await auth.checkAuth({ force: true })
         if (!refreshed) {
           toast.warning('Je rol is bijgewerkt, maar je sessie kon niet opnieuw worden geladen.')
-          goto(resolveInternalHref('/login'))
+          await goto(resolveInternalHref('/login'))
           return
         }
 
@@ -74,8 +74,9 @@
       }
 
       toast.success('Gebruiker bijgewerkt')
-      goto(resolveInternalHref('/users'))
+      await goto(resolveInternalHref('/users'))
     } catch (err) {
+      errors = getFieldErrors(err)
       notifyMutationError(err, 'Bijwerken mislukt')
     } finally {
       submitting = false
