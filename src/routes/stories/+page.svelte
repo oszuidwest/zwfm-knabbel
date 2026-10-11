@@ -19,7 +19,14 @@
     Trash2,
     Zap,
   } from '$lib/components/icons'
-  import { PageHeader, EmptyState, TableActions, FilterModal, Pagination } from '$lib/components/ui'
+  import {
+    PageHeader,
+    EmptyState,
+    TableActions,
+    FilterModal,
+    MaybeTooltip,
+    Pagination,
+  } from '$lib/components/ui'
   import ReadMode from '$lib/components/ReadMode.svelte'
   import RestoreStoryDialog from './RestoreStoryDialog.svelte'
   import type { Story } from '$lib/types'
@@ -27,8 +34,8 @@
   let { data } = $props()
   const auth = getAuthContext()
   let showFilterModal = $state(false)
-  let readModeStory = $state<Story | null>(null)
-  let restoreStory = $state<Story | null>(null)
+  let readModeStory = $state.raw<Story | null>(null)
+  let restoreStory = $state.raw<Story | null>(null)
 
   const statusFilter = $derived(page.url.searchParams.get('status') ?? '')
   const dateFilter = $derived(page.url.searchParams.get('date') ?? '')
@@ -68,6 +75,8 @@
     })
 
   async function handleRestored(story: Story, edit: boolean): Promise<void> {
+    // Closing the dialog during the restore drops the move to the edit page.
+    if (restoreStory !== story) return invalidateAll()
     restoreStory = null
     if (edit) {
       await goto(resolveInternalHref(`/stories/${story.id}/edit`))
@@ -109,7 +118,7 @@
   <PageHeader
     title={trashView ? 'Prullenbak' : 'Berichten'}
     subtitle={countLabel}
-    actionHref="/stories/new"
+    actionHref={trashView ? undefined : '/stories/new'}
     actionLabel="Nieuw bericht"
     canAction={canWrite}
   />
@@ -360,7 +369,7 @@
   {/if}
 </div>
 
-{#if canWrite}
+{#if canWrite && !trashView}
   <a
     href={resolveInternalHref('/stories/new')}
     class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
@@ -474,9 +483,10 @@
 {/snippet}
 
 {#snippet restoreButton(story: Story, iconClass: string)}
-  <div
-    class="tooltip tooltip-left"
-    data-tip={canWrite ? 'Herstellen' : 'Geen rechten'}
+  <MaybeTooltip
+    when
+    tip={canWrite ? 'Herstellen' : 'Geen rechten'}
+    announce={!canWrite}
   >
     <button
       type="button"
@@ -490,19 +500,14 @@
         class={iconClass}
       />
     </button>
-    {#if !canWrite}
-      <!-- Expose the tooltip to screen readers when the control cannot take focus. -->
-      <span class="sr-only">Geen rechten</span>
-    {/if}
-  </div>
+  </MaybeTooltip>
 {/snippet}
 
 {#if restoreStory}
-  {@const story = restoreStory}
   <RestoreStoryDialog
-    {story}
+    story={restoreStory}
     onclose={() => (restoreStory = null)}
-    ondone={edit => handleRestored(story, edit)}
+    ondone={handleRestored}
   />
 {/if}
 

@@ -12,77 +12,61 @@
   interface Props {
     story: Story
     onclose: () => void
-    ondone: (edit: boolean) => void | Promise<void>
+    /** ondone runs after a restore, also when the dialog closed in the meantime. */
+    ondone: (story: Story, edit: boolean) => void | Promise<void>
   }
 
   let { story, onclose, ondone }: Props = $props()
 
   type RestoreMode = 'as-is' | 'draft' | 'edit'
 
-  // The primary action comes last so mobile can stack it on top.
-  const ACTIONS: Record<'draft' | 'edit' | 'none', { mode: RestoreMode; label: string }[]> = {
-    draft: [
-      { mode: 'as-is', label: 'Actief herstellen' },
-      { mode: 'draft', label: 'Herstellen als concept' },
-    ],
-    edit: [
-      { mode: 'as-is', label: 'Alleen herstellen' },
-      { mode: 'edit', label: 'Herstellen en planning aanpassen' },
-    ],
-    none: [{ mode: 'as-is', label: 'Herstellen' }],
+  const LABELS = {
+    draft: { asIs: 'Actief herstellen', suggested: 'Herstellen als concept' },
+    edit: { asIs: 'Alleen herstellen', suggested: 'Herstellen en planning aanpassen' },
   }
 
   let pending = $state<RestoreMode | null>(null)
   const restoring = $derived(pending !== null)
 
   const assessment = $derived(assessRestore(story))
-  const actions = $derived(ACTIONS[assessment.suggestion ?? 'none'])
-
-  function close(): void {
-    if (!restoring) onclose()
-  }
+  const suggestion = $derived(assessment.suggestion)
 
   async function restore(mode: RestoreMode): Promise<void> {
     if (restoring) return
     pending = mode
+    // The dialog can close while this runs, so read the prop before the first await.
+    const target = story
     try {
-      await patchStoriesId({ path: { id: story.id }, body: { deleted_at: '' } })
+      await patchStoriesId({ path: { id: target.id }, body: { deleted_at: '' } })
     } catch (err) {
       pending = null
       notifyMutationError(err, 'Herstellen mislukt')
-      if (err instanceof ApiError && err.status === 404) await ondone(false)
+      if (err instanceof ApiError && err.status === 404) await ondone(target, false)
       return
     }
     if (mode === 'draft') {
       // Babbel requires separate restore and status updates; the story is active in between.
       try {
-        await patchStoriesId({ path: { id: story.id }, body: { status: 'draft' } })
+        await patchStoriesId({ path: { id: target.id }, body: { status: 'draft' } })
       } catch (err) {
         console.error('[stories] set restored story to draft failed', err)
         toast.error('Bericht hersteld, maar nog actief: zet het zelf op concept', 10_000)
-        await ondone(true)
+        await ondone(target, true)
         return
       }
     }
 
     toast.success(mode === 'draft' ? 'Bericht hersteld als concept' : 'Bericht hersteld')
-    await ondone(mode === 'edit')
+    await ondone(target, mode === 'edit')
   }
 </script>
 
 <dialog
   class="modal modal-bottom sm:modal-middle"
   aria-labelledby="restore-story-title"
-  onkeydown={e => {
-    // Chrome can bypass repeated cancel events; block Escape at the key while restoring.
-    if (e.key === 'Escape' && restoring) e.preventDefault()
-  }}
-  oncancel={e => {
-    e.preventDefault()
-    close()
-  }}
   onclose={e => {
-    // Handle native closes (Android back), but ignore the teardown's close event.
+    // The teardown's close() can deliver this event after the dialog is gone,
+    // when the parent may already show a new one.
     if (e.currentTarget.isConnected) onclose()
   }}
   {@attach showModal}
@@ -98,8 +82,7 @@
       <button
         type="button"
         class="btn btn-square btn-ghost btn-sm"
-        onclick={close}
-        disabled={restoring}
+        onclick={onclose}
         aria-label="Sluiten"
       >
         <X
@@ -140,7 +123,9 @@
     {#if assessment.notice}
       {@const { tone, message } = assessment.notice}
       {@const Icon = tone === 'warning' ? TriangleAlert : Info}
-      <div class={['mt-3 alert items-start text-sm', tone === 'warning' && 'alert-warning']}>
+      <div
+        class={['mt-3 alert items-start alert-soft text-sm', tone === 'warning' && 'alert-warning']}
+      >
         <Icon
           aria-hidden="true"
           class="h-5 w-5 shrink-0"
@@ -152,44 +137,51 @@
       </div>
     {/if}
 
+    <!-- The primary action comes last so phones stack it on top. -->
     <div class="modal-action flex-col-reverse sm:flex-row">
       <button
         type="button"
         class="btn btn-ghost"
-        onclick={close}
-        disabled={restoring}
+        onclick={onclose}
       >
         Annuleren
       </button>
-      {#each actions as action, i (action.mode)}
-        {@const primary = i === actions.length - 1}
-        <button
-          type="button"
-          class={['btn', primary ? 'btn-primary' : 'btn-outline']}
-          onclick={() => restore(action.mode)}
-          disabled={restoring}
-        >
-          {#if pending === action.mode}
-            <span class="loading loading-sm loading-spinner"></span>
-          {:else if primary}
-            <ArchiveRestore
-              aria-hidden="true"
-              class="h-5 w-5"
-            />
-          {/if}
-          {action.label}
-        </button>
-      {/each}
+      {#if suggestion}
+        {@render restoreButton('as-is', LABELS[suggestion].asIs, false)}
+        {@render restoreButton(suggestion, LABELS[suggestion].suggested, true)}
+      {:else}
+        {@render restoreButton('as-is', 'Herstellen', true)}
+      {/if}
     </div>
   </div>
-  <div class="modal-backdrop">
+  <form
+    method="dialog"
+    class="modal-backdrop"
+  >
     <button
-      type="button"
-      onclick={close}
       tabindex="-1"
       aria-hidden="true"
     >
       Sluiten
     </button>
-  </div>
+  </form>
 </dialog>
+
+{#snippet restoreButton(mode: RestoreMode, label: string, primary: boolean)}
+  <button
+    type="button"
+    class={['btn', primary ? 'btn-primary' : 'btn-outline']}
+    onclick={() => restore(mode)}
+    disabled={restoring}
+  >
+    {#if pending === mode}
+      <span class="loading loading-sm loading-spinner"></span>
+    {:else if primary}
+      <ArchiveRestore
+        aria-hidden="true"
+        class="h-5 w-5"
+      />
+    {/if}
+    {label}
+  </button>
+{/snippet}
