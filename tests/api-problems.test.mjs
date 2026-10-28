@@ -143,33 +143,6 @@ test('silent story audio keeps its reason', async () => {
   assert.equal(err.message, 'Audiobestand: stil of te zacht, controleer het opnameniveau')
 })
 
-test('undecodable jingle audio names the file field', async () => {
-  const err = await rejection(
-    sdk.postStationVoicesIdAudio({
-      path: { id: 1 },
-      body: { jingle: new Blob(['x'], { type: 'audio/wav' }) },
-      fetch: problem(422, {
-        errors: [{ field: 'jingle', code: 'undecodable_audio', message: 'not decodable audio' }],
-      }),
-    })
-  )
-  assert.equal(err.message, 'Jingle: geen leesbaar audiobestand')
-})
-
-test('station-voice conflicts use Dutch copy', async () => {
-  const err = await rejection(
-    sdk.postStationVoicesIdAudio({
-      path: { id: 1 },
-      body: { jingle: new Blob(['x'], { type: 'audio/wav' }) },
-      fetch: problem(409, {
-        code: 'stationvoice.pair_changed',
-        detail: 'Station-voice changed during the jingle upload',
-      }),
-    })
-  )
-  assert.match(err.message, /upload de jingle opnieuw/)
-})
-
 test('unknown problems fall back to the server detail', async () => {
   const err = await rejection(
     sdk.getStations({ fetch: problem(500, { detail: 'database exploded' }) })

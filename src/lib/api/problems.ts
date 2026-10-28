@@ -16,8 +16,6 @@ const problemMessages: Record<string, string> = {
   'internal.generation_failed': 'Bulletin genereren mislukt',
   'internal.retries_exhausted': 'Bulletin genereren mislukt na meerdere pogingen',
   'internal.timeout': 'De server deed er te lang over',
-  'stationvoice.jingle_locked': 'Zender of stem kan niet wijzigen zolang er een jingle is',
-  'stationvoice.pair_changed': 'De koppeling is intussen gewijzigd, upload de jingle opnieuw',
   'story.audio_exists': 'Dit bericht heeft al audio',
   'story.deleted': 'Dit bericht is verwijderd',
   'story.no_text': 'Het bericht heeft geen tekst',
