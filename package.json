@@ -46,7 +46,7 @@
   "dependencies": {
     "@lucide/svelte": "^1.52.0",
     "daisyui": "^5.7.47",
-    "zod": "^4.6.5"
+    "zod": "^4.6.6"
   },
   "overrides": {
     "cookie": "0.7.2",
