@@ -61,6 +61,7 @@ const fieldErrorMessages: Record<FieldError['code'], string> = {
   duplicate: 'Dubbele invoer',
   unsupported: 'Niet ondersteund',
   silent_audio: 'Stil of te zacht, controleer het opnameniveau',
+  undecodable_audio: 'Geen leesbaar audiobestand',
 }
 
 const fieldLabels: Record<string, string> = {

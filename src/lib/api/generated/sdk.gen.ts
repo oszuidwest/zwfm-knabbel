@@ -28,7 +28,11 @@ import type {
   DeleteVoicesIdData,
   DeleteVoicesIdErrors,
   DeleteVoicesIdResponses,
+  GetAuditEventsData,
+  GetAuditEventsErrors,
+  GetAuditEventsResponses,
   GetAuthConfigData,
+  GetAuthConfigErrors,
   GetAuthConfigResponses,
   GetAuthOauthCallbackData,
   GetAuthOauthCallbackErrors,
@@ -213,6 +217,7 @@ export const getHealth = <ThrowOnError extends boolean = true>(
  * - If `max_age = 0`: Always generates a fresh bulletin
  * - If endpoint is disabled (no API key configured): Returns 404
  * - If the station has no eligible stories: Returns 409 `bulletin.no_stories`
+ * - If a referenced resource disappears during generation: Returns 409 `bulletin.reference_missing`
  *
  * **Concurrency**: Only one bulletin can be generated per station at a time.
  * Concurrent requests for the same station will queue for up to
@@ -239,12 +244,17 @@ export const getPublicBulletin = <ThrowOnError extends boolean = true>(
 /**
  * Get authentication configuration
  *
- * Returns available authentication methods for the API
+ * Returns available authentication methods for the API. Query parameters are not supported and return 422.
  */
 export const getAuthConfig = <ThrowOnError extends boolean = true>(
   options?: Options<GetAuthConfigData, ThrowOnError>
-): RequestResult<GetAuthConfigResponses, unknown, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetAuthConfigResponses, unknown, ThrowOnError, 'data'>({
+): RequestResult<GetAuthConfigResponses, GetAuthConfigErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<
+    GetAuthConfigResponses,
+    GetAuthConfigErrors,
+    ThrowOnError,
+    'data'
+  >({
     responseStyle: 'data',
     url: '/api/v1/auth/config',
     ...options,
@@ -325,7 +335,7 @@ export const deleteSessionsCurrent = <ThrowOnError extends boolean = true>(
 /**
  * Get current user information
  *
- * Returns the authenticated user and effective permissions derived from the server RBAC policy.
+ * Returns the authenticated user and effective permissions derived from the server RBAC policy. Query parameters are not supported and return 422.
  */
 export const getSessionsCurrent = <ThrowOnError extends boolean = true>(
   options?: Options<GetSessionsCurrentData, ThrowOnError>
@@ -347,8 +357,8 @@ export const getSessionsCurrent = <ThrowOnError extends boolean = true>(
  * Returns a paginated list of radio stations with modern query parameter support.
  *
  * ## Search Fields
- * Full-text search across:
- * - `s.name` - Station name
+ * Substring search across:
+ * - `name` - Station name
  *
  * ## Filter Fields
  * Available filter fields:
@@ -457,7 +467,7 @@ export const putStationsId = <ThrowOnError extends boolean = true>(
  * Returns a paginated list of newsreader voices with modern query parameter support.
  *
  * ## Search Fields
- * Full-text search across:
+ * Substring search across:
  * - `name` - Voice name
  *
  * ## Filter Fields
@@ -556,9 +566,48 @@ export const putVoicesId = <ThrowOnError extends boolean = true>(
   })
 
 /**
+ * List audit events
+ *
+ * Returns committed story, TTS settings, and pronunciation rule-set changes.
+ * History is retained indefinitely, including events for deleted stories and users.
+ * Only entities the caller may read are included, in both data and total:
+ * `story` requires `stories:read`, `tts_settings` requires `settings:tts:read`,
+ * and `pronunciation_rules` requires `pronunciation_rules:read`.
+ * Filters cannot broaden these permissions; an inaccessible entity filter returns
+ * an empty list. A caller with none of these permissions receives 403.
+ * Actor `username` and `full_name` require `users:read`; otherwise both are
+ * null. The `user_id` remains visible.
+ *
+ * The default order is `-occurred_at,-id`. Filter and sort fields are `id`,
+ * `occurred_at`, `user_id`, `entity_type`, `entity_id`, and `action`.
+ * For example: `?filter[entity_type]=story&filter[entity_id]=1991&filter[action]=delete`.
+ * Date ranges use `filter[occurred_at][gte]` and `filter[occurred_at][lte]`.
+ * `filter[user_id][null]=true` selects system events.
+ *
+ */
+export const getAuditEvents = <ThrowOnError extends boolean = true>(
+  options?: Options<GetAuditEventsData, ThrowOnError>
+): RequestResult<GetAuditEventsResponses, GetAuditEventsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<
+    GetAuditEventsResponses,
+    GetAuditEventsErrors,
+    ThrowOnError,
+    'data'
+  >({
+    responseStyle: 'data',
+    url: '/api/v1/audit-events',
+    ...options,
+  })
+
+/**
  * List all stories
  *
  * List stories with modern query parameter support.
+ *
+ * ## Search Fields
+ * Substring search across:
+ * - `title` - Story title
+ * - `text` - Story text
  *
  * ## Date Filtering
  * Use date range filters to find stories active on specific dates:
@@ -617,6 +666,15 @@ export const getStories = <ThrowOnError extends boolean = true>(
  * A `voice_id` that does not exist fails with 422 (`voice_id`, `not_found`).
  * An `end_date` before `start_date` fails with 422 (`end_date`, `date_order`).
  *
+ * With `idempotency_key`, a client can retry a create whose response it
+ * lost: a create that reuses a key answers 201 with the ID of the story
+ * first made with it, even if that story has since been deleted. The
+ * repeated body must still be a valid create request but is otherwise
+ * ignored, so a different body still returns the original story's ID; the
+ * `voice_id` and date order checks are skipped. Concurrent creates with
+ * one key make one story. A blank key, or one longer than 100 characters,
+ * fails with 422 (`idempotency_key`, `blank` or `too_long`).
+ *
  */
 export const postStories = <ThrowOnError extends boolean = true>(
   options: Options<PostStoriesData, ThrowOnError>
@@ -638,6 +696,11 @@ export const postStories = <ThrowOnError extends boolean = true>(
  * support: `Range` requests return 206 Partial Content, unsatisfiable
  * ranges return 416, and conditional requests (e.g. `If-Modified-Since`)
  * can return 304 Not Modified.
+ *
+ * Audio of a soft-deleted story stays downloadable with `stories:read`,
+ * so a trash view can play the `audio_url` from
+ * `GET /stories?trashed=only`, although `GET /stories/{id}` returns 404
+ * until the story is restored.
  *
  */
 export const getStoriesIdAudio = <ThrowOnError extends boolean = true>(
@@ -665,9 +728,12 @@ export const getStoriesIdAudio = <ThrowOnError extends boolean = true>(
  * - 408: the upload did not complete within the time limit.
  * - 413: the file is larger than 100 MB.
  * - 422: the `audio` file is missing (`required`), has an unsupported
- * extension (`unsupported`), or is silent or below -50 LUFS
+ * extension (`unsupported`), cannot be decoded as audio
+ * (`undecodable_audio`), or is silent or below -50 LUFS
  * (`silent_audio`). Existing audio is kept.
  * - 500: the server could not store or process the file.
+ * - 504: the database did not save the upload in time. The new audio
+ * may already be live; upload it again to record it.
  *
  */
 export const postStoriesIdAudio = <ThrowOnError extends boolean = true>(
@@ -735,6 +801,7 @@ export const postStoriesIdTts = <ThrowOnError extends boolean = true>(
  * Returns the singleton ElevenLabs text-to-speech settings row.
  * The response includes whether an API key is configured, but never returns the key value.
  * All authenticated roles can read these settings.
+ * Query parameters are not supported and return 422.
  *
  */
 export const getSettingsTts = <ThrowOnError extends boolean = true>(
@@ -787,6 +854,7 @@ export const patchSettingsTts = <ThrowOnError extends boolean = true>(
  *
  * Returns local pronunciation rules used for ElevenLabs inline IPA
  * injection. No ElevenLabs API call is made for this management route.
+ * Query parameters are not supported and return 422.
  *
  */
 export const getSettingsTtsPronunciations = <ThrowOnError extends boolean = true>(
@@ -879,15 +947,21 @@ export const getStoriesId = <ThrowOnError extends boolean = true>(
 /**
  * Update story state
  *
- * Update story status or restore soft-deleted stories.
- * This endpoint can be used to:
- * - Change story status (draft, active, expired)
- * - Restore a soft-deleted story by setting deleted_at to empty string
+ * Change story status, soft-delete a story, or restore it.
  *
- * Send exactly one of `status` and `deleted_at`. Neither fails with 422
- * (`request`, `empty_update`); both fail with 422 (`request`,
- * `unsupported`). An unknown status fails with 422 (`status`,
- * `invalid_choice`).
+ * Without `deleted_at`, send only `status`. A restore (`deleted_at: ""`)
+ * may carry any field that `PUT /stories/{id}` accepts. The restore and
+ * those fields apply in one transaction: no reader, including bulletin
+ * selection, sees the restored story with its old fields, and when a
+ * field is rejected the story stays deleted. Restoring a story that is
+ * not deleted only applies the fields. Any other `deleted_at` value
+ * soft-deletes the story and takes no other field.
+ *
+ * A body that sets no field fails with 422 (`request`, `empty_update`). A
+ * story field other than `status` without a restore, or a soft delete
+ * with another field, fails with 422 (`request`, `unsupported`). An
+ * unknown status fails with 422 (`status`, `invalid_choice`); other
+ * field errors match `PUT /stories/{id}`.
  *
  */
 export const patchStoriesId = <ThrowOnError extends boolean = true>(
@@ -937,7 +1011,7 @@ export const putStoriesId = <ThrowOnError extends boolean = true>(
  * Ordered by bulletin creation time descending by default.
  *
  * ## Search Fields
- * Full-text search across:
+ * Substring search across:
  * - `filename` - Bulletin filename
  *
  * ## Filter Fields
@@ -963,12 +1037,12 @@ export const putStoriesId = <ThrowOnError extends boolean = true>(
  * - `created_at` - Bulletin creation timestamp
  *
  * ## Examples
- * - Search by bulletin filename: `?search=bulletin_2024`
+ * - Search by filename date: `?search=20240120`
  * - Filter by station: `?filter[station_id]=1`
  * - Filter by date range: `?filter[created_at][gte]=2024-01-01&filter[created_at][lte]=2024-12-31`
  * - Sort by creation date: `?sort=-created_at`
  * - Field selection: `?fields=id,filename,created_at`
- * - Complex query: `?search=bulletin&filter[story_count][gte]=2&sort=-created_at&fields=id,filename,story_count`
+ * - Complex query: `?search=20240120&filter[story_count][gte]=2&sort=-created_at&fields=id,filename,story_count`
  *
  */
 export const getStoriesIdBulletins = <ThrowOnError extends boolean = true>(
@@ -992,6 +1066,14 @@ export const getStoriesIdBulletins = <ThrowOnError extends boolean = true>(
 
 /**
  * List all users
+ *
+ * Returns a paginated list of users with modern query parameter support.
+ *
+ * ## Search Fields
+ * Substring search across:
+ * - `username` - Username
+ * - `full_name` - Full name
+ *
  */
 export const getUsers = <ThrowOnError extends boolean = true>(
   options?: Options<GetUsersData, ThrowOnError>
@@ -1108,7 +1190,7 @@ export const putUsersId = <ThrowOnError extends boolean = true>(
  * Returns a paginated list of generated bulletins with modern query parameter support.
  *
  * ## Search Fields
- * Full-text search across:
+ * Substring search across:
  * - `filename` - Bulletin filename
  *
  * ## Filter Fields
@@ -1137,13 +1219,13 @@ export const putUsersId = <ThrowOnError extends boolean = true>(
  * To get story information for a bulletin, use GET /bulletins/{id}/stories after fetching the bulletin list.
  *
  * ## Examples
- * - Search by filename: `?search=bulletin_2024`
+ * - Search by filename date: `?search=20240120`
  * - Filter by station: `?filter[station_id]=1`
  * - Filter by date range: `?filter[created_at][gte]=2024-01-01&filter[created_at][lte]=2024-12-31`
  * - Sort by duration: `?sort=-duration_seconds`
  * - Filter by story count: `?filter[story_count][gte]=3`
  * - Field selection: `?fields=id,filename,duration_seconds,story_count,created_at`
- * - Complex query: `?search=2024&filter[station_id]=1&filter[story_count][gte]=3&sort=-created_at`
+ * - Complex query: `?search=20240120&filter[station_id]=1&filter[story_count][gte]=3&sort=-created_at`
  *
  */
 export const getBulletins = <ThrowOnError extends boolean = true>(
@@ -1186,7 +1268,7 @@ export const getBulletinsId = <ThrowOnError extends boolean = true>(
  * Ordered by most recent first by default.
  *
  * ## Search Fields
- * Full-text search across:
+ * Substring search across:
  * - `filename` - Bulletin filename
  *
  * ## Filter Fields
@@ -1216,11 +1298,11 @@ export const getBulletinsId = <ThrowOnError extends boolean = true>(
  * To get story information for bulletins, use GET /bulletins/{id}/stories for each bulletin.
  *
  * ## Examples
- * - Search by filename: `?search=bulletin_2024`
+ * - Search by filename date: `?search=20240120`
  * - Filter by date range: `?filter[created_at][gte]=2024-01-01&filter[created_at][lte]=2024-12-31`
  * - Sort by duration: `?sort=-duration_seconds`
  * - Field selection: `?fields=id,filename,duration_seconds,created_at`
- * - Complex query: `?search=2024&filter[story_count][gte]=3&sort=-created_at&fields=id,filename,story_count`
+ * - Complex query: `?search=20240120&filter[story_count][gte]=3&sort=-created_at&fields=id,filename,story_count`
  *
  */
 export const getStationsIdBulletins = <ThrowOnError extends boolean = true>(
@@ -1495,9 +1577,13 @@ export const getStationVoicesIdAudio = <ThrowOnError extends boolean = true>(
  * Errors:
  * - 400: the body is not valid multipart form data (`request`, `invalid_format`).
  * - 408: the upload did not complete within the time limit.
+ * - 409 `stationvoice.pair_changed`: the station-voice moved to another
+ * station or voice while the upload ran. Nothing is stored; upload the
+ * jingle again.
  * - 413: the file is larger than 100 MB.
- * - 422: the `jingle` file is missing (`required`) or has an unsupported
- * extension (`unsupported`).
+ * - 422: the `jingle` file is missing (`required`), has an unsupported
+ * extension (`unsupported`), or cannot be decoded as audio
+ * (`undecodable_audio`).
  * - 500: the server could not store or process the file.
  *
  */
@@ -1573,6 +1659,12 @@ export const getStationVoicesId = <ThrowOnError extends boolean = true>(
  * (`errors[].code` is `not_found`); 404 means only that the station-voice
  * in the path does not exist.
  * Jingle audio file must be uploaded separately via POST /station-voices/{id}/audio.
+ *
+ * `station_id` and `voice_id` cannot change while the station-voice has a
+ * jingle (409 `stationvoice.jingle_locked`); create a station-voice for the
+ * new station and voice, upload its jingle, then delete this one. Sending
+ * the current values is accepted. This check comes first, so such a change
+ * gets the 409 even when the new station or voice does not exist.
  *
  */
 export const putStationVoicesId = <ThrowOnError extends boolean = true>(

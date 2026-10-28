@@ -4,6 +4,56 @@ export type ClientOptions = {
   baseUrl: `${string}://${string}` | (string & {})
 }
 
+export type AuditEvent = {
+  id: number
+  occurred_at: string
+  /**
+   * Acting user; null for system jobs such as story expiration.
+   */
+  user_id: number | null
+  /**
+   * Current username, including soft-deleted users; null without users:read or for system or missing users.
+   */
+  username: string | null
+  /**
+   * Current full name, including soft-deleted users; null without users:read or for system or missing users.
+   */
+  full_name: string | null
+  entity_type: 'story' | 'tts_settings' | 'pronunciation_rules'
+  /**
+   * Story ID, or 1 for the TTS settings or pronunciation rule-set singleton.
+   */
+  entity_id: number
+  action: 'create' | 'update' | 'delete' | 'restore' | 'audio' | 'tts' | 'expire'
+  /**
+   * Only changed values, keyed by field name. Creation uses null old values.
+   * Story timestamps maintained automatically are omitted; deleted_at is included.
+   * Audio changes contain filenames and durations, never audio bytes.
+   * For pronunciation_rules, keys are string_to_replace; values are rule objects
+   * containing ipa, case_sensitive, and word_boundaries, or null for additions/removals.
+   * Identical writes produce no audit event. Audio and TTS publications are
+   * always recorded because they overwrite the story's audio file; their
+   * changes are empty when the filename and duration stay the same.
+   *
+   */
+  changes: {
+    [key: string]: {
+      old: unknown
+      new: unknown
+    }
+  }
+}
+
+export type AuditEventsListResponse = {
+  data: Array<AuditEvent>
+  /**
+   * Total visible events matching the query.
+   */
+  total: number
+  limit: number
+  offset: number
+}
+
 export type StringFilter = string | StringFilterOperators
 
 export type NullableStringFilter = string | NullableStringFilterOperators
@@ -306,6 +356,44 @@ export type UserRoleFilter =
       in?: string
     }
 
+export type AuditEntityTypeFilter =
+  | 'story'
+  | 'tts_settings'
+  | 'pronunciation_rules'
+  | {
+      eq?: 'story' | 'tts_settings' | 'pronunciation_rules'
+      ne?: 'story' | 'tts_settings' | 'pronunciation_rules'
+      /**
+       * Alias for `ne`.
+       */
+      not?: 'story' | 'tts_settings' | 'pronunciation_rules'
+      /**
+       * Comma-separated entity type values.
+       */
+      in?: string
+    }
+
+export type AuditActionFilter =
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'restore'
+  | 'audio'
+  | 'tts'
+  | 'expire'
+  | {
+      eq?: 'create' | 'update' | 'delete' | 'restore' | 'audio' | 'tts' | 'expire'
+      ne?: 'create' | 'update' | 'delete' | 'restore' | 'audio' | 'tts' | 'expire'
+      /**
+       * Alias for `ne`.
+       */
+      not?: 'create' | 'update' | 'delete' | 'restore' | 'audio' | 'tts' | 'expire'
+      /**
+       * Comma-separated action values.
+       */
+      in?: string
+    }
+
 /**
  * Identifier and confirmation message returned when a resource is created
  */
@@ -519,11 +607,15 @@ export type StationVoiceCreate = {
  */
 export type StationVoiceUpdate = {
   /**
-   * New station ID (optional)
+   * New station ID (optional). Cannot change while the station-voice has a
+   * jingle (409); sending the current value is accepted.
+   *
    */
   station_id?: number | null
   /**
-   * New voice ID (optional)
+   * New voice ID (optional). Cannot change while the station-voice has a
+   * jingle (409); sending the current value is accepted.
+   *
    */
   voice_id?: number | null
   /**
@@ -637,6 +729,12 @@ export type StoryCreate = {
   metadata?: {
     [key: string]: unknown
   }
+  /**
+   * Optional retry key, compared exactly (case and whitespace count);
+   * see POST /stories. Null is treated as omitted.
+   *
+   */
+  idempotency_key?: string | null
 }
 
 /**
@@ -910,7 +1008,9 @@ export type BulletinJob = {
  * - `bulletin.no_stories` - 409 no active stories for bulletin generation
  * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
  * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - 409 story or voice not ready for TTS
- * - `tts.upstream_failed` - 502 ElevenLabs failed, rejected the request or returned silent audio
+ * - `stationvoice.jingle_locked` - 409 `station_id` or `voice_id` cannot change while the station-voice has a jingle
+ * - `stationvoice.pair_changed` - 409 the station-voice moved to another station or voice while its jingle upload ran
+ * - `tts.upstream_failed` - 502 ElevenLabs could not be reached, failed, rejected the request or returned silent or undecodable audio
  * (503 when ElevenLabs rejects the API credentials)
  * - `audio.processing_failed` - 500 FFmpeg processing error
  * - `internal.database_error` - 500 unexpected database error
@@ -977,6 +1077,7 @@ export type FieldError = {
    * - the multipart field name of an uploaded file: `audio` (story
    * audio) or `jingle` (station-voice audio)
    * - `request` for the body as a whole
+   * - `query` for a query string that cannot be decoded
    *
    */
   field: string
@@ -991,14 +1092,15 @@ export type FieldError = {
    * non-alphanumeric username, missing password character classes,
    * an ElevenLabs voice ID, a non-integer path ID or query number,
    * a non-boolean query flag, a malformed filter key or filter
-   * value, or malformed multipart form data
+   * value, an empty `sort` or `fields` item, or malformed
+   * multipart form data or query encoding
    * - `invalid_choice` - a value is not in the allowed set, such as a
    * status, a role, a sort direction, a filter operator,
    * `apply_text_normalization` or `trashed`
    * - `invalid_type` - a body value has the wrong JSON type (400)
    * - `invalid_json` - the body is malformed JSON or has trailing content (400)
    * - `unknown_field` - an unknown body member (400), or an unknown
-   * filter, sort or fields name (422)
+   * list query key or filter, sort or fields name (422)
    * - `not_found` - a body reference, such as `voice_id` or
    * `station_id`, names a resource that does not exist
    * - `date_order` - `end_date` is before `start_date`; `field` is
@@ -1008,9 +1110,13 @@ export type FieldError = {
    * key, or a duplicate or conflicting pronunciation rule (422)
    * - `unsupported` - a query feature the endpoint does not support,
    * an operator the filter field does not support, an unsupported
-   * upload file extension, or `status` combined with `deleted_at`
-   * in `PATCH /stories/{id}`
+   * upload file extension, or in `PATCH /stories/{id}` a story field
+   * other than `status` without a restore, or a soft delete with
+   * another field
    * - `silent_audio` - uploaded story audio is silent or below -50 LUFS; `field` is `audio`
+   * - `undecodable_audio` - the uploaded file is not audio that FFmpeg
+   * can decode, such as a corrupt, empty or non-audio file; `field` is
+   * `audio` or `jingle`
    *
    */
   code:
@@ -1030,6 +1136,7 @@ export type FieldError = {
     | 'duplicate'
     | 'unsupported'
     | 'silent_audio'
+    | 'undecodable_audio'
   /**
    * Human-readable explanation. The wording can change; do not parse it.
    */
@@ -1360,6 +1467,10 @@ export type offset = number
  * - `name:desc` or `-name` - descending
  * - `created_at:desc,name:asc` - multiple fields
  *
+ * An empty value means the default order. An empty item (`sort=,`,
+ * `sort=name,`) or an item without a field name (`sort=-`,
+ * `sort=:desc`) fails with 422 `invalid_format`.
+ *
  * Text fields sort by the database column collation, not by code point.
  * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
  * case and accents do not count: `apple` sorts before `Banana`, and
@@ -1378,14 +1489,18 @@ export type sort = string
  * is used, response objects contain only the requested fields; all
  * other documented fields (including required ones) are omitted, so a
  * sparse response is a subset projection that intentionally does not
- * conform to the full resource schema.
+ * conform to the full resource schema. An empty value returns all
+ * fields; an empty item (`fields=,`, `fields=id,,name`) fails with 422
+ * `invalid_format`.
  *
  */
 export type fields = string
 
 /**
- * Search term for full-text search across relevant fields.
- * Searches in names, titles, text content depending on resource.
+ * Literal substring match on any of the operation's fields listed
+ * under "Search Fields" (`%` and `_` are not wildcards); case
+ * sensitivity follows the column collation (case-insensitive by
+ * default).
  *
  */
 export type search = string
@@ -1420,6 +1535,18 @@ export type voiceFilter = {
   elevenlabs_voice_id?: NullableStringFilter
   created_at?: DateTimeFilter
   updated_at?: DateTimeFilter
+}
+
+/**
+ * Audit filters using `filter[field]` or `filter[field][operator]`.
+ */
+export type auditEventFilter = {
+  id?: IntegerFilter
+  occurred_at?: DateTimeFilter
+  user_id?: NullableIntegerFilter
+  entity_type?: AuditEntityTypeFilter
+  entity_id?: IntegerFilter
+  action?: AuditActionFilter
 }
 
 /**
@@ -1506,6 +1633,13 @@ export type GetHealthData = {
 
 export type GetHealthErrors = {
   /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file, or `query` for a query string that cannot be decoded.
+   *
+   */
+  422: ValidationError
+  /**
    * The service is unhealthy because it cannot connect to the database
    */
   503: ProblemDetails
@@ -1576,7 +1710,7 @@ export type GetPublicBulletinErrors = {
    */
   404: ProblemDetails
   /**
-   * The station has no eligible stories for a new bulletin (`bulletin.no_stories`)
+   * The station has no eligible stories (`bulletin.no_stories`), or a referenced resource disappeared during generation (`bulletin.reference_missing`)
    */
   409: ConflictError
   /**
@@ -1584,9 +1718,11 @@ export type GetPublicBulletinErrors = {
    */
   416: ProblemDetails
   /**
-   * Invalid path or query parameter. `errors[].field` is `id` or
-   * `max_age`; `max_age` fails with `required`, `invalid_format` or
-   * `out_of_range`.
+   * Invalid path or query parameter. `errors[].field` is `id`, `key`,
+   * `max_age`, or `query` for a query string that cannot be decoded;
+   * `max_age` fails with `required`, `invalid_format` or
+   * `out_of_range`, and a repeated `key` or `max_age` with
+   * `duplicate`.
    *
    */
   422: ValidationError
@@ -1626,6 +1762,18 @@ export type GetAuthConfigData = {
   query?: never
   url: '/api/v1/auth/config'
 }
+
+export type GetAuthConfigErrors = {
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file, or `query` for a query string that cannot be decoded.
+   *
+   */
+  422: ValidationError
+}
+
+export type GetAuthConfigError = GetAuthConfigErrors[keyof GetAuthConfigErrors]
 
 export type GetAuthConfigResponses = {
   /**
@@ -1673,7 +1821,9 @@ export type PostSessionsErrors = {
    */
   413: ProblemDetails
   /**
-   * A missing or empty `username` or `password` fails with code `required`.
+   * A missing or empty `username` or `password` fails with code
+   * `required`. A query string that cannot be decoded fails as `query`.
+   *
    */
   422: ValidationError
 }
@@ -1711,6 +1861,13 @@ export type GetAuthOauthErrors = {
    */
   404: ProblemDetails
   /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file, or `query` for a query string that cannot be decoded.
+   *
+   */
+  422: ValidationError
+  /**
    * Session storage failed before the redirect
    */
   500: ProblemDetails
@@ -1745,6 +1902,13 @@ export type GetAuthOauthCallbackData = {
 
 export type GetAuthOauthCallbackErrors = {
   /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file, or `query` for a query string that cannot be decoded.
+   *
+   */
+  422: ValidationError
+  /**
    * Internal server error
    */
   500: ProblemDetails
@@ -1764,6 +1928,13 @@ export type DeleteSessionsCurrentErrors = {
    * Unauthorized
    */
   401: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file, or `query` for a query string that cannot be decoded.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -1795,6 +1966,13 @@ export type GetSessionsCurrentErrors = {
    * Unauthorized
    */
   401: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file, or `query` for a query string that cannot be decoded.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -1835,6 +2013,10 @@ export type GetStationsData = {
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
      *
+     * An empty value means the default order. An empty item (`sort=,`,
+     * `sort=name,`) or an item without a field name (`sort=-`,
+     * `sort=:desc`) fails with 422 `invalid_format`.
+     *
      * Text fields sort by the database column collation, not by code point.
      * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
      * case and accents do not count: `apple` sorts before `Banana`, and
@@ -1852,13 +2034,17 @@ export type GetStationsData = {
      * is used, response objects contain only the requested fields; all
      * other documented fields (including required ones) are omitted, so a
      * sparse response is a subset projection that intentionally does not
-     * conform to the full resource schema.
+     * conform to the full resource schema. An empty value returns all
+     * fields; an empty item (`fields=,`, `fields=id,,name`) fails with 422
+     * `invalid_format`.
      *
      */
     fields?: string
     /**
-     * Search term for full-text search across relevant fields.
-     * Searches in names, titles, text content depending on resource.
+     * Literal substring match on any of the operation's fields listed
+     * under "Search Fields" (`%` and `_` are not wildcards); case
+     * sensitivity follows the column collation (case-insensitive by
+     * default).
      *
      */
     search?: string
@@ -1889,7 +2075,7 @@ export type GetStationsErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -1947,6 +2133,8 @@ export type PostStationsErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
@@ -1957,7 +2145,7 @@ export type PostStationsErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -2020,13 +2208,15 @@ export type DeleteStationsIdErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -2079,7 +2269,7 @@ export type GetStationsIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -2150,6 +2340,8 @@ export type PutStationsIdErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
@@ -2160,7 +2352,7 @@ export type PutStationsIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -2203,6 +2395,10 @@ export type GetVoicesData = {
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
      *
+     * An empty value means the default order. An empty item (`sort=,`,
+     * `sort=name,`) or an item without a field name (`sort=-`,
+     * `sort=:desc`) fails with 422 `invalid_format`.
+     *
      * Text fields sort by the database column collation, not by code point.
      * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
      * case and accents do not count: `apple` sorts before `Banana`, and
@@ -2220,13 +2416,17 @@ export type GetVoicesData = {
      * is used, response objects contain only the requested fields; all
      * other documented fields (including required ones) are omitted, so a
      * sparse response is a subset projection that intentionally does not
-     * conform to the full resource schema.
+     * conform to the full resource schema. An empty value returns all
+     * fields; an empty item (`fields=,`, `fields=id,,name`) fails with 422
+     * `invalid_format`.
      *
      */
     fields?: string
     /**
-     * Search term for full-text search across relevant fields.
-     * Searches in names, titles, text content depending on resource.
+     * Literal substring match on any of the operation's fields listed
+     * under "Search Fields" (`%` and `_` are not wildcards); case
+     * sensitivity follows the column collation (case-insensitive by
+     * default).
      *
      */
     search?: string
@@ -2256,7 +2456,7 @@ export type GetVoicesErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -2323,6 +2523,8 @@ export type PostVoicesErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
@@ -2333,7 +2535,7 @@ export type PostVoicesErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -2396,13 +2598,15 @@ export type DeleteVoicesIdErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -2455,7 +2659,7 @@ export type GetVoicesIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -2535,6 +2739,8 @@ export type PutVoicesIdErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
@@ -2545,7 +2751,7 @@ export type PutVoicesIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -2565,6 +2771,107 @@ export type PutVoicesIdResponses = {
 }
 
 export type PutVoicesIdResponse = PutVoicesIdResponses[keyof PutVoicesIdResponses]
+
+export type GetAuditEventsData = {
+  body?: never
+  path?: never
+  query?: {
+    /**
+     * Maximum number of items to return. Values below 1, above 100, or
+     * non-integer values are rejected with 422 Unprocessable Entity.
+     *
+     */
+    limit?: number
+    /**
+     * Number of items to skip. Negative or non-integer values are rejected
+     * with 422 Unprocessable Entity.
+     *
+     */
+    offset?: number
+    /**
+     * Sort order. Use field:direction format or prefix notation:
+     * - `name:asc` or `+name` - ascending
+     * - `name:desc` or `-name` - descending
+     * - `created_at:desc,name:asc` - multiple fields
+     *
+     * An empty value means the default order. An empty item (`sort=,`,
+     * `sort=name,`) or an item without a field name (`sort=-`,
+     * `sort=:desc`) fails with 422 `invalid_format`.
+     *
+     * Text fields sort by the database column collation, not by code point.
+     * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
+     * case and accents do not count: `apple` sorts before `Banana`, and
+     * `delta` equals `Delta`. Rows with equal values, also under the default
+     * sort, have no defined order and can repeat or go missing across pages;
+     * add `id` as the last sort field for a stable order.
+     *
+     */
+    sort?: string
+    /**
+     * Comma-separated list of top-level JSON field names to include in the
+     * response (sparse fieldsets). Field names match the JSON response
+     * properties exactly (e.g. `id,name,created_at`). Nested or dot
+     * notation (e.g. `station.name`) is not supported. When this parameter
+     * is used, response objects contain only the requested fields; all
+     * other documented fields (including required ones) are omitted, so a
+     * sparse response is a subset projection that intentionally does not
+     * conform to the full resource schema. An empty value returns all
+     * fields; an empty item (`fields=,`, `fields=id,,name`) fails with 422
+     * `invalid_format`.
+     *
+     */
+    fields?: string
+    /**
+     * Audit filters using `filter[field]` or `filter[field][operator]`.
+     */
+    filter?: {
+      id?: IntegerFilter
+      occurred_at?: DateTimeFilter
+      user_id?: NullableIntegerFilter
+      entity_type?: AuditEntityTypeFilter
+      entity_id?: IntegerFilter
+      action?: AuditActionFilter
+    }
+  }
+  url: '/api/v1/audit-events'
+}
+
+export type GetAuditEventsErrors = {
+  /**
+   * Unauthorized
+   */
+  401: ProblemDetails
+  /**
+   * Insufficient permissions
+   */
+  403: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file, or `query` for a query string that cannot be decoded.
+   *
+   */
+  422: ValidationError
+  /**
+   * Internal server error
+   */
+  500: ProblemDetails
+  /**
+   * Service unavailable
+   */
+  503: ProblemDetails
+}
+
+export type GetAuditEventsError = GetAuditEventsErrors[keyof GetAuditEventsErrors]
+
+export type GetAuditEventsResponses = {
+  /**
+   * Audit events visible to the caller
+   */
+  200: AuditEventsListResponse
+}
+
+export type GetAuditEventsResponse = GetAuditEventsResponses[keyof GetAuditEventsResponses]
 
 export type GetStoriesData = {
   body?: never
@@ -2588,6 +2895,10 @@ export type GetStoriesData = {
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
      *
+     * An empty value means the default order. An empty item (`sort=,`,
+     * `sort=name,`) or an item without a field name (`sort=-`,
+     * `sort=:desc`) fails with 422 `invalid_format`.
+     *
      * Text fields sort by the database column collation, not by code point.
      * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
      * case and accents do not count: `apple` sorts before `Banana`, and
@@ -2605,13 +2916,17 @@ export type GetStoriesData = {
      * is used, response objects contain only the requested fields; all
      * other documented fields (including required ones) are omitted, so a
      * sparse response is a subset projection that intentionally does not
-     * conform to the full resource schema.
+     * conform to the full resource schema. An empty value returns all
+     * fields; an empty item (`fields=,`, `fields=id,,name`) fails with 422
+     * `invalid_format`.
      *
      */
     fields?: string
     /**
-     * Search term for full-text search across relevant fields.
-     * Searches in names, titles, text content depending on resource.
+     * Literal substring match on any of the operation's fields listed
+     * under "Search Fields" (`%` and `_` are not wildcards); case
+     * sensitivity follows the column collation (case-insensitive by
+     * default).
      *
      */
     search?: string
@@ -2667,7 +2982,7 @@ export type GetStoriesErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -2725,6 +3040,8 @@ export type PostStoriesErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
@@ -2735,7 +3052,7 @@ export type PostStoriesErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -2743,6 +3060,10 @@ export type PostStoriesErrors = {
    * Internal server error
    */
   500: ProblemDetails
+  /**
+   * Service unavailable
+   */
+  503: ProblemDetails
 }
 
 export type PostStoriesError = PostStoriesErrors[keyof PostStoriesErrors]
@@ -2809,7 +3130,7 @@ export type GetStoriesIdAudioErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -2889,7 +3210,7 @@ export type PostStoriesIdAudioErrors = {
    */
   408: ProblemDetails
   /**
-   * Story is soft-deleted. Restore it with PATCH {"deleted_at":""} before updating it.
+   * Story is soft-deleted. Restore it with PATCH {"deleted_at":""}, optionally with the fields to update.
    */
   410: ProblemDetails & {
     code: 'story.deleted'
@@ -2905,7 +3226,7 @@ export type PostStoriesIdAudioErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -2913,6 +3234,14 @@ export type PostStoriesIdAudioErrors = {
    * Internal server error
    */
   500: ProblemDetails
+  /**
+   * Service unavailable
+   */
+  503: ProblemDetails
+  /**
+   * The operation exceeded the server-side timeout
+   */
+  504: ProblemDetails
 }
 
 export type PostStoriesIdAudioError = PostStoriesIdAudioErrors[keyof PostStoriesIdAudioErrors]
@@ -2979,7 +3308,7 @@ export type PostStoriesIdTtsErrors = {
    */
   409: ConflictError
   /**
-   * Story is soft-deleted. Restore it with PATCH {"deleted_at":""} before updating it.
+   * Story is soft-deleted. Restore it with PATCH {"deleted_at":""}, optionally with the fields to update.
    */
   410: ProblemDetails & {
     code: 'story.deleted'
@@ -2991,7 +3320,7 @@ export type PostStoriesIdTtsErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -3008,8 +3337,9 @@ export type PostStoriesIdTtsErrors = {
    */
   501: ProblemDetails
   /**
-   * Upstream service failed (`tts.upstream_failed`): ElevenLabs returned an
-   * error, rejected the generated request, or returned silent audio.
+   * Upstream service failed (`tts.upstream_failed`): ElevenLabs could not be
+   * reached, returned an error, rejected the generated request, or returned
+   * silent or undecodable audio.
    *
    */
   502: ProblemDetails
@@ -3052,6 +3382,13 @@ export type GetSettingsTtsErrors = {
    * Insufficient permissions
    */
   403: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file, or `query` for a query string that cannot be decoded.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -3104,7 +3441,7 @@ export type PatchSettingsTtsErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -3145,6 +3482,13 @@ export type GetSettingsTtsPronunciationsErrors = {
    * Insufficient permissions
    */
   403: ProblemDetails
+  /**
+   * The request is well-formed, but the API rejects one or more values.
+   * `errors[]` names each rejected body field, query parameter, path `id`
+   * or uploaded file, or `query` for a query string that cannot be decoded.
+   *
+   */
+  422: ValidationError
   /**
    * Internal server error
    */
@@ -3199,7 +3543,7 @@ export type PutSettingsTtsPronunciationsErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -3258,7 +3602,7 @@ export type DeleteStoriesIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -3266,6 +3610,10 @@ export type DeleteStoriesIdErrors = {
    * Internal server error
    */
   500: ProblemDetails
+  /**
+   * Service unavailable
+   */
+  503: ProblemDetails
 }
 
 export type DeleteStoriesIdError = DeleteStoriesIdErrors[keyof DeleteStoriesIdErrors]
@@ -3311,7 +3659,7 @@ export type GetStoriesIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -3337,11 +3685,48 @@ export type PatchStoriesIdData = {
     /**
      * Story status
      */
-    status?: 'draft' | 'active' | 'expired'
+    status?: 'draft' | 'active' | 'expired' | null
     /**
      * Set to empty string ("") to restore a soft-deleted story, or any other value to soft-delete
      */
     deleted_at?: string
+    /**
+     * Story title
+     */
+    title?: string | null
+    /**
+     * Story text content
+     */
+    text?: string | null
+    /**
+     * Voice ID. Omit or set to null to keep current value unchanged
+     */
+    voice_id?: number | null
+    /**
+     * Start date in YYYY-MM-DD format
+     */
+    start_date?: string | null
+    /**
+     * End date in YYYY-MM-DD format
+     */
+    end_date?: string | null
+    /**
+     * Bitmask for scheduling stories on specific days of the week.
+     * Each day is a power of 2: Sunday=1, Monday=2, Tuesday=4, Wednesday=8, Thursday=16, Friday=32, Saturday=64.
+     * Common values: 127 (all days), 62 (Mon-Fri weekdays), 65 (Sat+Sun weekend), 0 (no days).
+     *
+     */
+    weekdays?: number | null
+    /**
+     * Mark as breaking news. Breaking stories are prioritized for selection in bulletins. Normal eligibility rules (date range, weekday schedule, active status, audio required) still apply.
+     */
+    is_breaking?: boolean | null
+    /**
+     * Optional JSON metadata object for story-specific settings
+     */
+    metadata?: {
+      [key: string]: unknown
+    } | null
   }
   path: {
     /**
@@ -3379,7 +3764,25 @@ export type PatchStoriesIdErrors = {
    */
   404: ProblemDetails
   /**
-   * Story is soft-deleted. Restore it with PATCH {"deleted_at":""} before updating it.
+   * The request conflicts with the current server state.
+   *
+   * 409 responses use resource-specific problem types in the pattern
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
+   * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
+   * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
+   *
+   */
+  409: ConflictError
+  /**
+   * Story is soft-deleted. Restore it with PATCH {"deleted_at":""}, optionally with the fields to update.
    */
   410: ProblemDetails & {
     code: 'story.deleted'
@@ -3395,7 +3798,7 @@ export type PatchStoriesIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -3403,6 +3806,10 @@ export type PatchStoriesIdErrors = {
    * Internal server error
    */
   500: ProblemDetails
+  /**
+   * Service unavailable
+   */
+  503: ProblemDetails
 }
 
 export type PatchStoriesIdError = PatchStoriesIdErrors[keyof PatchStoriesIdErrors]
@@ -3470,11 +3877,13 @@ export type PutStoriesIdErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
   /**
-   * Story is soft-deleted. Restore it with PATCH {"deleted_at":""} before updating it.
+   * Story is soft-deleted. Restore it with PATCH {"deleted_at":""}, optionally with the fields to update.
    */
   410: ProblemDetails & {
     code: 'story.deleted'
@@ -3490,7 +3899,7 @@ export type PutStoriesIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -3498,6 +3907,10 @@ export type PutStoriesIdErrors = {
    * Internal server error
    */
   500: ProblemDetails
+  /**
+   * Service unavailable
+   */
+  503: ProblemDetails
 }
 
 export type PutStoriesIdError = PutStoriesIdErrors[keyof PutStoriesIdErrors]
@@ -3542,6 +3955,10 @@ export type GetStoriesIdBulletinsData = {
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
      *
+     * An empty value means the default order. An empty item (`sort=,`,
+     * `sort=name,`) or an item without a field name (`sort=-`,
+     * `sort=:desc`) fails with 422 `invalid_format`.
+     *
      * Text fields sort by the database column collation, not by code point.
      * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
      * case and accents do not count: `apple` sorts before `Banana`, and
@@ -3559,13 +3976,17 @@ export type GetStoriesIdBulletinsData = {
      * is used, response objects contain only the requested fields; all
      * other documented fields (including required ones) are omitted, so a
      * sparse response is a subset projection that intentionally does not
-     * conform to the full resource schema.
+     * conform to the full resource schema. An empty value returns all
+     * fields; an empty item (`fields=,`, `fields=id,,name`) fails with 422
+     * `invalid_format`.
      *
      */
     fields?: string
     /**
-     * Search term for full-text search across relevant fields.
-     * Searches in names, titles, text content depending on resource.
+     * Literal substring match on any of the operation's fields listed
+     * under "Search Fields" (`%` and `_` are not wildcards); case
+     * sensitivity follows the column collation (case-insensitive by
+     * default).
      *
      */
     search?: string
@@ -3602,7 +4023,7 @@ export type GetStoriesIdBulletinsErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -3647,6 +4068,10 @@ export type GetUsersData = {
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
      *
+     * An empty value means the default order. An empty item (`sort=,`,
+     * `sort=name,`) or an item without a field name (`sort=-`,
+     * `sort=:desc`) fails with 422 `invalid_format`.
+     *
      * Text fields sort by the database column collation, not by code point.
      * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
      * case and accents do not count: `apple` sorts before `Banana`, and
@@ -3664,13 +4089,17 @@ export type GetUsersData = {
      * is used, response objects contain only the requested fields; all
      * other documented fields (including required ones) are omitted, so a
      * sparse response is a subset projection that intentionally does not
-     * conform to the full resource schema.
+     * conform to the full resource schema. An empty value returns all
+     * fields; an empty item (`fields=,`, `fields=id,,name`) fails with 422
+     * `invalid_format`.
      *
      */
     fields?: string
     /**
-     * Search term for full-text search across relevant fields.
-     * Searches in names, titles, text content depending on resource.
+     * Literal substring match on any of the operation's fields listed
+     * under "Search Fields" (`%` and `_` are not wildcards); case
+     * sensitivity follows the column collation (case-insensitive by
+     * default).
      *
      */
     search?: string
@@ -3710,7 +4139,7 @@ export type GetUsersErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -3768,6 +4197,8 @@ export type PostUsersErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
@@ -3778,7 +4209,7 @@ export type PostUsersErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -3841,13 +4272,15 @@ export type DeleteUsersIdErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -3900,7 +4333,7 @@ export type GetUsersIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -3976,6 +4409,8 @@ export type PatchUsersIdErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
@@ -3986,7 +4421,7 @@ export type PatchUsersIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -4057,6 +4492,8 @@ export type PutUsersIdErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
@@ -4067,7 +4504,7 @@ export type PutUsersIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -4110,6 +4547,10 @@ export type GetBulletinsData = {
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
      *
+     * An empty value means the default order. An empty item (`sort=,`,
+     * `sort=name,`) or an item without a field name (`sort=-`,
+     * `sort=:desc`) fails with 422 `invalid_format`.
+     *
      * Text fields sort by the database column collation, not by code point.
      * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
      * case and accents do not count: `apple` sorts before `Banana`, and
@@ -4127,13 +4568,17 @@ export type GetBulletinsData = {
      * is used, response objects contain only the requested fields; all
      * other documented fields (including required ones) are omitted, so a
      * sparse response is a subset projection that intentionally does not
-     * conform to the full resource schema.
+     * conform to the full resource schema. An empty value returns all
+     * fields; an empty item (`fields=,`, `fields=id,,name`) fails with 422
+     * `invalid_format`.
      *
      */
     fields?: string
     /**
-     * Search term for full-text search across relevant fields.
-     * Searches in names, titles, text content depending on resource.
+     * Literal substring match on any of the operation's fields listed
+     * under "Search Fields" (`%` and `_` are not wildcards); case
+     * sensitivity follows the column collation (case-insensitive by
+     * default).
      *
      */
     search?: string
@@ -4166,7 +4611,7 @@ export type GetBulletinsErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -4219,7 +4664,7 @@ export type GetBulletinsIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -4271,6 +4716,10 @@ export type GetStationsIdBulletinsData = {
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
      *
+     * An empty value means the default order. An empty item (`sort=,`,
+     * `sort=name,`) or an item without a field name (`sort=-`,
+     * `sort=:desc`) fails with 422 `invalid_format`.
+     *
      * Text fields sort by the database column collation, not by code point.
      * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
      * case and accents do not count: `apple` sorts before `Banana`, and
@@ -4288,13 +4737,17 @@ export type GetStationsIdBulletinsData = {
      * is used, response objects contain only the requested fields; all
      * other documented fields (including required ones) are omitted, so a
      * sparse response is a subset projection that intentionally does not
-     * conform to the full resource schema.
+     * conform to the full resource schema. An empty value returns all
+     * fields; an empty item (`fields=,`, `fields=id,,name`) fails with 422
+     * `invalid_format`.
      *
      */
     fields?: string
     /**
-     * Search term for full-text search across relevant fields.
-     * Searches in names, titles, text content depending on resource.
+     * Literal substring match on any of the operation's fields listed
+     * under "Search Fields" (`%` and `_` are not wildcards); case
+     * sensitivity follows the column collation (case-insensitive by
+     * default).
      *
      */
     search?: string
@@ -4331,7 +4784,7 @@ export type GetStationsIdBulletinsErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -4407,7 +4860,7 @@ export type PostStationsIdBulletinsErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -4466,7 +4919,7 @@ export type GetBulletinJobsIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -4523,7 +4976,7 @@ export type GetStationsIdBulletinsLatestErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -4603,7 +5056,7 @@ export type GetBulletinsIdAudioErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -4679,7 +5132,7 @@ export type GetBulletinsIdStoriesErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -4724,6 +5177,10 @@ export type GetStationVoicesData = {
      * - `name:desc` or `-name` - descending
      * - `created_at:desc,name:asc` - multiple fields
      *
+     * An empty value means the default order. An empty item (`sort=,`,
+     * `sort=name,`) or an item without a field name (`sort=-`,
+     * `sort=:desc`) fails with 422 `invalid_format`.
+     *
      * Text fields sort by the database column collation, not by code point.
      * With MySQL's default collation `utf8mb4_0900_ai_ci` (8.0 and later),
      * case and accents do not count: `apple` sorts before `Banana`, and
@@ -4741,7 +5198,9 @@ export type GetStationVoicesData = {
      * is used, response objects contain only the requested fields; all
      * other documented fields (including required ones) are omitted, so a
      * sparse response is a subset projection that intentionally does not
-     * conform to the full resource schema.
+     * conform to the full resource schema. An empty value returns all
+     * fields; an empty item (`fields=,`, `fields=id,,name`) fails with 422
+     * `invalid_format`.
      *
      */
     fields?: string
@@ -4779,7 +5238,7 @@ export type GetStationVoicesErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -4837,6 +5296,8 @@ export type PostStationVoicesErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
@@ -4847,7 +5308,7 @@ export type PostStationVoicesErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -4921,7 +5382,7 @@ export type GetStationVoicesIdAudioErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -5003,13 +5464,31 @@ export type PostStationVoicesIdAudioErrors = {
    */
   408: ProblemDetails
   /**
+   * The request conflicts with the current server state.
+   *
+   * 409 responses use resource-specific problem types in the pattern
+   * `https://babbel.api/problems/{code}`, with `title` "Conflict", a
+   * top-level `code` and `hint`, and no `errors[]`:
+   * - `{resource}.duplicate` - Duplicate resource (e.g., `station.duplicate` when a station name already exists)
+   * - `{resource}.has_dependencies` - Resource has dependencies that prevent deletion
+   * - `{resource}.reference_missing` - A referenced resource was deleted while the request ran; reload and retry
+   * - `user.last_admin` - The last active admin user cannot be deleted, demoted or suspended
+   * - `bulletin.no_stories` - No eligible stories for bulletin generation
+   * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
+   * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
+   *
+   */
+  409: ConflictError
+  /**
    * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -5066,7 +5545,7 @@ export type DeleteStationVoicesIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -5121,7 +5600,7 @@ export type GetStationVoicesIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
@@ -5193,6 +5672,8 @@ export type PutStationVoicesIdErrors = {
    * - `bulletin.no_stories` - No eligible stories for bulletin generation
    * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
    * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - The story or voice is not ready for TTS
+   * - `stationvoice.jingle_locked` - The station or voice cannot change while the station-voice has a jingle
+   * - `stationvoice.pair_changed` - The station-voice moved to another station or voice while its jingle upload ran; upload it again
    *
    */
   409: ConflictError
@@ -5203,7 +5684,7 @@ export type PutStationVoicesIdErrors = {
   /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
-   * or uploaded file.
+   * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
