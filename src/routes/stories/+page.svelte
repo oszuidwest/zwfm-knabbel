@@ -69,6 +69,9 @@
   const handleDelete = (story: Story) =>
     deleteWithConfirm({
       name: story.title ?? 'dit bericht',
+      warning: story.metadata?.wordpress_id
+        ? 'Dit bericht komt uit WordPress. WordPress merkt het verwijderen niet op. Latere wijzigingen vanuit WordPress mislukken dan. Zet liever in WordPress "Radionieuws" uit.'
+        : undefined,
       deleteFn: () => deleteStoriesId({ path: { id: story.id } }),
       onSuccess: () => invalidateAll(),
       successMessage: 'Bericht verplaatst naar de prullenbak',
@@ -305,6 +308,7 @@
                 <td class="font-medium">
                   <span class="flex items-center gap-1.5">
                     {story.title}
+                    {@render wordpressBadge(story)}
                     {#if story.is_breaking}
                       <span
                         class="text-primary"
@@ -438,6 +442,7 @@
 {#snippet cardSummary(story: Story)}
   <div class="flex items-center gap-2">
     <h3 class="truncate font-medium">{story.title}</h3>
+    {@render wordpressBadge(story)}
     {#if story.is_breaking}
       <span
         class="text-primary"
@@ -471,6 +476,12 @@
   </div>
   {#if story.deleted_at}
     <p class="mt-1 text-sm text-base-content/60">Verwijderd {@render deletedAt(story)}</p>
+  {/if}
+{/snippet}
+
+{#snippet wordpressBadge(story: Story)}
+  {#if story.metadata?.wordpress_id}
+    <span class="badge shrink-0 badge-ghost badge-sm">WordPress</span>
   {/if}
 {/snippet}
 
