@@ -4,6 +4,7 @@
   import { deleteStoriesId } from '#lib/api/generated/sdk.gen.js'
   import { getAuthContext } from '#lib/stores/auth.svelte.js'
   import { deleteWithConfirm } from '#lib/utils/crud.js'
+  import { isFromWordPress } from '#lib/utils/story-origin.js'
   import { formatDate, formatDateTime, formatRelativeTime, parseDate } from '#lib/utils/format.js'
   import { resolveInternalHref } from '#lib/utils/routes.js'
   import { statusLabels, statusColors, statusOptions } from '#lib/utils/labels.js'
@@ -28,6 +29,7 @@
     Pagination,
   } from '#lib/components/ui/index.js'
   import ReadMode from '#lib/components/ReadMode.svelte'
+  import WordPressBadge from '#lib/components/WordPressBadge.svelte'
   import RestoreStoryDialog from './RestoreStoryDialog.svelte'
   import type { Story } from '#lib/types/index.js'
 
@@ -69,6 +71,9 @@
   const handleDelete = (story: Story) =>
     deleteWithConfirm({
       name: story.title ?? 'dit bericht',
+      warning: isFromWordPress(story)
+        ? 'Dit bericht komt uit WordPress. WordPress merkt het verwijderen niet op. Vink liever in WordPress "Radionieuws" uit.'
+        : undefined,
       deleteFn: () => deleteStoriesId({ path: { id: story.id } }),
       onSuccess: () => refreshAll(),
       successMessage: 'Bericht verplaatst naar de prullenbak',
@@ -267,6 +272,7 @@
                 <div class="min-w-0 flex-1">
                   {@render cardSummary(story)}
                 </div>
+                <WordPressBadge {story} />
                 {@render restoreButton(story, 'h-5 w-5')}
               {:else}
                 <a
@@ -275,6 +281,7 @@
                 >
                   {@render cardSummary(story)}
                 </a>
+                <WordPressBadge {story} />
                 {@render readModeButton(story, 'h-5 w-5')}
               {/if}
             </div>
@@ -305,6 +312,7 @@
                 <td class="font-medium">
                   <span class="flex items-center gap-1.5">
                     {story.title}
+                    <WordPressBadge {story} />
                     {#if story.is_breaking}
                       <span
                         class="text-primary"

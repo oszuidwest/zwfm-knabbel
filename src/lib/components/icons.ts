@@ -13,6 +13,7 @@ export {
   ChevronLeft,
   ChevronRight,
   Download,
+  ExternalLink,
   Eye,
   FileText,
   Grid2x2,
