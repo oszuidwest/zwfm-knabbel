@@ -332,7 +332,7 @@
           aria-hidden="true"
           class="h-5 w-5"
         />
-        Uitgezonden in bulletins
+        Opgenomen in bulletins
         {#if bulletinsTotal > 0}
           <span class="text-sm font-normal text-base-content/60">({bulletinsTotal})</span>
         {/if}
@@ -340,7 +340,7 @@
 
       {#if bulletins.length === 0}
         <p class="text-sm text-base-content/60">
-          Dit bericht is nog niet uitgezonden in een bulletin.
+          Dit bericht is nog niet opgenomen in een bulletin.
         </p>
       {:else}
         <ul class="divide-y divide-base-200">
