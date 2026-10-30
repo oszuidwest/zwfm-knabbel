@@ -17,7 +17,7 @@ const problemMessages: Record<string, string> = {
   'internal.retries_exhausted': 'Bulletin genereren mislukt na meerdere pogingen',
   'internal.timeout': 'De server deed er te lang over',
   'story.audio_exists': 'Dit bericht heeft al audio',
-  'story.deleted': 'Dit bericht is verwijderd',
+  'story.deleted': 'Dit bericht staat in de prullenbak, herstel het daar eerst',
   'story.no_text': 'Het bericht heeft geen tekst',
   'story.no_voice': 'Het bericht heeft geen stem',
   'story.tts_text_too_long': 'De tekst is te lang voor spraakgeneratie',

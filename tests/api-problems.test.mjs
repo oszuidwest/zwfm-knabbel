@@ -107,7 +107,7 @@ test('conflict, gone and not-found codes use Dutch copy instead of the English d
       fetch: problem(410, { code: 'story.deleted', deleted_at: '2026-10-11T17:06:13+02:00' }),
     })
   )
-  assert.equal(deleted.message, 'Dit bericht is verwijderd')
+  assert.equal(deleted.message, 'Dit bericht staat in de prullenbak, herstel het daar eerst')
 
   const missing = await rejection(
     sdk.patchStoriesId({
