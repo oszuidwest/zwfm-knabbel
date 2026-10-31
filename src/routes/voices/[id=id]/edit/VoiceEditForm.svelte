@@ -217,7 +217,8 @@
       try {
         const updated = await getStationVoicesId({ path: { id: stationVoiceId } })
         hasAudio = !!updated.audio_file
-        audioUrl = hasAudio ? (updated.audio_url ?? null) : null
+        // The URL stays the same after an upload; a version makes the player load the new file.
+        audioUrl = hasAudio && updated.audio_url ? `${updated.audio_url}?v=${Date.now()}` : null
       } catch (err) {
         console.warn('[voices] jingle refresh failed after upload', err)
         refreshFailed = true
