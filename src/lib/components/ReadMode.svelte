@@ -161,7 +161,7 @@
     </div>
 
     <button
-      class="fixed right-5 bottom-5 z-50 flex size-12 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-content transition-[background-color,transform] duration-150 ease-out hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:scale-95 md:right-6 md:bottom-6 md:size-14"
+      class="btn fixed right-5 bottom-5 z-50 btn-circle size-12 btn-primary md:right-6 md:bottom-6 md:size-14"
       onclick={onclose}
       aria-label="Sluiten (Escape)"
     >

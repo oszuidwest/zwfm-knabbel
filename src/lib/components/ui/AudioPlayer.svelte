@@ -17,25 +17,23 @@
   let audio = $state<HTMLAudioElement | null>(null)
   let paused = $state(true)
   let currentTime = $state(0)
-  let mediaDuration = $state(0)
-  let failed = $state(false)
+  let mediaDuration = $state(NaN)
+  // Tied to the source, so a replaced file starts without the old error.
+  let failedSrc = $state<string>()
 
-  const total = $derived(mediaDuration || duration || 0)
-  const unavailable = $derived(failed || !src)
+  const total = $derived((Number.isFinite(mediaDuration) && mediaDuration) || duration || 0)
+  const unavailable = $derived(!src || failedSrc === src)
 
   // One clip at a time: starting any other media on the page pauses this one.
-  $effect(() => {
-    function handlePlay(e: Event): void {
-      if (audio && e.target !== audio) audio.pause()
-    }
-    document.addEventListener('play', handlePlay, true)
-    return () => document.removeEventListener('play', handlePlay, true)
-  })
+  function handlePlay(e: Event): void {
+    if (audio && e.target !== audio) audio.pause()
+  }
 
   function toggle(): void {
     if (!audio) return
     if (audio.paused) {
-      audio.play().catch(() => (failed = true))
+      // A pause before playback starts rejects with AbortError; real load errors reach onerror.
+      audio.play().catch(() => {})
     } else {
       audio.pause()
     }
@@ -45,6 +43,8 @@
     if (audio) audio.currentTime = e.currentTarget.valueAsNumber
   }
 </script>
+
+<svelte:document onplaycapture={handlePlay} />
 
 {#snippet playButton()}
   <button
@@ -77,12 +77,10 @@
   bind:this={audio}
   bind:paused
   bind:currentTime
+  bind:duration={mediaDuration}
   {src}
   preload={size === 'icon' ? 'none' : 'metadata'}
-  onloadedmetadata={() => {
-    if (audio && Number.isFinite(audio.duration)) mediaDuration = audio.duration
-  }}
-  onerror={() => (failed = true)}
+  onerror={() => (failedSrc = src)}
 ></audio>
 
 {#if size === 'icon'}
