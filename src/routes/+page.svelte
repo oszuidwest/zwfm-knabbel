@@ -4,16 +4,8 @@
   import { statusColors, statusLabels } from '$lib/utils/labels'
   import { formatDuration, formatRelativeTime } from '$lib/utils/format'
   import { resolveInternalHref } from '$lib/utils/routes'
-  import {
-    ArchiveX,
-    CircleCheckBig,
-    FileText,
-    Pencil,
-    Podcast,
-    Radio,
-    Zap,
-  } from '$lib/components/icons'
-  import { PageHeader } from '$lib/components/ui'
+  import { ArchiveX, Zap } from '$lib/components/icons'
+  import { AudioPlayer, PageHeader } from '$lib/components/ui'
 
   let { data } = $props()
   const auth = getAuthContext()
@@ -62,7 +54,7 @@
     ],
     early_evening: [
       'Hallo {name}, nog even de avond door',
-      'Dag {name}, avonddienst? Respect.',
+      'Dag {name}, avonddienst? Respect',
       'Hallo {name}, West-Brabant rekent op nieuws',
       'Ha {name}, de studio is van jou vanavond',
       'Hallo {name}, de avondploeg is compleet',
@@ -73,7 +65,7 @@
       'Hey {name}, het nieuws slaapt nooit',
       'Ha {name}, nog even Babbel voor het slapen?',
       'Hey {name}, de late uurtjes tellen dubbel',
-      'Hi {name}, de avondploeg is compleet!',
+      'Hi {name}, de avondploeg is compleet',
       'Ha {name}, Babbel blijft op tot jij klaar bent',
       'Dag {name}, de laatste loodjes van vandaag',
       'Hallo {name}, bijna bedtijd?',
@@ -103,16 +95,15 @@
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-    year: 'numeric',
   })
+  const todayTitle = todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)
 
   interface StatTile {
     label: string
     value: number
     href: string
-    icon: typeof Radio
-    accent: string
-    tint: string
+    /** Marks the one figure that needs attention. */
+    emphasis?: boolean
     show: boolean
   }
 
@@ -121,36 +112,25 @@
       label: 'Actieve berichten',
       value: data.stats.active,
       href: '/stories?status=active',
-      icon: CircleCheckBig,
-      accent: 'text-success/60',
-      tint: 'sm:hover:bg-success/5',
       show: data.canStories,
     },
     {
       label: 'Breaking actief',
       value: data.stats.breaking,
       href: '/stories?status=active',
-      icon: Zap,
-      accent: 'text-error/60',
-      tint: 'sm:hover:bg-error/5',
+      emphasis: data.stats.breaking > 0,
       show: data.canStories,
     },
     {
       label: 'Concepten',
       value: data.stats.drafts,
       href: '/stories?status=draft',
-      icon: Pencil,
-      accent: 'text-warning/60',
-      tint: 'sm:hover:bg-warning/5',
       show: data.canStories,
     },
     {
       label: 'Bulletins vandaag',
       value: data.stats.today,
       href: '/bulletins',
-      icon: Podcast,
-      accent: 'text-primary/60',
-      tint: 'sm:hover:bg-primary/5',
       show: data.canBulletins,
     },
   ])
@@ -162,9 +142,9 @@
 
 <div class="space-y-6">
   <PageHeader
-    title={greeting}
+    title={todayTitle}
     documentTitle="Overzicht"
-    subtitle={todayLabel}
+    subtitle={greeting}
     actionHref="/stories/new"
     actionLabel="Nieuw bericht"
     canAction={canCreateStory}
@@ -175,19 +155,19 @@
       class="stats w-full bg-base-100 max-sm:grid-flow-row max-sm:grid-cols-2 max-sm:gap-3 max-sm:bg-transparent"
     >
       {#each statTiles.filter(tile => tile.show) as tile (tile.label)}
-        {@const Icon = tile.icon}
         <a
           href={resolveInternalHref(tile.href)}
-          class="stat transition-colors {tile.tint} max-sm:gap-x-2 max-sm:rounded-box max-sm:border-0 max-sm:bg-base-100 max-sm:p-4"
+          class="stat transition-colors hover:bg-base-200/60 max-sm:rounded-box max-sm:border-0 max-sm:bg-base-100 max-sm:p-4"
         >
-          <div class="stat-figure {tile.accent}">
-            <Icon
-              aria-hidden="true"
-              class="h-8 w-8 max-sm:h-6 max-sm:w-6"
-            />
-          </div>
           <div class="stat-title max-sm:whitespace-normal">{tile.label}</div>
-          <div class="stat-value">{tile.value}</div>
+          <div
+            class={[
+              'stat-value text-3xl font-medium tabular-nums',
+              tile.emphasis && 'text-primary',
+            ]}
+          >
+            {tile.value}
+          </div>
         </a>
       {/each}
     </div>
@@ -195,25 +175,24 @@
 
   {#if data.stationBulletins.length > 0}
     <section class="space-y-3">
-      <h2 class="text-lg font-semibold">Laatste bulletin per zender</h2>
+      <h2 class="section-title">Laatste bulletin per zender</h2>
       <div class="grid gap-4 md:grid-cols-[repeat(auto-fit,minmax(20rem,1fr))]">
         {#each data.stationBulletins as { station, bulletin } (station.id)}
           <div class="card bg-base-100 card-sm">
             <div class="card-body">
               <div class="flex items-center justify-between gap-2">
                 <h3 class="card-title min-w-0 text-base">
-                  <Radio
-                    aria-hidden="true"
-                    class="h-4 w-4 shrink-0 text-primary"
-                  />
                   <span class="truncate">{station.name}</span>
                 </h3>
                 {#if bulletin}
-                  <span
-                    class="badge badge-sm {isFresh(bulletin.created_at)
-                      ? 'badge-success'
-                      : 'badge-warning'}"
-                  >
+                  <span class="flex shrink-0 items-center gap-1.5 text-xs text-base-content/60">
+                    <span
+                      class={[
+                        'status',
+                        isFresh(bulletin.created_at) ? 'status-success' : 'status-warning',
+                      ]}
+                      aria-hidden="true"
+                    ></span>
                     {formatRelativeTime(bulletin.created_at)}
                   </span>
                 {/if}
@@ -221,7 +200,7 @@
 
               {#if bulletin}
                 <div class="flex flex-wrap items-center gap-3 text-sm text-base-content/60">
-                  <span>{formatDuration(bulletin.duration_seconds)}</span>
+                  <span class="tabular-nums">{formatDuration(bulletin.duration_seconds)}</span>
                   <span>{bulletin.story_count ?? 0} berichten</span>
                 </div>
 
@@ -234,17 +213,12 @@
                     <span>Audio is opgeruimd</span>
                   </div>
                 {:else if bulletin.audio_url}
-                  <audio
-                    controls
-                    preload="metadata"
-                    class="h-10 w-full"
-                  >
-                    <source
-                      src={getMediaUrl(bulletin.audio_url)}
-                      type="audio/wav"
-                    />
-                    Je browser ondersteunt geen audio weergave.
-                  </audio>
+                  <AudioPlayer
+                    src={getMediaUrl(bulletin.audio_url)}
+                    duration={bulletin.duration_seconds}
+                    label="Bulletin {station.name}"
+                    size="sm"
+                  />
                 {/if}
 
                 <div class="card-actions justify-end">
@@ -256,7 +230,7 @@
                   </a>
                 </div>
               {:else}
-                <p class="text-sm text-base-content/60">Nog geen bulletin gegenereerd.</p>
+                <p class="text-sm text-base-content/60">Nog geen bulletin gegenereerd</p>
                 {#if canGenerate}
                   <div class="card-actions justify-end">
                     <a
@@ -279,26 +253,20 @@
     {#if data.canStories}
       <ul class="list rounded-box bg-base-100">
         <li class="flex items-center justify-between p-4 pb-2">
-          <span class="text-xs tracking-wide text-base-content/60">Recente berichten</span>
+          <h2 class="font-medium">Recente berichten</h2>
           <a
             href={resolveInternalHref('/stories')}
-            class="link text-xs link-hover"
+            class="link text-sm text-base-content/60 link-hover"
           >
             Alle berichten
           </a>
         </li>
         {#if data.recentStories.length === 0}
-          <li class="p-4 pt-2 text-sm text-base-content/60">Nog geen berichten.</li>
+          <li class="p-4 pt-2 text-sm text-base-content/60">Nog geen berichten</li>
         {:else}
           {#each data.recentStories as story (story.id)}
             <li class="list-row items-center">
-              <div>
-                <FileText
-                  aria-hidden="true"
-                  class="h-5 w-5 text-base-content/40"
-                />
-              </div>
-              <div class="min-w-0">
+              <div class="min-w-0 list-col-grow">
                 <a
                   href={resolveInternalHref(`/stories/${story.id}/edit`)}
                   class="flex items-center gap-1.5 font-medium hover:text-primary hover:underline"
@@ -327,26 +295,20 @@
     {#if data.canBulletins}
       <ul class="list rounded-box bg-base-100">
         <li class="flex items-center justify-between p-4 pb-2">
-          <span class="text-xs tracking-wide text-base-content/60">Recente bulletins</span>
+          <h2 class="font-medium">Recente bulletins</h2>
           <a
             href={resolveInternalHref('/bulletins')}
-            class="link text-xs link-hover"
+            class="link text-sm text-base-content/60 link-hover"
           >
             Alle bulletins
           </a>
         </li>
         {#if data.recentBulletins.length === 0}
-          <li class="p-4 pt-2 text-sm text-base-content/60">Nog geen bulletins.</li>
+          <li class="p-4 pt-2 text-sm text-base-content/60">Nog geen bulletins</li>
         {:else}
           {#each data.recentBulletins as bulletin (bulletin.id)}
             <li class="list-row items-center">
-              <div>
-                <Podcast
-                  aria-hidden="true"
-                  class="h-5 w-5 text-base-content/40"
-                />
-              </div>
-              <div class="min-w-0">
+              <div class="min-w-0 list-col-grow">
                 <a
                   href={resolveInternalHref(`/bulletins/${bulletin.id}`)}
                   class="flex items-center gap-1.5 font-medium hover:text-primary hover:underline"
@@ -357,7 +319,7 @@
                   {formatRelativeTime(bulletin.created_at)}
                 </div>
               </div>
-              <span class="text-sm text-base-content/60">
+              <span class="text-sm text-base-content/60 tabular-nums">
                 {formatDuration(bulletin.duration_seconds)}
               </span>
             </li>

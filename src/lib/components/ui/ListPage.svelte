@@ -95,7 +95,7 @@
           >
             <Plus
               aria-hidden="true"
-              class="h-5 w-5"
+              class="h-4 w-4"
             />
             {newLabel}
           </a>
@@ -116,7 +116,7 @@
       {#each items as item (item.id)}
         {@const Icon = icon}
         {@const isClickable = !!editHref}
-        <div class="card bg-base-100 transition-shadow hover:shadow-md">
+        <div class="card bg-base-100">
           <div class="card-body p-4">
             <div class="flex items-center justify-between gap-3">
               {#if isClickable}
@@ -125,7 +125,7 @@
                   class="flex min-w-0 flex-1 items-center gap-3 rounded-field active:bg-base-200"
                 >
                   <div
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-(--color-primary-ink)"
                   >
                     <Icon
                       aria-hidden="true"
@@ -139,7 +139,7 @@
               {:else}
                 <div class="flex min-w-0 flex-1 items-center gap-3">
                   <div
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-(--color-primary-ink)"
                   >
                     <Icon
                       aria-hidden="true"
@@ -184,7 +184,7 @@
                     <button
                       class={[
                         'btn btn-square shrink-0 btn-ghost btn-sm',
-                        canDelete && 'text-error',
+                        canDelete && 'hover:text-error',
                       ]}
                       onclick={e => handleDeleteClick(item, e)}
                       disabled={!canDelete}

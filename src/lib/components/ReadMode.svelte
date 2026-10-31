@@ -121,7 +121,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <dialog
-  class="fixed inset-0 m-0 flex h-full max-h-none w-full max-w-none flex-col overflow-hidden border-0 bg-black transition-opacity duration-200 before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,oklch(from_var(--color-primary)_l_c_h/0.08),transparent_50%)] focus:outline-hidden starting:opacity-0"
+  class="fixed inset-0 m-0 flex h-full max-h-none w-full max-w-none flex-col overflow-hidden border-0 bg-black transition-opacity duration-200 focus:outline-hidden starting:opacity-0"
   aria-label="Leesmodus"
   tabindex="-1"
   oncancel={e => {
@@ -130,18 +130,16 @@
   }}
   {@attach openFocused}
 >
-  <div class="absolute top-0 right-0 left-0 z-10 h-[3px] bg-white/5">
+  <div class="absolute top-0 right-0 left-0 z-10 h-1 bg-white/5">
     <div
-      class="h-full bg-linear-to-r from-primary to-primary/70 shadow-[0_0_12px_oklch(from_var(--color-primary)_l_c_h/0.4)] transition-[width] duration-150 ease-out"
-      style="width: {scrollProgress}%"
+      class="h-full origin-left bg-primary transition-transform duration-150 ease-out"
+      style="transform: scaleX({scrollProgress / 100})"
     ></div>
   </div>
 
   {#if hasText}
     <div class="relative flex min-h-14 shrink-0 items-center justify-center px-4 py-5 md:py-4">
-      <div
-        class="flex items-center gap-2 font-mono text-xs tracking-widest text-white/60 uppercase md:text-sm"
-      >
+      <div class="flex items-center gap-2 font-mono text-xs text-white/60 tabular-nums md:text-sm">
         <span class="font-medium text-white/90">~{readingTimeFormatted}</span>
         <span class="size-1 rounded-full bg-primary opacity-80"></span>
         <span>{wordCount} woorden</span>
@@ -155,7 +153,7 @@
     >
       <div class="mx-auto max-w-5xl px-5 pt-4 pb-24 md:px-12 md:pt-8 lg:px-16">
         <p
-          class="font-mono text-[clamp(1.125rem,2.5vw+0.5rem,2rem)] leading-[1.9] tracking-wide wrap-break-word whitespace-pre-wrap text-white/95 [text-shadow:0_1px_2px_rgba(0,0,0,0.3)] first-letter:float-left first-letter:mt-[0.05em] first-letter:mr-[0.08em] first-letter:text-[3.5em] first-letter:leading-[0.8] first-letter:font-semibold first-letter:text-primary"
+          class="font-mono text-[clamp(1.125rem,2.5vw+0.5rem,2rem)] leading-[1.9] tracking-wide wrap-break-word whitespace-pre-wrap text-white/95 first-letter:float-left first-letter:mt-[0.05em] first-letter:mr-[0.08em] first-letter:text-[3.5em] first-letter:leading-[0.8] first-letter:font-semibold first-letter:text-primary"
         >
           {text}
         </p>
@@ -163,7 +161,7 @@
     </div>
 
     <button
-      class="fixed right-5 bottom-5 z-50 flex size-12 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-primary/80 text-white shadow-[0_4px_12px_rgba(0,0,0,0.3),0_0_20px_oklch(from_var(--color-primary)_l_c_h/0.4)] backdrop-blur-md transition-all duration-200 ease-out hover:scale-105 hover:bg-primary/90 hover:shadow-[0_6px_20px_rgba(0,0,0,0.4),0_0_30px_oklch(from_var(--color-primary)_l_c_h/0.4)] active:scale-95 md:right-6 md:bottom-6 md:size-14"
+      class="btn fixed right-5 bottom-5 z-50 btn-circle size-12 btn-primary md:right-6 md:bottom-6 md:size-14"
       onclick={onclose}
       aria-label="Sluiten (Escape)"
     >
@@ -183,7 +181,7 @@
         class="mt-4 cursor-pointer border-none bg-transparent font-mono text-sm text-white/60 transition-colors hover:text-white/80"
         onclick={onclose}
       >
-        SLUITEN
+        Sluiten
       </button>
     </div>
   {/if}

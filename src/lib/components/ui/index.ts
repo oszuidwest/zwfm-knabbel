@@ -1,4 +1,5 @@
 export { default as AIAudioField } from './AIAudioField.svelte'
+export { default as AudioPlayer } from './AudioPlayer.svelte'
 export { default as BreakingToggle } from './BreakingToggle.svelte'
 export { default as EmptyState } from './EmptyState.svelte'
 export { default as FileInput } from './FileInput.svelte'

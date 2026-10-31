@@ -3,7 +3,7 @@
   import { deleteVoicesId } from '$lib/api/generated/sdk.gen'
   import { getAuthContext } from '$lib/stores/auth.svelte'
   import { deleteWithConfirm } from '$lib/utils/crud'
-  import { Mic, Sparkles } from '$lib/components/icons'
+  import { AudioLines, Mic } from '$lib/components/icons'
   import { ListPage, TableActions } from '$lib/components/ui'
   import type { Voice } from '$lib/types'
 
@@ -25,10 +25,10 @@
 {#snippet aiBadge(voice: Voice)}
   {#if voice.elevenlabs_voice_id}
     <span
-      class="shrink-0 text-info"
+      class="shrink-0 text-base-content/60"
       title="AI-stem"
     >
-      <Sparkles
+      <AudioLines
         aria-hidden="true"
         class="h-4 w-4"
       />

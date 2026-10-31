@@ -29,9 +29,9 @@ export const statusOptions = [
 ]
 
 export const statusColors: Record<string, string> = {
-  draft: 'badge-warning',
-  active: 'badge-success',
-  expired: 'badge-error',
+  draft: 'badge-soft',
+  active: 'badge-soft badge-success',
+  expired: 'badge-soft badge-error',
 }
 
 export const weekdayLabels: Record<string, string> = {

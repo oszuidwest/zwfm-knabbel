@@ -7,6 +7,7 @@
   import { getAuthOauthCallback } from '$lib/api/generated/sdk.gen'
   import { toast } from '$lib/stores/toast'
   import { resolveInternalHref } from '$lib/utils/routes'
+  import { CircleAlert, CircleCheckBig } from '$lib/components/icons'
 
   let status = $state<'loading' | 'success' | 'error'>('loading')
   let errorMessage = $state('')
@@ -71,17 +72,23 @@
     <div class="card-body items-center text-center">
       {#if status === 'loading'}
         <span class="loading loading-lg loading-spinner text-primary"></span>
-        <h2 class="mt-4 card-title">Bezig met inloggen...</h2>
+        <h2 class="mt-4 card-title">Bezig met inloggen…</h2>
         <p class="page-subtitle">Even geduld terwijl we je authenticatie verwerken.</p>
       {:else if status === 'success'}
-        <div class="mb-4 text-5xl text-success">✓</div>
-        <h2 class="card-title">Ingelogd!</h2>
-        <p class="page-subtitle">Je wordt doorgestuurd...</p>
+        <CircleCheckBig
+          aria-hidden="true"
+          class="mb-4 h-10 w-10 text-success"
+        />
+        <h2 class="card-title">Ingelogd</h2>
+        <p class="page-subtitle">Je wordt doorgestuurd…</p>
       {:else if status === 'error'}
-        <div class="mb-4 text-5xl text-error">✗</div>
+        <CircleAlert
+          aria-hidden="true"
+          class="mb-4 h-10 w-10 text-error"
+        />
         <h2 class="card-title">Inloggen mislukt</h2>
         <p class="page-subtitle">{errorMessage}</p>
-        <p class="page-subtitle mt-2">Je wordt doorgestuurd naar de login pagina...</p>
+        <p class="page-subtitle mt-2">Je wordt doorgestuurd naar de inlogpagina…</p>
       {/if}
     </div>
   </div>

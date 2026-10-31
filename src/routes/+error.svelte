@@ -8,16 +8,16 @@
 </svelte:head>
 
 <div class="flex min-h-screen items-center justify-center bg-base-200 p-4">
-  <div class="card w-full max-w-md bg-base-100 shadow-xl">
+  <div class="card w-full max-w-md bg-base-100">
     <div class="card-body items-center text-center">
-      <h1 class="text-6xl font-bold text-error">{page.status}</h1>
-      <p class="mt-4 text-xl text-base-content/70">
+      <h1 class="text-5xl font-medium text-primary tabular-nums">{page.status}</h1>
+      <p class="mt-4 text-lg">
         {#if page.status === 404}
           Pagina niet gevonden
         {:else if page.status === 403}
           Geen toegang
         {:else if page.status === 500}
-          Server fout
+          Serverfout
         {:else}
           {page.error?.message ?? 'Er is iets misgegaan'}
         {/if}

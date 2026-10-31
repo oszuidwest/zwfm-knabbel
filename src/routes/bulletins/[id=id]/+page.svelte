@@ -3,8 +3,8 @@
   import { toast } from '$lib/stores/toast'
   import { formatDateTime, formatDuration, formatFileSize } from '$lib/utils/format'
   import { resolveInternalHref } from '$lib/utils/routes'
-  import { ArchiveX, Download, FileText, Zap } from '$lib/components/icons'
-  import { PageHeader } from '$lib/components/ui'
+  import { ArchiveX, Download, Zap } from '$lib/components/icons'
+  import { AudioPlayer, PageHeader } from '$lib/components/ui'
 
   let { data } = $props()
 
@@ -63,7 +63,7 @@
           </div>
           <div class="flex justify-between">
             <dt class="page-subtitle">Duur</dt>
-            <dd>{formatDuration(data.bulletin.duration_seconds)}</dd>
+            <dd class="tabular-nums">{formatDuration(data.bulletin.duration_seconds)}</dd>
           </div>
           <div class="flex justify-between gap-4">
             <dt class="page-subtitle">Bestandsnaam</dt>
@@ -95,16 +95,11 @@
             </p>
           </div>
         {:else if data.bulletin.audio_url}
-          <audio
-            controls
-            class="w-full"
-          >
-            <source
-              src={getMediaUrl(data.bulletin.audio_url)}
-              type="audio/wav"
-            />
-            Je browser ondersteunt geen audio weergave.
-          </audio>
+          <AudioPlayer
+            src={getMediaUrl(data.bulletin.audio_url)}
+            duration={data.bulletin.duration_seconds}
+            label="Bulletin"
+          />
           <div class="mt-4 flex gap-2">
             <button
               onclick={handleDownload}
@@ -134,7 +129,7 @@
           {#each data.stories as story, index (story.id)}
             <li class="flex items-start gap-3 rounded-lg bg-base-200/50 p-3">
               <span
-                class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary"
+                class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-(--color-primary-ink) tabular-nums"
               >
                 {index + 1}
               </span>
@@ -157,17 +152,13 @@
                   {/if}
                 </a>
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-sm text-base-content/60">
-                  <span>{formatDuration(story.duration_seconds)}</span>
+                  <span class="tabular-nums">{formatDuration(story.duration_seconds)}</span>
                   {#if story.voice_name}
                     <span>•</span>
                     <span>{story.voice_name}</span>
                   {/if}
                 </div>
               </div>
-              <FileText
-                aria-hidden="true"
-                class="h-4 w-4 shrink-0 text-base-content/40"
-              />
             </li>
           {/each}
         </ul>
