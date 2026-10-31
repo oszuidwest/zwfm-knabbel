@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { invalidateAll } from '$app/navigation'
-  import { deleteVoicesId } from '$lib/api/generated/sdk.gen'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { deleteWithConfirm } from '$lib/utils/crud'
-  import { AudioLines, Mic } from '$lib/components/icons'
-  import { ListPage, TableActions } from '$lib/components/ui'
-  import type { Voice } from '$lib/types'
+  import { refreshAll } from '$app/navigation'
+  import { deleteVoicesId } from '#lib/api/generated/sdk.gen.js'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { deleteWithConfirm } from '#lib/utils/crud.js'
+  import { AudioLines, Mic } from '#lib/components/icons.js'
+  import { ListPage, TableActions } from '#lib/components/ui/index.js'
+  import type { Voice } from '#lib/types/index.js'
 
   let { data } = $props()
   const auth = getAuthContext()
@@ -16,7 +16,7 @@
     deleteWithConfirm({
       name: voice.name ?? 'deze stem',
       deleteFn: () => deleteVoicesId({ path: { id: voice.id } }),
-      onSuccess: () => invalidateAll(),
+      onSuccess: () => refreshAll(),
       successMessage: 'Stem verwijderd',
     })
   }

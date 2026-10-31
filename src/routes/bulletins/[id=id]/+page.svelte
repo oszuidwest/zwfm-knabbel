@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { getMediaUrl } from '$lib/api/client'
-  import { toast } from '$lib/stores/toast'
-  import { formatDateTime, formatDuration, formatFileSize } from '$lib/utils/format'
-  import { resolveInternalHref } from '$lib/utils/routes'
-  import { ArchiveX, Download, Zap } from '$lib/components/icons'
-  import { AudioPlayer, PageHeader } from '$lib/components/ui'
+  import { getMediaUrl } from '#lib/api/client.js'
+  import { toast } from '#lib/stores/toast.js'
+  import { formatDateTime, formatDuration, formatFileSize } from '#lib/utils/format.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
+  import { ArchiveX, Download, Zap } from '#lib/components/icons.js'
+  import { AudioPlayer, PageHeader } from '#lib/components/ui/index.js'
 
   let { data } = $props()
 

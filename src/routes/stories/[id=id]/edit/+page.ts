@@ -1,7 +1,7 @@
 import type { PageLoad } from './$types'
-import { getStoriesId, getStoriesIdBulletins, getVoices } from '$lib/api/generated/sdk.gen'
-import { requirePermission } from '$lib/auth/guard'
-import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
+import { getStoriesId, getStoriesIdBulletins, getVoices } from '#lib/api/generated/sdk.gen.js'
+import { requirePermission } from '#lib/auth/guard.js'
+import { settleLoad, unwrapLoadResult } from '#lib/utils/load-error.js'
 
 const BULLETINS_PAGE_SIZE = 20
 

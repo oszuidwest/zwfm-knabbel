@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { resolveInternalHref } from '$lib/utils/routes'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
 </script>
 
 <svelte:head>

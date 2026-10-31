@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { toast } from '$lib/stores/toast'
+  import { toast } from '#lib/stores/toast.js'
   import { CircleCheckBig, CircleAlert, TriangleAlert, Info, X } from './icons'
 
   const iconMap = {

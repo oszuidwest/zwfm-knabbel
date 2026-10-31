@@ -3,19 +3,19 @@
   import { page } from '$app/state'
   import { afterNavigate, goto } from '$app/navigation'
   import { untrack } from 'svelte'
-  import { createAuthStore, setAuthContext } from '$lib/stores/auth.svelte'
-  import Layout from '$lib/components/Layout.svelte'
-  import Toast from '$lib/components/Toast.svelte'
-  import { toast } from '$lib/stores/toast'
-  import { resolveInternalHref } from '$lib/utils/routes'
+  import { createAuthStore, setAuthContext } from '#lib/stores/auth.svelte.js'
+  import Layout from '#lib/components/Layout.svelte'
+  import Toast from '#lib/components/Toast.svelte'
+  import { toast } from '#lib/stores/toast.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
   import type { LayoutProps } from './$types'
 
   let { data, children }: LayoutProps = $props()
   const auth = createAuthStore(untrack(() => data.user))
+
   setAuthContext(auth)
 
   const publicRoutes = ['/login', '/auth/oauth/callback']
-
   const currentPathname = $derived(page.url.pathname)
   const isPublic = $derived(isPublicRoute(currentPathname))
   const isSessionExpiredLogin = $derived(
@@ -35,16 +35,19 @@
 
   $effect(() => {
     if (!auth.checked || auth.user || isPublic) return
+
     void goto(resolveInternalHref('/login'))
   })
 
   $effect(() => {
     if (!auth.checked || !isSessionExpiredLogin || !auth.user) return
+
     auth.hydrate(null)
   })
 
   $effect(() => {
     if (!auth.checked || !isAuthenticatedLoginRedirect) return
+
     void goto(resolveInternalHref('/stories'))
   })
 
@@ -59,7 +62,7 @@
   afterNavigate(({ to }) => {
     if (to?.url.searchParams.get('denied') === '1') {
       toast.error('Geen rechten voor deze pagina')
-      void goto(resolveInternalHref('/stories'), { replaceState: true })
+      void goto(resolveInternalHref('/stories'), { replace: true })
       return
     }
 

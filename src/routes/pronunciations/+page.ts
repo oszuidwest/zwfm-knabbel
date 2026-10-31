@@ -1,8 +1,8 @@
-import { ApiError, isProblemDetails } from '$lib/api/client'
-import { getSettingsTtsPronunciations } from '$lib/api/generated/sdk.gen'
-import { requirePermission } from '$lib/auth/guard'
-import { redirectToLogin, settleLoad } from '$lib/utils/load-error'
-import type { PronunciationRulesList } from '$lib/types'
+import { ApiError, isProblemDetails } from '#lib/api/client.js'
+import { getSettingsTtsPronunciations } from '#lib/api/generated/sdk.gen.js'
+import { requirePermission } from '#lib/auth/guard.js'
+import { redirectToLogin, settleLoad } from '#lib/utils/load-error.js'
+import type { PronunciationRulesList } from '#lib/types/index.js'
 import type { PageLoad } from './$types'
 
 interface PronunciationsLoadError {

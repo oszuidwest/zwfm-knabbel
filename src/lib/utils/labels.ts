@@ -1,4 +1,4 @@
-import { WEEKDAY_BITS } from '$lib/types'
+import { WEEKDAY_BITS } from '#lib/types/index.js'
 
 export const roleLabels: Record<string, string> = {
   admin: 'Beheerder',

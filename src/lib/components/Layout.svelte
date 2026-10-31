@@ -2,10 +2,10 @@
   import type { Snippet } from 'svelte'
   import { navigating, page } from '$app/state'
   import { goto, invalidate } from '$app/navigation'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { AUTH_DEPENDENCY } from '$lib/auth/session'
-  import { getRoleLabel } from '$lib/utils/labels'
-  import { resolveInternalHref } from '$lib/utils/routes'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { AUTH_DEPENDENCY } from '#lib/auth/session.js'
+  import { getRoleLabel } from '#lib/utils/labels.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
   import {
     Radio,
     Mic,

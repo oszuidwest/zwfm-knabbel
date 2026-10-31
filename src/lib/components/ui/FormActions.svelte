@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Component } from 'svelte'
-  import { X, Check } from '$lib/components/icons'
-  import { resolveInternalHref } from '$lib/utils/routes'
+  import { X, Check } from '#lib/components/icons.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
   import MaybeTooltip from './MaybeTooltip.svelte'
 
   interface Props {

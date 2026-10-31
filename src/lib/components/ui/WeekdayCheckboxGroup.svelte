@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { weekdayLabels } from '$lib/utils/labels'
-  import type { Weekdays } from '$lib/types'
+  import { weekdayLabels } from '#lib/utils/labels.js'
+  import type { Weekdays } from '#lib/types/index.js'
 
   interface Props {
     value: Weekdays

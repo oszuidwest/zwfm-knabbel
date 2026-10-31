@@ -1,14 +1,14 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { getFieldErrors, notifyMutationError } from '$lib/api/client'
-  import { userCreateSchema, type UserFormData } from '$lib/schemas/user'
-  import { postUsers } from '$lib/api/generated/sdk.gen'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { toast } from '$lib/stores/toast'
-  import { validateForm } from '$lib/utils/validation'
-  import { roleOptions } from '$lib/utils/labels'
-  import { resolveInternalHref } from '$lib/utils/routes'
-  import { TextInput, SelectInput, FormActions, PageHeader } from '$lib/components/ui'
+  import { getFieldErrors, notifyMutationError } from '#lib/api/client.js'
+  import { userCreateSchema, type UserFormData } from '#lib/schemas/user.js'
+  import { postUsers } from '#lib/api/generated/sdk.gen.js'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { toast } from '#lib/stores/toast.js'
+  import { validateForm } from '#lib/utils/validation.js'
+  import { roleOptions } from '#lib/utils/labels.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
+  import { TextInput, SelectInput, FormActions, PageHeader } from '#lib/components/ui/index.js'
 
   const auth = getAuthContext()
 

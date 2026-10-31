@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Component } from 'svelte'
-  import { resolveInternalHref } from '$lib/utils/routes'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
 
   interface Props {
     icon: Component

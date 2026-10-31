@@ -1,4 +1,4 @@
-import { WEEKDAY_BITS_BY_DAY, type Story } from '$lib/types'
+import { WEEKDAY_BITS_BY_DAY, type Story } from '#lib/types/index.js'
 import { formatDate, parseDate, toLocalDateString } from './format'
 
 type RestoreStory = Pick<Story, 'status' | 'start_date' | 'end_date' | 'weekdays' | 'audio_file'>

@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { getMediaUrl } from '$lib/api/client'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { statusColors, statusLabels } from '$lib/utils/labels'
-  import { formatDuration, formatRelativeTime } from '$lib/utils/format'
-  import { resolveInternalHref } from '$lib/utils/routes'
-  import { ArchiveX, Zap } from '$lib/components/icons'
-  import { AudioPlayer, PageHeader } from '$lib/components/ui'
+  import { getMediaUrl } from '#lib/api/client.js'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { statusColors, statusLabels } from '#lib/utils/labels.js'
+  import { formatDuration, formatRelativeTime } from '#lib/utils/format.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
+  import { ArchiveX, Zap } from '#lib/components/icons.js'
+  import { AudioPlayer, PageHeader } from '#lib/components/ui/index.js'
 
   let { data } = $props()
   const auth = getAuthContext()

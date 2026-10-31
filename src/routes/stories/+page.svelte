@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { goto, invalidateAll } from '$app/navigation'
+  import { goto, refreshAll } from '$app/navigation'
   import { page } from '$app/state'
-  import { deleteStoriesId } from '$lib/api/generated/sdk.gen'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { deleteWithConfirm } from '$lib/utils/crud'
-  import { formatDate, formatDateTime, formatRelativeTime, parseDate } from '$lib/utils/format'
-  import { resolveInternalHref } from '$lib/utils/routes'
-  import { statusLabels, statusColors, statusOptions } from '$lib/utils/labels'
+  import { deleteStoriesId } from '#lib/api/generated/sdk.gen.js'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { deleteWithConfirm } from '#lib/utils/crud.js'
+  import { formatDate, formatDateTime, formatRelativeTime, parseDate } from '#lib/utils/format.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
+  import { statusLabels, statusColors, statusOptions } from '#lib/utils/labels.js'
   import {
     ArchiveRestore,
     FileText,
@@ -18,7 +18,7 @@
     SlidersHorizontal,
     Trash2,
     Zap,
-  } from '$lib/components/icons'
+  } from '#lib/components/icons.js'
   import {
     PageHeader,
     EmptyState,
@@ -26,10 +26,10 @@
     MaybeTooltip,
     Modal,
     Pagination,
-  } from '$lib/components/ui'
-  import ReadMode from '$lib/components/ReadMode.svelte'
+  } from '#lib/components/ui/index.js'
+  import ReadMode from '#lib/components/ReadMode.svelte'
   import RestoreStoryDialog from './RestoreStoryDialog.svelte'
-  import type { Story } from '$lib/types'
+  import type { Story } from '#lib/types/index.js'
 
   let { data } = $props()
   const auth = getAuthContext()
@@ -53,7 +53,7 @@
   })
 
   function updateFilters(updates: Record<string, string>): void {
-    const url = new URL(page.url)
+    const url = new URL(page.url.href)
     // New filters can make the current page number invalid.
     url.searchParams.delete('page')
     for (const [key, value] of Object.entries(updates)) {
@@ -70,18 +70,18 @@
     deleteWithConfirm({
       name: story.title ?? 'dit bericht',
       deleteFn: () => deleteStoriesId({ path: { id: story.id } }),
-      onSuccess: () => invalidateAll(),
+      onSuccess: () => refreshAll(),
       successMessage: 'Bericht verplaatst naar de prullenbak',
     })
 
   async function handleRestored(story: Story, edit: boolean): Promise<void> {
     // Closing the dialog during the restore drops the move to the edit page.
-    if (restoreStory !== story) return invalidateAll()
+    if (restoreStory !== story) return refreshAll()
     restoreStory = null
     if (edit) {
       await goto(resolveInternalHref(`/stories/${story.id}/edit`))
     } else {
-      await invalidateAll()
+      await refreshAll()
     }
   }
 

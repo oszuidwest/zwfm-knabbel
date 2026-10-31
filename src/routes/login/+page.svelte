@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { oauthLogin } from '$lib/api/auth'
-  import { AudioWaveform, Grid2x2, TriangleAlert } from '$lib/components/icons'
+  import { oauthLogin } from '#lib/api/auth.js'
+  import { AudioWaveform, Grid2x2, TriangleAlert } from '#lib/components/icons.js'
 
   let ssoLoading = $state(false)
   const sessionExpired = $derived(page.url.searchParams.get('expired') === '1')

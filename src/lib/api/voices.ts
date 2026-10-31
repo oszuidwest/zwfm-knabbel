@@ -1,5 +1,5 @@
 import type { PostVoicesData } from './generated/types.gen'
-import type { VoiceFormData } from '$lib/schemas/voice'
+import type { VoiceFormData } from '#lib/schemas/voice.js'
 
 export type VoiceCreateInput = PostVoicesData['body']
 

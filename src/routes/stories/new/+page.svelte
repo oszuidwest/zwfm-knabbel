@@ -1,16 +1,21 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { ApiError, getFieldErrors, getUploadFailure, notifyMutationError } from '$lib/api/client'
-  import { storySchema, type StoryFormData } from '$lib/schemas/story'
-  import { postStories, postStoriesIdAudio, postStoriesIdTts } from '$lib/api/generated/sdk.gen'
-  import { toStoryApiFormat } from '$lib/api/stories'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { toast } from '$lib/stores/toast'
-  import { validateForm } from '$lib/utils/validation'
-  import { toLocalDateString } from '$lib/utils/format'
-  import { toSelectOptions } from '$lib/utils/form'
-  import { statusOptions } from '$lib/utils/labels'
-  import { resolveInternalHref } from '$lib/utils/routes'
+  import {
+    ApiError,
+    getFieldErrors,
+    getUploadFailure,
+    notifyMutationError,
+  } from '#lib/api/client.js'
+  import { storySchema, type StoryFormData } from '#lib/schemas/story.js'
+  import { postStories, postStoriesIdAudio, postStoriesIdTts } from '#lib/api/generated/sdk.gen.js'
+  import { toStoryApiFormat } from '#lib/api/stories.js'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { toast } from '#lib/stores/toast.js'
+  import { validateForm } from '#lib/utils/validation.js'
+  import { toLocalDateString } from '#lib/utils/format.js'
+  import { toSelectOptions } from '#lib/utils/form.js'
+  import { statusOptions } from '#lib/utils/labels.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
   import {
     AIAudioField,
     BreakingToggle,
@@ -23,8 +28,8 @@
     fieldA11y,
     PageHeader,
     WeekdayCheckboxGroup,
-  } from '$lib/components/ui'
-  import { allWeekdaysTrue } from '$lib/types'
+  } from '#lib/components/ui/index.js'
+  import { allWeekdaysTrue } from '#lib/types/index.js'
 
   let { data } = $props()
   const auth = getAuthContext()

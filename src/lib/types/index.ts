@@ -12,7 +12,7 @@ export type {
   User,
   UserUpdateWritable as UserUpdate,
   Voice,
-} from '$lib/api/generated/types.gen'
+} from '#lib/api/generated/types.gen.js'
 
 export interface Weekdays {
   monday: boolean

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Zap } from '$lib/components/icons'
+  import { Zap } from '#lib/components/icons.js'
 
   interface Props {
     checked: boolean

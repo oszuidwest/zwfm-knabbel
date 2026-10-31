@@ -1,4 +1,4 @@
-import type { Station } from '$lib/types'
+import type { Station } from '#lib/types/index.js'
 
 export interface StationConfig {
   station: Station

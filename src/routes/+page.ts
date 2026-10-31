@@ -1,16 +1,16 @@
 import type { PageLoad } from './$types'
-import { ApiError } from '$lib/api/client'
-import { can } from '$lib/auth/policy'
-import type { StoryFilters } from '$lib/api/stories'
+import { ApiError } from '#lib/api/client.js'
+import { can } from '#lib/auth/policy.js'
+import type { StoryFilters } from '#lib/api/stories.js'
 import {
   getBulletins,
   getStations,
   getStationsIdBulletinsLatest,
   getStories,
-} from '$lib/api/generated/sdk.gen'
-import { redirectToLogin, settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
-import { toLocalDateString } from '$lib/utils/format'
-import type { Bulletin, Station, Story } from '$lib/types'
+} from '#lib/api/generated/sdk.gen.js'
+import { redirectToLogin, settleLoad, unwrapLoadResult } from '#lib/utils/load-error.js'
+import { toLocalDateString } from '#lib/utils/format.js'
+import type { Bulletin, Station, Story } from '#lib/types/index.js'
 
 export interface StationBulletin {
   station: Station

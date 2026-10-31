@@ -2,10 +2,10 @@
   lang="ts"
   generics="T extends { id?: number; name?: string }"
 >
-  import { Plus, Pencil, Trash2, Eye } from '$lib/components/icons'
-  import { PageHeader, EmptyState, Pagination } from '$lib/components/ui'
-  import type { PaginationInfo } from '$lib/utils/pagination'
-  import { resolveInternalHref } from '$lib/utils/routes'
+  import { Plus, Pencil, Trash2, Eye } from '#lib/components/icons.js'
+  import { PageHeader, EmptyState, Pagination } from '#lib/components/ui/index.js'
+  import type { PaginationInfo } from '#lib/utils/pagination.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
   import MaybeTooltip from './MaybeTooltip.svelte'
   import type { Component, Snippet } from 'svelte'
 

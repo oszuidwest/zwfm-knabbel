@@ -1,8 +1,8 @@
 // This import registers timeout/error interceptors before any SDK call.
-import { ApiError } from '$lib/api/client'
-import { getSessionsCurrent } from '$lib/api/generated/sdk.gen'
-import { AUTH_DEPENDENCY } from '$lib/auth/session'
-import type { Session } from '$lib/types'
+import { ApiError } from '#lib/api/client.js'
+import { getSessionsCurrent } from '#lib/api/generated/sdk.gen.js'
+import { AUTH_DEPENDENCY } from '#lib/auth/session.js'
+import type { Session } from '#lib/types/index.js'
 import type { LayoutLoad } from './$types'
 
 // Client-only rendering keeps session state owned by the browser/API session.

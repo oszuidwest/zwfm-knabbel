@@ -1,7 +1,7 @@
 import type { PageLoad } from './$types'
-import { getUsersId } from '$lib/api/generated/sdk.gen'
-import { requirePermission } from '$lib/auth/guard'
-import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
+import { getUsersId } from '#lib/api/generated/sdk.gen.js'
+import { requirePermission } from '#lib/auth/guard.js'
+import { settleLoad, unwrapLoadResult } from '#lib/utils/load-error.js'
 
 export const load: PageLoad = async ({ params, fetch, parent }) => {
   const userId = Number(params.id)
