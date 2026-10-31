@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { invalidateAll } from '$app/navigation'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { RefreshCw, TriangleAlert } from '$lib/components/icons'
-  import { PageHeader } from '$lib/components/ui'
+  import { refreshAll } from '$app/navigation'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { RefreshCw, TriangleAlert } from '#lib/components/icons.js'
+  import { PageHeader } from '#lib/components/ui/index.js'
   import TTSSettingsForm from './TTSSettingsForm.svelte'
   import type { PageProps } from './$types'
 
@@ -10,7 +10,7 @@
   const auth = getAuthContext()
 
   async function reloadSettings(): Promise<void> {
-    await invalidateAll()
+    await refreshAll()
   }
 </script>
 

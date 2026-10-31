@@ -1,4 +1,4 @@
-import type { CurrentSession } from '$lib/api/generated/types.gen'
+import type { CurrentSession } from '#lib/api/generated/types.gen.js'
 
 type Permissions = CurrentSession['permissions']
 

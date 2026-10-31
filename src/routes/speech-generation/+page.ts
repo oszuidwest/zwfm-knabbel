@@ -1,8 +1,8 @@
 import type { PageLoad } from './$types'
-import { ApiError, isProblemDetails } from '$lib/api/client'
-import { getSettingsTts } from '$lib/api/generated/sdk.gen'
-import { requirePermission } from '$lib/auth/guard'
-import { redirectToLogin, settleLoad } from '$lib/utils/load-error'
+import { ApiError, isProblemDetails } from '#lib/api/client.js'
+import { getSettingsTts } from '#lib/api/generated/sdk.gen.js'
+import { requirePermission } from '#lib/auth/guard.js'
+import { redirectToLogin, settleLoad } from '#lib/utils/load-error.js'
 
 interface SettingsLoadError {
   status?: number

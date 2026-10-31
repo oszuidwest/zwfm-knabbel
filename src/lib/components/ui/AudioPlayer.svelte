@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Pause, Play } from '$lib/components/icons'
-  import { formatDuration } from '$lib/utils/format'
+  import { Pause, Play } from '#lib/components/icons.js'
+  import { formatDuration } from '#lib/utils/format.js'
 
   interface Props {
     src: string | undefined

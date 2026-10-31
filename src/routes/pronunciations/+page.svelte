@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { invalidateAll } from '$app/navigation'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { toast } from '$lib/stores/toast'
-  import { RefreshCw, TriangleAlert } from '$lib/components/icons'
-  import { PageHeader } from '$lib/components/ui'
+  import { refreshAll } from '$app/navigation'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { toast } from '#lib/stores/toast.js'
+  import { RefreshCw, TriangleAlert } from '#lib/components/icons.js'
+  import { PageHeader } from '#lib/components/ui/index.js'
   import PronunciationRulesForm from './PronunciationRulesForm.svelte'
   import type { PageProps } from './$types'
 
@@ -16,7 +16,7 @@
 
   async function reloadPronunciations(): Promise<void> {
     try {
-      await invalidateAll()
+      await refreshAll()
     } catch (err) {
       console.error('[pronunciations] reload failed', err)
       toast.error('Herladen mislukt')

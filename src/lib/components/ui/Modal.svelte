@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
-  import { X } from '$lib/components/icons'
-  import { showModal } from '$lib/utils/dialog'
+  import { X } from '#lib/components/icons.js'
+  import { showModal } from '#lib/utils/dialog.js'
 
   interface Props {
     title: string

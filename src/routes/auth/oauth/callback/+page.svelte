@@ -2,12 +2,12 @@
   import { page } from '$app/state'
   import { goto, invalidate } from '$app/navigation'
   import { onMount } from 'svelte'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { AUTH_DEPENDENCY } from '$lib/auth/session'
-  import { getAuthOauthCallback } from '$lib/api/generated/sdk.gen'
-  import { toast } from '$lib/stores/toast'
-  import { resolveInternalHref } from '$lib/utils/routes'
-  import { CircleAlert, CircleCheckBig } from '$lib/components/icons'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { AUTH_DEPENDENCY } from '#lib/auth/session.js'
+  import { getAuthOauthCallback } from '#lib/api/generated/sdk.gen.js'
+  import { toast } from '#lib/stores/toast.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
+  import { CircleAlert, CircleCheckBig } from '#lib/components/icons.js'
 
   let status = $state<'loading' | 'success' | 'error'>('loading')
   let errorMessage = $state('')

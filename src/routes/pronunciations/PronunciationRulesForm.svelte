@@ -1,16 +1,16 @@
 <script lang="ts">
   import { tick } from 'svelte'
-  import { beforeNavigate, invalidateAll } from '$app/navigation'
-  import { ApiError, isProblemDetails, notifyMutationError } from '$lib/api/client'
-  import { describeFieldError } from '$lib/api/problems'
-  import { putSettingsTtsPronunciations } from '$lib/api/generated/sdk.gen'
+  import { beforeNavigate, refreshAll } from '$app/navigation'
+  import { ApiError, isProblemDetails, notifyMutationError } from '#lib/api/client.js'
+  import { describeFieldError } from '#lib/api/problems.js'
+  import { putSettingsTtsPronunciations } from '#lib/api/generated/sdk.gen.js'
   import {
     isPronunciationRuleField,
     pronunciationRulesSchema,
     type PronunciationRuleField,
-  } from '$lib/schemas/pronunciations'
-  import { toast } from '$lib/stores/toast'
-  import { EmptyState, MaybeTooltip, PageHeader } from '$lib/components/ui'
+  } from '#lib/schemas/pronunciations.js'
+  import { toast } from '#lib/stores/toast.js'
+  import { EmptyState, MaybeTooltip, PageHeader } from '#lib/components/ui/index.js'
   import {
     BookOpen,
     Check,
@@ -20,12 +20,12 @@
     Search,
     Trash2,
     TriangleAlert,
-  } from '$lib/components/icons'
+  } from '#lib/components/icons.js'
   import {
     type PronunciationRule,
     type PronunciationRulesList,
     type PronunciationRulesUpdate,
-  } from '$lib/types'
+  } from '#lib/types/index.js'
 
   interface Props {
     initial: PronunciationRulesList
@@ -45,8 +45,8 @@
   type RowErrors = Record<number, Partial<Record<PronunciationRuleField, string>>>
 
   const SERVER_RULE_ERROR_RE = /^rules\[(\d+)\]\.(\w+)$/
-
   let nextKey = 1
+
   const makeDraft = (r: PronunciationRule): DraftRow => ({
     _key: nextKey++,
     string_to_replace: r.string_to_replace,
@@ -80,6 +80,7 @@
 
     return a.every((row, index) => {
       const other = b[index]
+
       return (
         row.string_to_replace.trim() === other.string_to_replace.trim() &&
         row.ipa.trim() === other.ipa.trim() &&
@@ -96,19 +97,19 @@
   let globalError = $state<string | null>(null)
   let submitting = $state(false)
   let search = $state('')
-
   const editable = $derived(canEdit)
   const disabledTooltip = 'Geen rechten'
   const inlineIpaHint =
     'Vul alleen de IPA-klanken in, zonder schuine strepen. De app zet de /.../ automatisch om de klanken heen.'
-
   const isDirty = $derived(!draftsEqual(rows, snapshot))
   const saveDisabled = $derived(!editable || !isDirty || submitting)
   const reloadLabel = $derived(isDirty ? 'Wijzigingen verwerpen' : 'Herladen')
 
   const filteredRows = $derived.by(() => {
     const q = search.trim().toLowerCase()
+
     if (!q) return rows
+
     return rows.filter(
       r => r.string_to_replace.toLowerCase().includes(q) || r.ipa.toLowerCase().includes(q)
     )
@@ -120,8 +121,8 @@
     const inputs = [`row-${key}-word`, `m-row-${key}-word`]
       .map(id => document.getElementById(id))
       .filter((el): el is HTMLInputElement => el instanceof HTMLInputElement)
-
     const input = inputs.find(el => el.getClientRects().length > 0) ?? inputs[0]
+
     input?.focus()
   }
 
@@ -181,11 +182,13 @@
 
   async function handleSave(): Promise<void> {
     if (submitting || !editable) return
+
     rowErrors = {}
     globalError = null
 
     const payload = toPayload(rows)
     const parsed = pronunciationRulesSchema.safeParse({ rules: payload })
+
     if (!parsed.success) {
       const nextErrors: RowErrors = {}
       let hasRowErrors = false
@@ -229,7 +232,7 @@
       toast.success('Uitspraakregels opgeslagen')
 
       try {
-        await invalidateAll()
+        await refreshAll()
       } catch (err) {
         console.error('[pronunciations] refresh after save failed', err)
         toast.warning('Opgeslagen, maar vernieuwen mislukt')
@@ -308,7 +311,7 @@
     if (isDirty && !confirm('Onopgeslagen wijzigingen verwerpen en opnieuw laden?')) return
     if (isDirty) resetToSnapshot()
     try {
-      await invalidateAll()
+      await refreshAll()
       await tick()
       applyRulesList(initial)
     } catch (err) {

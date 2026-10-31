@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit'
-import { resolveInternalHref } from '$lib/utils/routes'
+import { resolveInternalHref } from '#lib/utils/routes.js'
 import { can, type Action, type Resource } from './policy'
-import type { Session } from '$lib/types'
+import type { Session } from '#lib/types/index.js'
 
 export function requirePermission<R extends Resource>(
   user: Session | null | undefined,

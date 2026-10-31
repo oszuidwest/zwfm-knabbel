@@ -1,13 +1,13 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { getFieldErrors, notifyMutationError } from '$lib/api/client'
-  import { stationSchema, type StationFormData } from '$lib/schemas/station'
-  import { putStationsId } from '$lib/api/generated/sdk.gen'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { toast } from '$lib/stores/toast'
-  import { validateForm } from '$lib/utils/validation'
-  import { resolveInternalHref } from '$lib/utils/routes'
-  import { TextInput, NumberInput, FormActions, PageHeader } from '$lib/components/ui'
+  import { getFieldErrors, notifyMutationError } from '#lib/api/client.js'
+  import { stationSchema, type StationFormData } from '#lib/schemas/station.js'
+  import { putStationsId } from '#lib/api/generated/sdk.gen.js'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { toast } from '#lib/stores/toast.js'
+  import { validateForm } from '#lib/utils/validation.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
+  import { TextInput, NumberInput, FormActions, PageHeader } from '#lib/components/ui/index.js'
   import type { PageData } from './$types'
 
   interface Props {

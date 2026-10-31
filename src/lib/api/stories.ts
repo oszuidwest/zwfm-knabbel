@@ -1,7 +1,7 @@
 import type { GetStoriesData, PostStoriesData } from './generated/types.gen'
-import type { StoryFormData } from '$lib/schemas/story'
-import { weekdaysToMask } from '$lib/types'
-import { toNumberOrNull } from '$lib/utils/form'
+import type { StoryFormData } from '#lib/schemas/story.js'
+import { weekdaysToMask } from '#lib/types/index.js'
+import { toNumberOrNull } from '#lib/utils/form.js'
 
 export type StoryFilters = NonNullable<GetStoriesData['query']>
 export type StoryCreateInput = PostStoriesData['body']

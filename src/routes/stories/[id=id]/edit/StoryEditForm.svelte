@@ -6,22 +6,22 @@
     getMediaUrl,
     getUploadFailure,
     notifyMutationError,
-  } from '$lib/api/client'
-  import { storySchema, type StoryFormData } from '$lib/schemas/story'
+  } from '#lib/api/client.js'
+  import { storySchema, type StoryFormData } from '#lib/schemas/story.js'
   import {
     getStoriesIdBulletins,
     postStoriesIdAudio,
     postStoriesIdTts,
     putStoriesId,
-  } from '$lib/api/generated/sdk.gen'
-  import { toStoryApiFormat } from '$lib/api/stories'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { toast } from '$lib/stores/toast'
-  import { validateForm } from '$lib/utils/validation'
-  import { toSelectOptions, toStringOrEmpty } from '$lib/utils/form'
-  import { statusOptions } from '$lib/utils/labels'
-  import { formatDateTime, formatDuration } from '$lib/utils/format'
-  import { resolveInternalHref } from '$lib/utils/routes'
+  } from '#lib/api/generated/sdk.gen.js'
+  import { toStoryApiFormat } from '#lib/api/stories.js'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { toast } from '#lib/stores/toast.js'
+  import { validateForm } from '#lib/utils/validation.js'
+  import { toSelectOptions, toStringOrEmpty } from '#lib/utils/form.js'
+  import { statusOptions } from '#lib/utils/labels.js'
+  import { formatDateTime, formatDuration } from '#lib/utils/format.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
   import {
     AIAudioField,
     BreakingToggle,
@@ -34,10 +34,10 @@
     fieldA11y,
     PageHeader,
     WeekdayCheckboxGroup,
-  } from '$lib/components/ui'
-  import { CassetteTape, Eye, Podcast } from '$lib/components/icons'
-  import ReadMode from '$lib/components/ReadMode.svelte'
-  import { maskToWeekdays, type Bulletin } from '$lib/types'
+  } from '#lib/components/ui/index.js'
+  import { CassetteTape, Eye, Podcast } from '#lib/components/icons.js'
+  import ReadMode from '#lib/components/ReadMode.svelte'
+  import { maskToWeekdays, type Bulletin } from '#lib/types/index.js'
   import type { PageData } from './$types'
 
   interface Props {

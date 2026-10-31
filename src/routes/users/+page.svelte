@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { invalidateAll } from '$app/navigation'
-  import { deleteUsersId } from '$lib/api/generated/sdk.gen'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { deleteWithConfirm } from '$lib/utils/crud'
-  import { getRoleLabel } from '$lib/utils/labels'
-  import { User } from '$lib/components/icons'
-  import { ListPage, TableActions } from '$lib/components/ui'
-  import type { User as UserType } from '$lib/types'
+  import { refreshAll } from '$app/navigation'
+  import { deleteUsersId } from '#lib/api/generated/sdk.gen.js'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { deleteWithConfirm } from '#lib/utils/crud.js'
+  import { getRoleLabel } from '#lib/utils/labels.js'
+  import { User } from '#lib/components/icons.js'
+  import { ListPage, TableActions } from '#lib/components/ui/index.js'
+  import type { User as UserType } from '#lib/types/index.js'
 
   let { data } = $props()
   const auth = getAuthContext()
@@ -17,7 +17,7 @@
     deleteWithConfirm({
       name: user.username ?? 'deze gebruiker',
       deleteFn: () => deleteUsersId({ path: { id: user.id } }),
-      onSuccess: () => invalidateAll(),
+      onSuccess: () => refreshAll(),
       successMessage: 'Gebruiker verwijderd',
     })
 </script>

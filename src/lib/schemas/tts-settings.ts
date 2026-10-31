@@ -1,5 +1,5 @@
-import type { TTSSettings, TTSSettingsUpdate } from '$lib/types'
-import { toNumberOrNull, toStringOrEmpty } from '$lib/utils/form'
+import type { TTSSettings, TTSSettingsUpdate } from '#lib/types/index.js'
+import { toNumberOrNull, toStringOrEmpty } from '#lib/utils/form.js'
 import { z } from 'zod'
 
 const textNormalizationValues = ['auto', 'on', 'off'] as const

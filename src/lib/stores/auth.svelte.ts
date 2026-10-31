@@ -1,8 +1,12 @@
 import { createContext } from 'svelte'
-import { ApiError } from '$lib/api/client'
-import { deleteSessionsCurrent, getSessionsCurrent, postSessions } from '$lib/api/generated/sdk.gen'
-import { can as sessionCan, type Action, type Resource } from '$lib/auth/policy'
-import type { Session } from '$lib/types'
+import { ApiError } from '#lib/api/client.js'
+import {
+  deleteSessionsCurrent,
+  getSessionsCurrent,
+  postSessions,
+} from '#lib/api/generated/sdk.gen.js'
+import { can as sessionCan, type Action, type Resource } from '#lib/auth/policy.js'
+import type { Session } from '#lib/types/index.js'
 
 interface CheckAuthOptions {
   force?: boolean

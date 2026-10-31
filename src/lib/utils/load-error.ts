@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit'
-import { ApiError } from '$lib/api/client'
-import { resolveInternalHref } from '$lib/utils/routes'
+import { ApiError } from '#lib/api/client.js'
+import { resolveInternalHref } from '#lib/utils/routes.js'
 
 interface ResourceLoadErrorOptions {
   notFound: string

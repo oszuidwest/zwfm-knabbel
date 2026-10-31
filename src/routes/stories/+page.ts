@@ -1,14 +1,14 @@
 import type { PageLoad } from './$types'
 import { redirect } from '@sveltejs/kit'
-import { requirePermission } from '$lib/auth/guard'
-import { getStories } from '$lib/api/generated/sdk.gen'
-import type { StoryFilters } from '$lib/api/stories'
-import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
-import { toLocalDateString } from '$lib/utils/format'
-import { getPaginationParams, getPaginationInfo } from '$lib/utils/pagination'
-import { resolveInternalHref } from '$lib/utils/routes'
-import { storySchema } from '$lib/schemas/story'
-import { WEEKDAY_BITS_BY_DAY } from '$lib/types'
+import { requirePermission } from '#lib/auth/guard.js'
+import { getStories } from '#lib/api/generated/sdk.gen.js'
+import type { StoryFilters } from '#lib/api/stories.js'
+import { settleLoad, unwrapLoadResult } from '#lib/utils/load-error.js'
+import { toLocalDateString } from '#lib/utils/format.js'
+import { getPaginationParams, getPaginationInfo } from '#lib/utils/pagination.js'
+import { resolveInternalHref } from '#lib/utils/routes.js'
+import { storySchema } from '#lib/schemas/story.js'
+import { WEEKDAY_BITS_BY_DAY } from '#lib/types/index.js'
 
 function getDateAndWeekdayBit(dateFilter: string): { date: string; weekdayBit: number } | null {
   if (dateFilter !== 'today' && dateFilter !== 'tomorrow') return null

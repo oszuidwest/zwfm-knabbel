@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AudioLines } from '$lib/components/icons'
+  import { AudioLines } from '#lib/components/icons.js'
 
   interface Props {
     voiceName: string

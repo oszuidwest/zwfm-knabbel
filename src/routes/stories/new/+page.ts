@@ -1,7 +1,7 @@
 import type { PageLoad } from './$types'
-import { requirePermission } from '$lib/auth/guard'
-import { getVoices } from '$lib/api/generated/sdk.gen'
-import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
+import { requirePermission } from '#lib/auth/guard.js'
+import { getVoices } from '#lib/api/generated/sdk.gen.js'
+import { settleLoad, unwrapLoadResult } from '#lib/utils/load-error.js'
 
 export const load: PageLoad = async ({ fetch, parent }) => {
   const responseResult = settleLoad(getVoices({ fetch }))

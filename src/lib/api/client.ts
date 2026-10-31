@@ -1,6 +1,6 @@
-import { PUBLIC_API_URL } from '$env/static/public'
+import { PUBLIC_API_URL } from '$app/env/public'
 import { client } from './generated/client.gen'
-import { toast } from '$lib/stores/toast'
+import { toast } from '#lib/stores/toast.js'
 import {
   UPLOAD_TIMEOUT_MESSAGE,
   describeProblem,
@@ -31,9 +31,11 @@ function getErrorMessage(error: unknown, status: number): string {
     const message = describeProblem(status, error)
     if (message) return message
   }
+
   if (typeof error !== 'object' || error === null) return ''
 
   const candidate = error as Record<string, unknown>
+
   for (const key of ['detail', 'message', 'title', 'error']) {
     if (typeof candidate[key] === 'string' && candidate[key]) return candidate[key]
   }

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { ChevronLeft, ChevronRight } from '$lib/components/icons'
-  import { getVisiblePages, type PaginationInfo } from '$lib/utils/pagination'
-  import { resolveInternalHref } from '$lib/utils/routes'
+  import { ChevronLeft, ChevronRight } from '#lib/components/icons.js'
+  import { getVisiblePages, type PaginationInfo } from '#lib/utils/pagination.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
 
   interface Props {
     pagination: PaginationInfo
@@ -13,7 +13,7 @@
   const visiblePages = $derived(getVisiblePages(pagination.currentPage, pagination.totalPages))
 
   function pageHref(pageNum: number): string {
-    const url = new URL(page.url)
+    const url = new URL(page.url.href)
     if (pageNum === 1) {
       url.searchParams.delete('page')
     } else {

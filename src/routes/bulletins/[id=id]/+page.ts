@@ -1,8 +1,8 @@
 import type { PageLoad } from './$types'
-import { requirePermission } from '$lib/auth/guard'
-import { getBulletinsId, getBulletinsIdStories, getStoriesId } from '$lib/api/generated/sdk.gen'
-import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
-import type { Story } from '$lib/types'
+import { requirePermission } from '#lib/auth/guard.js'
+import { getBulletinsId, getBulletinsIdStories, getStoriesId } from '#lib/api/generated/sdk.gen.js'
+import { settleLoad, unwrapLoadResult } from '#lib/utils/load-error.js'
+import type { Story } from '#lib/types/index.js'
 
 export const load: PageLoad = async ({ params, fetch, parent }) => {
   const bulletinId = Number(params.id)

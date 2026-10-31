@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { getFieldErrors, notifyMutationError } from '$lib/api/client'
-  import { voiceSchema, type VoiceFormData } from '$lib/schemas/voice'
+  import { getFieldErrors, notifyMutationError } from '#lib/api/client.js'
+  import { voiceSchema, type VoiceFormData } from '#lib/schemas/voice.js'
   import {
     deleteStationVoicesId,
     getStationVoicesId,
@@ -9,16 +9,16 @@
     postStationVoicesIdAudio,
     putStationVoicesId,
     putVoicesId,
-  } from '$lib/api/generated/sdk.gen'
-  import { toVoiceApiFormat } from '$lib/api/voices'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { toast } from '$lib/stores/toast'
-  import { validateForm } from '$lib/utils/validation'
-  import { resolveInternalHref } from '$lib/utils/routes'
-  import { MaybeTooltip, TextInput, PageHeader } from '$lib/components/ui'
+  } from '#lib/api/generated/sdk.gen.js'
+  import { toVoiceApiFormat } from '#lib/api/voices.js'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { toast } from '#lib/stores/toast.js'
+  import { validateForm } from '#lib/utils/validation.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
+  import { MaybeTooltip, TextInput, PageHeader } from '#lib/components/ui/index.js'
   import StationConfigDashboard from './StationConfigDashboard.svelte'
-  import { X, Check } from '$lib/components/icons'
-  import type { StationVoice } from '$lib/types'
+  import { X, Check } from '#lib/components/icons.js'
+  import type { StationVoice } from '#lib/types/index.js'
   import type { StationConfig } from './station-config'
   import type { PageData } from './$types'
 

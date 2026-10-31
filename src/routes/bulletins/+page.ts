@@ -1,16 +1,16 @@
 import type { PageLoad } from './$types'
-import { ApiError } from '$lib/api/client'
-import { requirePermission } from '$lib/auth/guard'
-import type { BulletinFilters } from '$lib/api/bulletins'
+import { ApiError } from '#lib/api/client.js'
+import { requirePermission } from '#lib/auth/guard.js'
+import type { BulletinFilters } from '#lib/api/bulletins.js'
 import {
   getBulletins,
   getBulletinsIdStories,
   getStations,
   getStoriesId,
-} from '$lib/api/generated/sdk.gen'
-import { settleLoad, unwrapLoadResult } from '$lib/utils/load-error'
-import { getPaginationParams, getPaginationInfo } from '$lib/utils/pagination'
-import type { Bulletin } from '$lib/types'
+} from '#lib/api/generated/sdk.gen.js'
+import { settleLoad, unwrapLoadResult } from '#lib/utils/load-error.js'
+import { getPaginationParams, getPaginationInfo } from '#lib/utils/pagination.js'
+import type { Bulletin } from '#lib/types/index.js'
 
 export interface BulletinWithVoice extends Bulletin {
   voice_name?: string

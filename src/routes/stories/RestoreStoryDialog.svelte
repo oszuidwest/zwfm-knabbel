@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { ApiError, notifyMutationError } from '$lib/api/client'
-  import { patchStoriesId } from '$lib/api/generated/sdk.gen'
-  import { ArchiveRestore, Info, TriangleAlert } from '$lib/components/icons'
-  import { Modal } from '$lib/components/ui'
-  import { toast } from '$lib/stores/toast'
-  import { formatDate, formatDateTime, formatDuration } from '$lib/utils/format'
-  import { formatWeekdays, statusColors, statusLabels } from '$lib/utils/labels'
-  import { assessRestore } from '$lib/utils/story-restore'
-  import type { Story } from '$lib/types'
+  import { ApiError, notifyMutationError } from '#lib/api/client.js'
+  import { patchStoriesId } from '#lib/api/generated/sdk.gen.js'
+  import { ArchiveRestore, Info, TriangleAlert } from '#lib/components/icons.js'
+  import { Modal } from '#lib/components/ui/index.js'
+  import { toast } from '#lib/stores/toast.js'
+  import { formatDate, formatDateTime, formatDuration } from '#lib/utils/format.js'
+  import { formatWeekdays, statusColors, statusLabels } from '#lib/utils/labels.js'
+  import { assessRestore } from '#lib/utils/story-restore.js'
+  import type { Story } from '#lib/types/index.js'
 
   interface Props {
     story: Story

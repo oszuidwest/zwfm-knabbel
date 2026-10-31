@@ -1,19 +1,19 @@
 <script lang="ts">
-  import { invalidateAll } from '$app/navigation'
-  import { getFieldErrors, notifyMutationError } from '$lib/api/client'
-  import { patchSettingsTts } from '$lib/api/generated/sdk.gen'
+  import { refreshAll } from '$app/navigation'
+  import { getFieldErrors, notifyMutationError } from '#lib/api/client.js'
+  import { patchSettingsTts } from '#lib/api/generated/sdk.gen.js'
   import {
     textNormalizationOptions,
     toTTSSettingsFormData,
     toTTSSettingsUpdate,
     ttsSettingsSchema,
     type TTSSettingsFormData,
-  } from '$lib/schemas/tts-settings'
-  import { Check, RefreshCw } from '$lib/components/icons'
-  import { toast } from '$lib/stores/toast'
-  import { validateForm } from '$lib/utils/validation'
-  import { MaybeTooltip, SelectInput, TextareaInput, TextInput } from '$lib/components/ui'
-  import type { TTSSettings } from '$lib/types'
+  } from '#lib/schemas/tts-settings.js'
+  import { Check, RefreshCw } from '#lib/components/icons.js'
+  import { toast } from '#lib/stores/toast.js'
+  import { validateForm } from '#lib/utils/validation.js'
+  import { MaybeTooltip, SelectInput, TextareaInput, TextInput } from '#lib/components/ui/index.js'
+  import type { TTSSettings } from '#lib/types/index.js'
 
   interface Props {
     settings: TTSSettings
@@ -52,7 +52,7 @@
       errors = {}
     }
 
-    await invalidateAll()
+    await refreshAll()
   }
 
   async function handleSubmit(e: Event): Promise<void> {
@@ -78,7 +78,7 @@
       }
 
       toast.success('Spraakgeneratie opgeslagen')
-      await invalidateAll()
+      await refreshAll()
     } finally {
       submitting = false
     }

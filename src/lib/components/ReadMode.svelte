@@ -1,7 +1,7 @@
 <script lang="ts">
   import { X, TriangleAlert } from './icons'
-  import { showModal } from '$lib/utils/dialog'
-  import { formatDuration } from '$lib/utils/format'
+  import { showModal } from '#lib/utils/dialog.js'
+  import { formatDuration } from '#lib/utils/format.js'
 
   interface Props {
     text: string | undefined

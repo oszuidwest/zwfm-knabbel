@@ -1,5 +1,5 @@
-import { notifyMutationError } from '$lib/api/client'
-import { toast } from '$lib/stores/toast'
+import { notifyMutationError } from '#lib/api/client.js'
+import { toast } from '#lib/stores/toast.js'
 
 interface DeleteOptions {
   name: string

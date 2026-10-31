@@ -1,14 +1,14 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { onDestroy } from 'svelte'
-  import { notifyMutationError } from '$lib/api/client'
-  import { generateBulletin } from '$lib/api/bulletins'
-  import { getAuthContext } from '$lib/stores/auth.svelte'
-  import { toast } from '$lib/stores/toast'
-  import { resolveInternalHref } from '$lib/utils/routes'
-  import { RefreshCw } from '$lib/components/icons'
-  import { FormActions, PageHeader, SelectInput } from '$lib/components/ui'
-  import { toSelectOptions } from '$lib/utils/form'
+  import { notifyMutationError } from '#lib/api/client.js'
+  import { generateBulletin } from '#lib/api/bulletins.js'
+  import { getAuthContext } from '#lib/stores/auth.svelte.js'
+  import { toast } from '#lib/stores/toast.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
+  import { RefreshCw } from '#lib/components/icons.js'
+  import { FormActions, PageHeader, SelectInput } from '#lib/components/ui/index.js'
+  import { toSelectOptions } from '#lib/utils/form.js'
 
   let { data } = $props()
   const auth = getAuthContext()
