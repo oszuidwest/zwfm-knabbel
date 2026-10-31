@@ -9,7 +9,7 @@
 /*
  * Theme overrides keep the brand primary (#d20072) and bring text to WCAG AA
  * (4.5:1) on base-100: the stock error colours are 2.7 to 2.9:1 there, the
- * corporate success colour is 3.0:1 as soft badge text, and
+ * stock corporate success colour is 3.0:1 as soft badge text, and
  * business draws its primary-content at 3.7:1 on this primary. primary-ink is
  * the brand colour for text on a primary/10 tint, at AA in both themes.
  */
