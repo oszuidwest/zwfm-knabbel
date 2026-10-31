@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Sparkles } from '$lib/components/icons'
+  import { AudioLines } from '$lib/components/icons'
 
   interface Props {
     voiceName: string
@@ -51,9 +51,9 @@
       <span class="loading loading-sm loading-spinner"></span>
       Genereren…
     {:else}
-      <Sparkles
+      <AudioLines
         aria-hidden="true"
-        class="h-5 w-5"
+        class="h-4 w-4"
       />
       {actionLabel}
     {/if}

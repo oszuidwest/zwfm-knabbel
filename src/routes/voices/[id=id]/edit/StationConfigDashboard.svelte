@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { Attachment } from 'svelte/attachments'
   import { getMediaUrl } from '$lib/api/client'
-  import { Radio, Upload, Music, Play, Pause } from '$lib/components/icons'
+  import { Radio, Upload, Music } from '$lib/components/icons'
+  import { AudioPlayer } from '$lib/components/ui'
   import type { StationConfig } from './station-config'
 
   interface Props {
@@ -27,22 +27,7 @@
   }: Props = $props()
 
   let dragOver = $state<number | null>(null)
-  let playingIndex = $state<number | null>(null)
-  // audioElements is populated by an attachment for imperative playback only.
-  const audioElements: Partial<Record<number, HTMLAudioElement>> = {}
   const effectiveDisabled = $derived(disabled || !canEdit)
-
-  function registerAudioElement(index: number): Attachment<HTMLAudioElement> {
-    return audio => {
-      audioElements[index] = audio
-
-      return () => {
-        if (audioElements[index] === audio) {
-          delete audioElements[index]
-        }
-      }
-    }
-  }
 
   function handleDragOver(e: DragEvent, index: number) {
     e.preventDefault()
@@ -77,28 +62,6 @@
     const file = input.files?.[0]
     if (file) {
       onJingleSelect(index, file)
-    }
-  }
-
-  function togglePlayback(index: number) {
-    const audio = audioElements[index]
-    if (!audio) return
-
-    if (playingIndex === index) {
-      audio.pause()
-      playingIndex = null
-    } else {
-      if (playingIndex !== null && audioElements[playingIndex]) {
-        audioElements[playingIndex]?.pause()
-      }
-      audio.play()
-      playingIndex = index
-    }
-  }
-
-  function handleAudioEnded(index: number) {
-    if (playingIndex === index) {
-      playingIndex = null
     }
   }
 
@@ -204,36 +167,14 @@
               <span class="text-sm font-medium">Jingle</span>
 
               {#if config.hasAudio && config.audioUrl}
-                <div class="flex items-center gap-3 rounded-xl bg-base-200 p-3">
-                  <audio
-                    {@attach registerAudioElement(index)}
-                    src={getMediaUrl(config.audioUrl)}
-                    onended={() => handleAudioEnded(index)}
-                    preload="none"
-                    class="hidden"
-                  ></audio>
-                  <button
-                    type="button"
-                    class="btn btn-circle btn-primary btn-sm"
-                    onclick={() => togglePlayback(index)}
-                    disabled={config.saving}
-                    aria-label={playingIndex === index ? 'Pauzeren' : 'Afspelen'}
-                  >
-                    {#if playingIndex === index}
-                      <Pause
-                        class="h-4 w-4"
-                        aria-hidden="true"
-                      />
-                    {:else}
-                      <Play
-                        class="h-4 w-4"
-                        aria-hidden="true"
-                      />
-                    {/if}
-                  </button>
+                <div class="flex items-center gap-3">
                   <div class="min-w-0 flex-1">
-                    <div class="truncate text-sm font-medium">Jingle geladen</div>
-                    <div class="text-xs text-base-content/70">Klik om af te spelen</div>
+                    <AudioPlayer
+                      src={getMediaUrl(config.audioUrl)}
+                      label="Jingle {config.station.name}"
+                      size="sm"
+                      disabled={config.saving}
+                    />
                   </div>
                   <input
                     id="jingle-replace-{config.station.id}"

@@ -20,9 +20,7 @@
   <div class="card w-full max-w-md bg-base-100">
     <div class="card-body">
       <div class="mb-6 flex flex-col items-center">
-        <div
-          class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary/80"
-        >
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary">
           <AudioWaveform
             aria-hidden="true"
             class="h-10 w-10 text-primary-content"

@@ -28,7 +28,7 @@
     <div class="mb-4 flex items-start justify-between gap-2">
       <h2
         id={titleId}
-        class="text-lg font-bold"
+        class="text-lg font-semibold"
       >
         {title}
       </h2>

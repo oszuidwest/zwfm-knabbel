@@ -13,7 +13,11 @@ export function parseDate(dateString: string): Date {
 
 export function formatDate(dateString: string | undefined): string {
   if (!dateString) return '-'
-  return parseDate(dateString).toLocaleDateString('nl-NL')
+  return parseDate(dateString).toLocaleDateString('nl-NL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
 }
 
 export function formatDateTime(dateString: string | undefined): string {

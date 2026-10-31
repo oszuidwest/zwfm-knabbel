@@ -5,7 +5,8 @@
   import { formatDateTime, formatDuration } from '$lib/utils/format'
   import { resolveInternalHref } from '$lib/utils/routes'
   import { Eye, Plus, Podcast } from '$lib/components/icons'
-  import { PageHeader, EmptyState, Pagination } from '$lib/components/ui'
+  import { getMediaUrl } from '$lib/api/client'
+  import { AudioPlayer, PageHeader, EmptyState, Pagination } from '$lib/components/ui'
 
   let { data } = $props()
   const auth = getAuthContext()
@@ -54,8 +55,8 @@
       icon={Podcast}
       title="Geen bulletins"
       description={canGenerate
-        ? 'Genereer je eerste nieuwsbulletin.'
-        : 'Nog geen bulletins aanwezig.'}
+        ? 'Genereer je eerste nieuwsbulletin'
+        : 'Nog geen bulletins aanwezig'}
       action={canGenerate ? { href: '/bulletins/new', label: 'Genereren' } : undefined}
     />
   {:else}
@@ -63,13 +64,13 @@
       {#each data.bulletins as bulletin (bulletin.id)}
         <a
           href={resolveInternalHref(`/bulletins/${bulletin.id}`)}
-          class="card bg-base-100 transition-shadow hover:shadow-md active:bg-base-200"
+          class="card bg-base-100 active:bg-base-200"
         >
           <div class="card-body p-4">
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center gap-3">
                 <div
-                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-(--color-primary-ink)"
                 >
                   <Podcast
                     aria-hidden="true"
@@ -81,7 +82,7 @@
                   <div class="flex flex-wrap items-center gap-2 text-sm text-base-content/60">
                     <span>{formatDateTime(bulletin.created_at)}</span>
                     <span>•</span>
-                    <span>{formatDuration(bulletin.duration_seconds)}</span>
+                    <span class="tabular-nums">{formatDuration(bulletin.duration_seconds)}</span>
                     <span>•</span>
                     <span>{bulletin.story_count ?? 0} berichten</span>
                     {#if bulletin.voice_name}
@@ -120,9 +121,22 @@
             {#each data.bulletins as bulletin (bulletin.id)}
               <tr>
                 <td class="font-medium">{bulletin.station_name}</td>
-                <td>{formatDateTime(bulletin.created_at)}</td>
-                <td>{formatDuration(bulletin.duration_seconds)}</td>
-                <td>{bulletin.story_count ?? 0}</td>
+                <td class="whitespace-nowrap tabular-nums">{formatDateTime(bulletin.created_at)}</td
+                >
+                <td>
+                  <div class="flex items-center gap-2">
+                    {#if bulletin.audio_url && !bulletin.file_purged_at}
+                      <AudioPlayer
+                        src={getMediaUrl(bulletin.audio_url)}
+                        duration={bulletin.duration_seconds}
+                        label="Bulletin {bulletin.station_name}"
+                        size="icon"
+                      />
+                    {/if}
+                    <span class="tabular-nums">{formatDuration(bulletin.duration_seconds)}</span>
+                  </div>
+                </td>
+                <td class="tabular-nums">{bulletin.story_count ?? 0}</td>
                 <td>{bulletin.voice_name ?? '-'}</td>
                 <td>
                   <a

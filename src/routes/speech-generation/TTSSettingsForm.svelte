@@ -9,7 +9,7 @@
     ttsSettingsSchema,
     type TTSSettingsFormData,
   } from '$lib/schemas/tts-settings'
-  import { Check, RefreshCw, Sparkles } from '$lib/components/icons'
+  import { Check, RefreshCw } from '$lib/components/icons'
   import { toast } from '$lib/stores/toast'
   import { validateForm } from '$lib/utils/validation'
   import { MaybeTooltip, SelectInput, TextareaInput, TextInput } from '$lib/components/ui'
@@ -93,16 +93,18 @@
 
 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
   <div class="rounded-lg border border-base-300 bg-base-100 p-4">
-    <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">API-sleutel</div>
+    <div class="text-sm text-base-content/60">API-sleutel</div>
     <div class="mt-2">
-      <span class={['badge', settings.api_key_configured ? 'badge-success' : 'badge-warning']}>
+      <span
+        class={['badge badge-soft', settings.api_key_configured ? 'badge-success' : 'badge-error']}
+      >
         {settings.api_key_configured ? 'Geconfigureerd' : 'Ontbreekt'}
       </span>
     </div>
   </div>
   <div class="rounded-lg border border-base-300 bg-base-100 p-4">
-    <div class="text-xs font-medium tracking-wide text-base-content/60 uppercase">Model</div>
-    <div class="mt-2 font-mono font-semibold">{settings.model_id}</div>
+    <div class="text-sm text-base-content/60">Model</div>
+    <div class="mt-2 font-mono">{settings.model_id}</div>
   </div>
 </div>
 
@@ -111,13 +113,7 @@
   class="card bg-base-100"
 >
   <div class="card-body space-y-6">
-    <div class="flex items-center gap-3">
-      <Sparkles
-        class="h-5 w-5 text-primary"
-        aria-hidden="true"
-      />
-      <h2 class="card-title">Spraakgeneratie</h2>
-    </div>
+    <h2 class="card-title">Spraakgeneratie</h2>
     <p class="max-w-3xl text-sm leading-relaxed text-base-content/70">
       Babbel stuurt alleen stabiliteit als steminstelling mee. Tekstnormalisatie, seed en audiotags
       sturen de generatie daarnaast; audio kan per generatie licht variëren.

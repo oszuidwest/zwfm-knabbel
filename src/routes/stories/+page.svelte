@@ -152,7 +152,7 @@
     </div>
 
     <select
-      class="select select-sm"
+      class="select w-44 select-sm"
       value={audioFilter}
       onchange={e => updateFilters({ audio: e.currentTarget.value })}
       aria-label="Filter op audio"
@@ -178,7 +178,7 @@
 
     <div class="hidden items-center gap-2 md:flex">
       <select
-        class="select select-sm"
+        class="select w-44 select-sm"
         value={statusFilter}
         onchange={e => updateFilters({ status: e.currentTarget.value })}
         aria-label="Filter op status"
@@ -196,7 +196,7 @@
         />
         <input
           type="search"
-          placeholder="Zoeken..."
+          placeholder="Zoeken"
           value={searchQuery}
           onchange={e => updateFilters({ q: e.currentTarget.value })}
           aria-label="Zoeken in berichten"
@@ -240,18 +240,18 @@
         icon={Trash2}
         title="Prullenbak is leeg"
         description={hasActiveFilters
-          ? 'Geen verwijderde berichten gevonden met deze filters.'
-          : 'Verwijderde berichten verschijnen hier.'}
+          ? 'Geen verwijderde berichten gevonden met deze filters'
+          : 'Verwijderde berichten verschijnen hier'}
       />
     {:else}
       <EmptyState
         icon={FileText}
         title="Geen berichten"
         description={hasActiveFilters
-          ? 'Geen berichten gevonden met deze filters.'
+          ? 'Geen berichten gevonden met deze filters'
           : canWrite
-            ? 'Maak je eerste bericht aan om te beginnen.'
-            : 'Nog geen berichten aanwezig.'}
+            ? 'Maak je eerste bericht aan om te beginnen'
+            : 'Nog geen berichten aanwezig'}
         action={!hasActiveFilters && canWrite
           ? { href: '/stories/new', label: 'Nieuw bericht' }
           : undefined}
@@ -260,7 +260,7 @@
   {:else}
     <div class="space-y-2 md:hidden">
       {#each data.stories as story (story.id)}
-        <div class={['card bg-base-100', !trashView && 'transition-shadow hover:shadow-md']}>
+        <div class="card bg-base-100">
           <div class="card-body p-4">
             <div class="flex items-start justify-between gap-3">
               {#if trashView}
@@ -326,7 +326,7 @@
                 <td>
                   {#if story.audio_file}
                     <span
-                      class="text-success"
+                      class="text-base-content/60"
                       title="Audio aanwezig"
                     >
                       <Play
@@ -338,8 +338,8 @@
                     <span class="text-base-content/30">-</span>
                   {/if}
                 </td>
-                <td class="whitespace-nowrap">{formatDate(story.start_date)}</td>
-                <td class="whitespace-nowrap">{formatDate(story.end_date)}</td>
+                <td class="whitespace-nowrap tabular-nums">{formatDate(story.start_date)}</td>
+                <td class="whitespace-nowrap tabular-nums">{formatDate(story.end_date)}</td>
                 {#if trashView}
                   <td class="whitespace-nowrap">{@render deletedAt(story)}</td>
                 {/if}
@@ -408,7 +408,7 @@
         <input
           id="modal-search"
           type="search"
-          placeholder="Zoek in titel of tekst..."
+          placeholder="Zoek in titel of tekst"
           class="input w-full"
           value={searchQuery}
           onchange={e => updateFilters({ q: e.currentTarget.value })}
@@ -451,7 +451,7 @@
     {/if}
     {#if story.audio_file}
       <span
-        class="text-success"
+        class="text-base-content/60"
         title="Audio aanwezig"
       >
         <Play

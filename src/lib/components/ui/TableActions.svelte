@@ -51,7 +51,7 @@
     placement="tooltip-left"
   >
     <button
-      class={['btn btn-ghost btn-sm', canDelete && 'text-error']}
+      class={['btn btn-ghost btn-sm', canDelete && 'hover:text-error']}
       onclick={handleDelete}
       disabled={!canDelete}
       aria-label="Verwijderen"

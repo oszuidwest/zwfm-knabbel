@@ -65,7 +65,7 @@
       >
         <Plus
           aria-hidden="true"
-          class="h-5 w-5"
+          class="h-4 w-4"
         />
         {actionLabel ?? 'Nieuw'}
       </a>

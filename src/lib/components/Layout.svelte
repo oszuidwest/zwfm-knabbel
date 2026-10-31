@@ -16,7 +16,7 @@
     LogOut,
     Menu,
     AudioWaveform,
-    Sparkles,
+    AudioLines,
   } from './icons'
 
   let { children }: { children: Snippet } = $props()
@@ -35,9 +35,9 @@
     { path: '/bulletins', label: 'Bulletins', icon: Podcast },
   ]
 
-  const aiNavItems: NavItem[] = [
+  const speechNavItems: NavItem[] = [
     { path: '/pronunciations', label: 'Uitspraakregels', icon: BookOpen },
-    { path: '/speech-generation', label: 'Spraakgeneratie', icon: Sparkles },
+    { path: '/speech-generation', label: 'Spraakgeneratie', icon: AudioLines },
   ]
 
   const adminNavItems: NavItem[] = [{ path: '/users', label: 'Gebruikers', icon: Users }]
@@ -63,7 +63,7 @@
     >
       <Icon
         aria-hidden="true"
-        class="h-6 w-6"
+        class="size-4.5"
       />
       {item.label}
     </a>
@@ -95,11 +95,9 @@
       <div class="flex-1">
         <a
           href={resolveInternalHref('/')}
-          class="btn gap-2 btn-ghost text-xl font-bold"
+          class="btn gap-3 btn-ghost text-xl font-semibold"
         >
-          <div
-            class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-primary to-primary/80"
-          >
+          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <AudioWaveform
               aria-hidden="true"
               class="h-6 w-6 text-primary-content"
@@ -123,18 +121,16 @@
       class="drawer-overlay"
       aria-label="Menu sluiten"
     ></label>
-    <aside class="flex min-h-full w-80 flex-col bg-base-100">
-      <div class="border-b border-base-300 p-6">
+    <aside class="flex min-h-full w-68 flex-col bg-base-100">
+      <div class="border-b border-base-300 px-5 py-5">
         <a
           href={resolveInternalHref('/')}
-          class="flex items-center gap-4"
+          class="flex items-center gap-3"
         >
-          <div
-            class="flex h-14 w-14 items-center justify-center rounded-lg bg-linear-to-br from-primary to-primary/80"
-          >
+          <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary">
             <AudioWaveform
               aria-hidden="true"
-              class="h-8 w-8 text-primary-content"
+              class="h-7 w-7 text-primary-content"
             />
           </div>
           <div>
@@ -144,22 +140,22 @@
         </a>
       </div>
 
-      <nav class="flex-1 p-5">
-        <ul class="menu gap-2 menu-md [&_a]:rounded-lg">
-          <li class="menu-title tracking-widest uppercase">Menu</li>
+      <nav class="flex-1 p-3">
+        <ul class="menu w-full gap-0.5 menu-md [&_a]:rounded-lg">
+          <li class="menu-title">Menu</li>
           {#each mainNavItems as item (item.path)}
             {@render navLink(item)}
           {/each}
 
           {#if auth.can('pronunciation_rules', 'read') || auth.can('settings:tts', 'read')}
-            <li class="mt-4 menu-title tracking-widest uppercase">AI</li>
-            {#each aiNavItems as item (item.path)}
+            <li class="mt-4 menu-title">Spraak</li>
+            {#each speechNavItems as item (item.path)}
               {@render navLink(item)}
             {/each}
           {/if}
 
           {#if auth.can('users', 'read')}
-            <li class="mt-4 menu-title tracking-widest uppercase">Beheer</li>
+            <li class="mt-4 menu-title">Beheer</li>
             {#each adminNavItems as item (item.path)}
               {@render navLink(item)}
             {/each}
@@ -167,10 +163,10 @@
         </ul>
       </nav>
 
-      <div class="border-t border-base-300 p-4">
+      <div class="border-t border-base-300 px-5 py-3">
         <div class="flex items-center gap-3">
-          <div class="avatar-online avatar avatar-placeholder">
-            <div class="w-10 rounded-full bg-primary text-primary-content">
+          <div class="avatar avatar-placeholder">
+            <div class="w-9 rounded-full bg-primary text-sm text-primary-content">
               <span>{(auth.user?.full_name || auth.user?.username)?.[0]?.toUpperCase() || '?'}</span
               >
             </div>
