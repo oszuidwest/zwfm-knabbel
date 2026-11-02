@@ -190,7 +190,12 @@
 </script>
 
 <div class="space-y-6">
-  <PageHeader title={canWrite ? 'Bericht bewerken' : 'Bericht bekijken'}>
+  <PageHeader
+    title={canWrite ? 'Bericht bewerken' : 'Bericht bekijken'}
+    subtitle={data.story.metadata?.wordpress_id
+      ? `Uit WordPress (post ${data.story.metadata.wordpress_id})`
+      : undefined}
+  >
     {#snippet actions()}
       <button
         type="button"
