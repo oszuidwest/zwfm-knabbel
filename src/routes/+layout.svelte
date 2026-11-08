@@ -54,14 +54,6 @@
     void goto(resolveInternalHref('/stories'))
   })
 
-  async function guardRoute(pathname: string): Promise<void> {
-    if (!auth.checked) return
-
-    if (!auth.user && !isPublicRoute(pathname)) {
-      await goto(resolveInternalHref('/login'))
-    }
-  }
-
   afterNavigate(({ to }) => {
     if (to?.url.searchParams.get('denied') === '1') {
       toast.error('Geen rechten voor deze pagina')
@@ -69,14 +61,14 @@
       return
     }
 
-    void guardRoute(to?.url.pathname ?? page.url.pathname)
+    if (auth.checked && !auth.user && !isPublicRoute(to?.url.pathname ?? page.url.pathname)) {
+      void goto(resolveInternalHref('/login'))
+    }
   })
 </script>
 
 {#if auth.loading || isAuthenticatedLoginRedirect}
-  <div class="flex min-h-screen items-center justify-center bg-base-200">
-    <span class="loading loading-lg loading-spinner text-primary"></span>
-  </div>
+  {@render spinner()}
 {:else if auth.user && !isSessionExpiredLogin}
   <Layout>
     {@render children()}
@@ -84,9 +76,13 @@
 {:else if isPublic}
   {@render children()}
 {:else}
-  <div class="flex min-h-screen items-center justify-center bg-base-200">
-    <span class="loading loading-lg loading-spinner text-primary"></span>
-  </div>
+  {@render spinner()}
 {/if}
 
 <Toast />
+
+{#snippet spinner()}
+  <div class="flex min-h-screen items-center justify-center bg-base-200">
+    <span class="loading loading-lg loading-spinner text-primary"></span>
+  </div>
+{/snippet}

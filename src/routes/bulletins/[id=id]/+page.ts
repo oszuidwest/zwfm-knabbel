@@ -4,6 +4,8 @@ import { getBulletinsId, getBulletinsIdStories, getStoriesId } from '#lib/api/ge
 import { settleLoad, unwrapLoadResult } from '#lib/utils/load-error.js'
 import type { Story } from '#lib/types/index.js'
 
+const loadErrors = { notFound: 'Bulletin niet gevonden', failed: 'Bulletin laden mislukt' }
+
 export const load: PageLoad = async ({ params, fetch, parent }) => {
   const bulletinId = Number(params.id)
 
@@ -17,10 +19,7 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
   const { user } = await parent()
   requirePermission(user, 'bulletins', 'read')
 
-  const [bulletin, bulletinStories] = unwrapLoadResult(await responseResult, {
-    notFound: 'Bulletin niet gevonden',
-    failed: 'Bulletin laden mislukt',
-  })
+  const [bulletin, bulletinStories] = unwrapLoadResult(await responseResult, loadErrors)
 
   const storiesResult = await settleLoad(
     Promise.all(
@@ -30,10 +29,7 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
     )
   )
 
-  const stories: Story[] = unwrapLoadResult(storiesResult, {
-    notFound: 'Bulletin niet gevonden',
-    failed: 'Bulletin laden mislukt',
-  })
+  const stories: Story[] = unwrapLoadResult(storiesResult, loadErrors)
 
   return { bulletin, stories }
 }

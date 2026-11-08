@@ -49,34 +49,16 @@
       <div class="card-body">
         <h2 class="card-title">Informatie</h2>
         <dl class="space-y-2">
-          <div class="flex justify-between">
-            <dt class="page-subtitle">Zender</dt>
-            <dd class="font-medium">{data.bulletin.station_name}</dd>
-          </div>
-          <div class="flex justify-between">
-            <dt class="page-subtitle">Nieuwslezer</dt>
-            <dd>{data.stories[0]?.voice_name ?? '-'}</dd>
-          </div>
-          <div class="flex justify-between">
-            <dt class="page-subtitle">Aangemaakt</dt>
-            <dd>{formatDateTime(data.bulletin.created_at)}</dd>
-          </div>
-          <div class="flex justify-between">
-            <dt class="page-subtitle">Duur</dt>
-            <dd class="tabular-nums">{formatDuration(data.bulletin.duration_seconds)}</dd>
-          </div>
+          {@render info('Zender', data.bulletin.station_name, 'font-medium')}
+          {@render info('Nieuwslezer', data.stories[0]?.voice_name ?? '-')}
+          {@render info('Aangemaakt', formatDateTime(data.bulletin.created_at))}
+          {@render info('Duur', formatDuration(data.bulletin.duration_seconds), 'tabular-nums')}
           <div class="flex justify-between gap-4">
             <dt class="page-subtitle">Bestandsnaam</dt>
             <dd class="min-w-0 text-right break-all">{data.bulletin.filename || '-'}</dd>
           </div>
-          <div class="flex justify-between">
-            <dt class="page-subtitle">Bestandsgrootte</dt>
-            <dd>{formatFileSize(data.bulletin.file_size)}</dd>
-          </div>
-          <div class="flex justify-between">
-            <dt class="page-subtitle">Aantal berichten</dt>
-            <dd>{data.bulletin.story_count ?? 0}</dd>
-          </div>
+          {@render info('Bestandsgrootte', formatFileSize(data.bulletin.file_size))}
+          {@render info('Aantal berichten', data.bulletin.story_count ?? 0)}
         </dl>
       </div>
     </div>
@@ -173,3 +155,10 @@
     >
   </div>
 </div>
+
+{#snippet info(label: string, value: string | number | undefined, valueClass?: string)}
+  <div class="flex justify-between">
+    <dt class="page-subtitle">{label}</dt>
+    <dd class={valueClass}>{value}</dd>
+  </div>
+{/snippet}
