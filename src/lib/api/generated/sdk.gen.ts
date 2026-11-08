@@ -221,7 +221,7 @@ export const getHealth = <ThrowOnError extends boolean = true>(
  *
  * **Concurrency**: Only one bulletin can be generated per station at a time.
  * Concurrent requests for the same station will queue for up to
- * `BABBEL_AUTOMATION_TIMEOUT` (default 120s), then return 504.
+ * 120s, then return 504.
  *
  * **Compatible systems**: mAirList, RadioDJ, PlayoutONE, StationPlaylist, and any
  * system that supports HTTP audio fetching.
@@ -299,6 +299,7 @@ export const getAuthOauth = <ThrowOnError extends boolean = true>(
  * This endpoint is called by the OAuth provider after user authentication.
  * Users are bound to the token's issuer and subject (`sub`); a missing
  * subject is rejected.
+ * Returns 404 when OAuth/OIDC authentication is disabled.
  *
  */
 export const getAuthOauthCallback = <ThrowOnError extends boolean = true>(
@@ -638,6 +639,11 @@ export const getAuditEvents = <ThrowOnError extends boolean = true>(
  * - `filter[has_audio]=false` - Stories without audio
  * - `filter[has_audio]=true` - Stories with audio
  *
+ * ## External ID Filtering
+ * Find the story a sending system already created, also when it is deleted.
+ * An exact match compares byte for byte. The `in` operator trims each value:
+ * - `filter[external_id]=177604&trashed=with`
+ *
  * Use cases:
  * - Quality control: Find stories missing audio before publication
  * - Bulk TTS: Identify stories that need text-to-speech generation
@@ -665,15 +671,6 @@ export const getStories = <ThrowOnError extends boolean = true>(
  * Create a new story with JSON body. Audio file must be uploaded separately via POST /stories/{id}/audio.
  * A `voice_id` that does not exist fails with 422 (`voice_id`, `not_found`).
  * An `end_date` before `start_date` fails with 422 (`end_date`, `date_order`).
- *
- * With `idempotency_key`, a client can retry a create whose response it
- * lost: a create that reuses a key answers 201 with the ID of the story
- * first made with it, even if that story has since been deleted. The
- * repeated body must still be a valid create request but is otherwise
- * ignored, so a different body still returns the original story's ID; the
- * `voice_id` and date order checks are skipped. Concurrent creates with
- * one key make one story. A blank key, or one longer than 100 characters,
- * fails with 422 (`idempotency_key`, `blank` or `too_long`).
  *
  */
 export const postStories = <ThrowOnError extends boolean = true>(
@@ -726,6 +723,7 @@ export const getStoriesIdAudio = <ThrowOnError extends boolean = true>(
  * Errors:
  * - 400: the body is not valid multipart form data (`request`, `invalid_format`).
  * - 408: the upload did not complete within the time limit.
+ * - 409: the story has no voice (`story.no_voice`). Assign one first.
  * - 413: the file is larger than 100 MB.
  * - 422: the `audio` file is missing (`required`), has an unsupported
  * extension (`unsupported`), cannot be decoded as audio
@@ -765,8 +763,8 @@ export const postStoriesIdAudio = <ThrowOnError extends boolean = true>(
  * story audio is replaced.
  *
  * TTS request options are read from the global settings row exposed at
- * `GET/PATCH /api/v1/settings/tts`. The API key and timeout remain environment
- * configuration; Babbel always sends `eleven_v4`. Stability, text
+ * `GET/PATCH /api/v1/settings/tts`. The API key remains environment configuration,
+ * and the request timeout is fixed at 60s. Babbel always sends `eleven_v4`. Stability, text
  * normalization, seed, and the audio-tag style prefix are database-backed
  * settings. Local pronunciation rules are injected as inline IPA before
  * the TTS request is sent.
@@ -1142,6 +1140,10 @@ export const getUsersId = <ThrowOnError extends boolean = true>(
  * This is an alternative to using PUT /users/{id} with the suspended field.
  * Use this endpoint when you only want to change suspension status without providing other user fields.
  * Suspending the last active admin fails with 409 `user.last_admin`.
+ * A suspended user's session ends at its next request to a route that needs a
+ * login. A restore before that request can let the session work again, until it
+ * expires 24 hours after login.
+ * Change the password to end all sessions of a user at once.
  *
  */
 export const patchUsersId = <ThrowOnError extends boolean = true>(
