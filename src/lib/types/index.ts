@@ -14,16 +14,6 @@ export type {
   Voice,
 } from '#lib/api/generated/types.gen.js'
 
-export interface Weekdays {
-  monday: boolean
-  tuesday: boolean
-  wednesday: boolean
-  thursday: boolean
-  friday: boolean
-  saturday: boolean
-  sunday: boolean
-}
-
 export const WEEKDAY_BITS = {
   sunday: 1,
   monday: 2,
@@ -33,6 +23,10 @@ export const WEEKDAY_BITS = {
   friday: 32,
   saturday: 64,
 } as const
+
+export type Weekdays = Record<keyof typeof WEEKDAY_BITS, boolean>
+
+const weekdayBits = Object.entries(WEEKDAY_BITS) as [keyof Weekdays, number][]
 
 /** Indexed by Date.getDay(): Sunday is 0. */
 export const WEEKDAY_BITS_BY_DAY: Record<number, number> = {
@@ -45,27 +39,11 @@ export const WEEKDAY_BITS_BY_DAY: Record<number, number> = {
   6: WEEKDAY_BITS.saturday,
 }
 
-export const weekdaysToMask = (weekdays: Weekdays): number => {
-  let mask = 0
-  if (weekdays.sunday) mask |= WEEKDAY_BITS.sunday
-  if (weekdays.monday) mask |= WEEKDAY_BITS.monday
-  if (weekdays.tuesday) mask |= WEEKDAY_BITS.tuesday
-  if (weekdays.wednesday) mask |= WEEKDAY_BITS.wednesday
-  if (weekdays.thursday) mask |= WEEKDAY_BITS.thursday
-  if (weekdays.friday) mask |= WEEKDAY_BITS.friday
-  if (weekdays.saturday) mask |= WEEKDAY_BITS.saturday
-  return mask
-}
+export const weekdaysToMask = (weekdays: Weekdays): number =>
+  weekdayBits.reduce((mask, [day, bit]) => (weekdays[day] ? mask | bit : mask), 0)
 
-export const maskToWeekdays = (mask: number): Weekdays => ({
-  sunday: (mask & WEEKDAY_BITS.sunday) !== 0,
-  monday: (mask & WEEKDAY_BITS.monday) !== 0,
-  tuesday: (mask & WEEKDAY_BITS.tuesday) !== 0,
-  wednesday: (mask & WEEKDAY_BITS.wednesday) !== 0,
-  thursday: (mask & WEEKDAY_BITS.thursday) !== 0,
-  friday: (mask & WEEKDAY_BITS.friday) !== 0,
-  saturday: (mask & WEEKDAY_BITS.saturday) !== 0,
-})
+export const maskToWeekdays = (mask: number): Weekdays =>
+  Object.fromEntries(weekdayBits.map(([day, bit]) => [day, (mask & bit) !== 0])) as Weekdays
 
 export const allWeekdaysTrue = (): Weekdays => ({
   monday: true,

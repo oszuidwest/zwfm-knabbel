@@ -22,9 +22,8 @@ export interface VisiblePage {
 
 export function getPaginationParams(
   searchParams: URLSearchParams,
-  defaultLimit = DEFAULT_PAGE_SIZE
+  limit = DEFAULT_PAGE_SIZE
 ): PaginationParams {
-  const limit = defaultLimit
   const requestedPage = Number(searchParams.get('page'))
   const page =
     Number.isSafeInteger(requestedPage) &&

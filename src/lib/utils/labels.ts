@@ -24,11 +24,10 @@ export const statusLabels: Record<string, string> = {
   expired: 'Verlopen',
 }
 
-export const statusOptions = [
-  { value: 'draft', label: statusLabels.draft },
-  { value: 'active', label: statusLabels.active },
-  { value: 'expired', label: statusLabels.expired },
-]
+export const statusOptions = Object.entries(statusLabels).map(([value, label]) => ({
+  value,
+  label,
+}))
 
 export const statusColors: Record<string, string> = {
   draft: 'badge-soft',

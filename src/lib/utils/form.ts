@@ -11,7 +11,7 @@ export function toSelectOptions<T extends { id?: number | null; name?: string | 
 }
 
 export function toNumberOrNull(value: string | null | undefined): number | null {
-  if (!value || !value.trim()) return null
+  if (!value?.trim()) return null
   const num = Number(value)
   return isNaN(num) ? null : num
 }

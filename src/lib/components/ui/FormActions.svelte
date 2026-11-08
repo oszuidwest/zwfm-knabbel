@@ -23,13 +23,11 @@
     canSubmit = true,
     forbidTooltip = 'Geen rechten',
   }: Props = $props()
-
-  const resolvedCancelHref = $derived(resolveInternalHref(cancelHref))
 </script>
 
 <div class="flex flex-wrap justify-end gap-2 pt-4">
   <a
-    href={resolvedCancelHref}
+    href={resolveInternalHref(cancelHref)}
     class="btn btn-ghost"
   >
     <X class="h-5 w-5" />
@@ -38,7 +36,6 @@
   <MaybeTooltip
     when={!canSubmit}
     tip={forbidTooltip}
-    placement="tooltip-left"
   >
     <button
       type="submit"

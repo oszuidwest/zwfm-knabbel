@@ -82,9 +82,7 @@ export class AuthStore {
     } catch (err) {
       console.warn('[auth] logout failed', err)
     }
-    this.user = null
-    this.loading = false
-    this.checked = true
+    this.hydrate(null)
   }
 }
 

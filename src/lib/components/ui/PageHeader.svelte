@@ -27,12 +27,8 @@
     actions,
   }: Props = $props()
 
-  const resolvedActionHref = $derived(actionHref ? resolveInternalHref(actionHref) : undefined)
-
   function handleActionClick(e: MouseEvent): void {
-    if (!canAction) {
-      e.preventDefault()
-    }
+    if (!canAction) e.preventDefault()
   }
 </script>
 
@@ -56,7 +52,7 @@
       wrapperClass="max-md:hidden"
     >
       <a
-        href={canAction ? resolvedActionHref : undefined}
+        href={canAction ? resolveInternalHref(actionHref) : undefined}
         class={['btn btn-primary', !canAction && 'btn-disabled']}
         role={canAction ? undefined : 'button'}
         aria-disabled={!canAction}

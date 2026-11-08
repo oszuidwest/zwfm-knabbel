@@ -42,6 +42,7 @@
 
   const adminNavItems: NavItem[] = [{ path: '/users', label: 'Gebruikers', icon: Users }]
   const activePathname = $derived(navigating.to?.url.pathname ?? page.url.pathname)
+  const displayName = $derived(auth.user?.full_name || auth.user?.username)
 
   function isActive(path: string): boolean {
     return activePathname === path || activePathname.startsWith(`${path}/`)
@@ -167,13 +168,12 @@
         <div class="flex items-center gap-3">
           <div class="avatar avatar-placeholder">
             <div class="w-9 rounded-full bg-primary text-sm text-primary-content">
-              <span>{(auth.user?.full_name || auth.user?.username)?.[0]?.toUpperCase() || '?'}</span
-              >
+              <span>{displayName?.[0]?.toUpperCase() || '?'}</span>
             </div>
           </div>
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-medium">
-              {auth.user?.full_name || auth.user?.username || 'Gebruiker'}
+              {displayName || 'Gebruiker'}
             </p>
             <p class="text-xs text-base-content/60">
               {getRoleLabel(auth.user?.role)}
