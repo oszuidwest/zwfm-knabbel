@@ -164,6 +164,55 @@ test('connection failures get Dutch copy', async () => {
   assert.equal(err.message, 'Geen verbinding met de server')
 })
 
+test('a 401 on a write sends the editor to the login page once, without a toast', async t => {
+  const { toast } = await server.ssrLoadModule('/src/lib/stores/toast.ts')
+  const toastError = t.mock.method(toast, 'error')
+  let leave
+  const handler = t.mock.fn(() => new Promise(resolve => (leave = resolve)))
+  api.onSessionExpired(handler)
+  const save = () =>
+    rejection(
+      sdk.putStoriesId({
+        path: { id: 1 },
+        body: { title: 'x' },
+        fetch: problem(401, { detail: 'Invalid session' }),
+      })
+    )
+
+  const [err] = await Promise.all([save(), save()])
+  api.notifyMutationError(err, 'Opslaan mislukt')
+  assert.equal(err.message, 'Je sessie is verlopen')
+  assert.equal(toastError.mock.callCount(), 0)
+  assert.equal(handler.mock.callCount(), 1)
+
+  leave()
+  await rejection(sdk.deleteStoriesId({ path: { id: 1 }, fetch: problem(401, {}) }))
+  assert.equal(handler.mock.callCount(), 2)
+  leave()
+})
+
+test('a failed move to the login page is logged, not left unhandled', async t => {
+  const logged = t.mock.method(console, 'error', () => {})
+  api.onSessionExpired(() => Promise.reject(new Error('navigation failed')))
+  await rejection(sdk.deleteStoriesId({ path: { id: 1 }, fetch: problem(401, {}) }))
+  await new Promise(resolve => setTimeout(resolve))
+  assert.equal(logged.mock.callCount(), 1)
+})
+
+test('a 401 on a read or a login attempt, a 403 and a 500 keep the session', async t => {
+  const handler = t.mock.fn(async () => {})
+  api.onSessionExpired(handler)
+
+  await rejection(sdk.getStations({ fetch: problem(401, {}) }))
+  await rejection(
+    sdk.postSessions({ body: { username: 'a', password: 'b' }, fetch: problem(401, {}) })
+  )
+  for (const status of [403, 500]) {
+    await rejection(sdk.deleteStoriesId({ path: { id: 1 }, fetch: problem(status, {}) }))
+  }
+  assert.equal(handler.mock.callCount(), 0)
+})
+
 test('route IDs must be positive integers', () => {
   for (const id of ['1', '42', '9007199254740991']) assert.equal(matchId(id), true, id)
   for (const id of ['0', '-1', '1.5', 'abc', '007', '1e3', '9007199254740992']) {
