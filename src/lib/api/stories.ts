@@ -1,3 +1,4 @@
+import { patchStoriesId } from './generated/sdk.gen'
 import type { GetStoriesData, PostStoriesData } from './generated/types.gen'
 import type { StoryFormData } from '#lib/schemas/story.js'
 import { weekdaysToMask } from '#lib/types/index.js'
@@ -16,3 +17,10 @@ export const toStoryApiFormat = (data: StoryFormData): StoryCreateInput => ({
   weekdays: weekdaysToMask(data.weekdays),
   is_breaking: data.is_breaking,
 })
+
+/** Babbel restores and sets a draft status in one transaction, so a draft never airs. */
+export const restoreStory = (id: number, asDraft: boolean) =>
+  patchStoriesId({
+    path: { id },
+    body: asDraft ? { deleted_at: '', status: 'draft' } : { deleted_at: '' },
+  })

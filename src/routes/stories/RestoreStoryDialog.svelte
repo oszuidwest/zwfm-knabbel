@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ApiError, notifyMutationError } from '#lib/api/client.js'
-  import { patchStoriesId } from '#lib/api/generated/sdk.gen.js'
+  import { restoreStory } from '#lib/api/stories.js'
   import { ArchiveRestore, Info, TriangleAlert } from '#lib/components/icons.js'
   import { Modal } from '#lib/components/ui/index.js'
   import { toast } from '#lib/stores/toast.js'
@@ -37,23 +37,12 @@
     // The dialog can close while this runs, so read the prop before the first await.
     const target = story
     try {
-      await patchStoriesId({ path: { id: target.id }, body: { deleted_at: '' } })
+      await restoreStory(target.id, mode === 'draft')
     } catch (err) {
       pending = null
       notifyMutationError(err, 'Herstellen mislukt')
       if (err instanceof ApiError && err.status === 404) await ondone(target, false)
       return
-    }
-    if (mode === 'draft') {
-      // Babbel requires separate restore and status updates; the story is active in between.
-      try {
-        await patchStoriesId({ path: { id: target.id }, body: { status: 'draft' } })
-      } catch (err) {
-        console.error('[stories] set restored story to draft failed', err)
-        toast.error('Bericht hersteld, maar nog actief: zet het zelf op concept', 10_000)
-        await ondone(target, true)
-        return
-      }
     }
 
     toast.success(mode === 'draft' ? 'Bericht hersteld als concept' : 'Bericht hersteld')
