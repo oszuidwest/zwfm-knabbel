@@ -5,6 +5,8 @@ import { createServer } from 'vite'
 let server
 let assessRestore
 let formatWeekdays
+let restoreStory
+let client
 
 before(async () => {
   server = await createServer({
@@ -13,6 +15,8 @@ before(async () => {
   })
   ;({ assessRestore } = await server.ssrLoadModule('/src/lib/utils/story-restore.ts'))
   ;({ formatWeekdays } = await server.ssrLoadModule('/src/lib/utils/labels.ts'))
+  ;({ restoreStory } = await server.ssrLoadModule('/src/lib/api/stories.ts'))
+  ;({ client } = await server.ssrLoadModule('/src/lib/api/generated/client.gen.ts'))
 })
 
 after(async () => {
@@ -104,4 +108,22 @@ test('formatWeekdays lists days from Monday', () => {
   assert.equal(formatWeekdays(62), 'Ma, Di, Wo, Do, Vr')
   assert.equal(formatWeekdays(SUNDAY | MONDAY), 'Ma, Zo')
   assert.equal(formatWeekdays(0), 'Geen dagen')
+})
+
+test('restoring sends one request, which also sets the status for a draft', async () => {
+  const requests = []
+  client.setConfig({
+    baseUrl: 'https://api.example.test',
+    fetch: async request => {
+      requests.push(`${request.method} ${new URL(request.url).pathname} ${await request.text()}`)
+      return Response.json({})
+    },
+  })
+
+  await restoreStory(7, true)
+  await restoreStory(8, false)
+  assert.deepEqual(requests, [
+    'PATCH /api/v1/stories/7 {"deleted_at":"","status":"draft"}',
+    'PATCH /api/v1/stories/8 {"deleted_at":""}',
+  ])
 })
