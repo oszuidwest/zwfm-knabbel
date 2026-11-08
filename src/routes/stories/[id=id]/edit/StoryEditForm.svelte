@@ -19,7 +19,7 @@
   import { toast } from '#lib/stores/toast.js'
   import { validateForm } from '#lib/utils/validation.js'
   import { toSelectOptions, toStringOrEmpty } from '#lib/utils/form.js'
-  import { statusOptions } from '#lib/utils/labels.js'
+  import { noVoiceUploadHint, statusOptions } from '#lib/utils/labels.js'
   import { formatDateTime, formatDuration } from '#lib/utils/format.js'
   import { resolveInternalHref } from '#lib/utils/routes.js'
   import {
@@ -98,7 +98,7 @@
 
   function setVoiceId(value: string | null | undefined): void {
     form.voice_id = value ?? ''
-    if (selectedVoice?.elevenlabs_voice_id) audioFile = null
+    if (!form.voice_id || selectedVoice?.elevenlabs_voice_id) audioFile = null
   }
 
   async function loadMoreBulletins(): Promise<void> {
@@ -303,16 +303,19 @@
             ongenerate={handleGenerateAudio}
           />
         {:else}
-          <FileInput
-            id="audio"
-            label="Audiobestand"
-            accept="audio/wav,audio/*"
-            existingAudioUrl={currentAudioUrl}
-            error={errors.audio}
-            hint={audioFile?.name}
-            onchange={file => (audioFile = file)}
-            disabled={formDisabled}
-          />
+          <!-- Remounting on a cleared voice also empties the native file input. -->
+          {#key !form.voice_id}
+            <FileInput
+              id="audio"
+              label="Audiobestand"
+              accept="audio/wav,audio/*"
+              existingAudioUrl={audioFile ? undefined : currentAudioUrl}
+              error={errors.audio}
+              hint={form.voice_id ? audioFile?.name : noVoiceUploadHint}
+              onchange={file => (audioFile = file)}
+              disabled={formDisabled || !form.voice_id}
+            />
+          {/key}
         {/if}
 
         <FormActions

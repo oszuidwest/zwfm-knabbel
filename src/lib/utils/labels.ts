@@ -16,6 +16,8 @@ export function getRoleLabel(role: string | undefined): string {
   return roleLabels[role ?? 'viewer'] ?? 'Kijker'
 }
 
+export const noVoiceUploadHint = 'Kies eerst de stem die in de opname te horen is.'
+
 export const statusLabels: Record<string, string> = {
   draft: 'Concept',
   active: 'Actief',

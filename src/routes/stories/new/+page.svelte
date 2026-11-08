@@ -14,7 +14,7 @@
   import { validateForm } from '#lib/utils/validation.js'
   import { toLocalDateString } from '#lib/utils/format.js'
   import { toSelectOptions } from '#lib/utils/form.js'
-  import { statusOptions } from '#lib/utils/labels.js'
+  import { noVoiceUploadHint, statusOptions } from '#lib/utils/labels.js'
   import { resolveInternalHref } from '#lib/utils/routes.js'
   import {
     AIAudioField,
@@ -60,7 +60,7 @@
 
   function setVoiceId(value: string | null | undefined): void {
     form.voice_id = value ?? ''
-    if (selectedVoice?.elevenlabs_voice_id) audioFile = null
+    if (!form.voice_id || selectedVoice?.elevenlabs_voice_id) audioFile = null
   }
 
   async function handleSubmit(e: Event): Promise<void> {
@@ -231,14 +231,17 @@
             ongenerate={handleGenerateAudio}
           />
         {:else}
-          <FileInput
-            id="audio"
-            label="Audiobestand (optioneel)"
-            accept="audio/wav,audio/*"
-            hint={audioFile?.name}
-            onchange={file => (audioFile = file)}
-            disabled={formDisabled}
-          />
+          <!-- Remounting on a cleared voice also empties the native file input. -->
+          {#key !form.voice_id}
+            <FileInput
+              id="audio"
+              label="Audiobestand (optioneel)"
+              accept="audio/wav,audio/*"
+              hint={form.voice_id ? audioFile?.name : noVoiceUploadHint}
+              onchange={file => (audioFile = file)}
+              disabled={formDisabled || !form.voice_id}
+            />
+          {/key}
         {/if}
 
         <FormActions
