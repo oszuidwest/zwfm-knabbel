@@ -671,6 +671,14 @@ export type Story = {
   metadata?: {
     [key: string]: unknown
   }
+  /**
+   * ID of the story in the system that sent it, null if none. Set on create only.
+   */
+  external_id: string | null
+  /**
+   * Link to the story in the system that sent it, null if none. Set on create only.
+   */
+  external_url: string | null
   created_at: string
   updated_at: string
   /**
@@ -730,11 +738,20 @@ export type StoryCreate = {
     [key: string]: unknown
   }
   /**
-   * Optional retry key, compared exactly (case and whitespace count);
-   * see POST /stories. Null is treated as omitted.
+   * ID of the story in the system that sent it. Compared byte for byte. It cannot change
+   * afterwards. An ID that any story already has, also a soft-deleted one, fails with 409
+   * (`story.duplicate`). The limit counts bytes, so an ID within `maxLength` that is longer
+   * than 100 bytes also fails with 422. Null counts as absent.
    *
    */
-  idempotency_key?: string | null
+  external_id?: string | null
+  /**
+   * Link to the story in the system that sent it, http or https. It cannot change afterwards.
+   * The limit counts bytes, so a link within `maxLength` that is longer than 500 bytes also
+   * fails with 422. Null counts as absent.
+   *
+   */
+  external_url?: string | null
 }
 
 /**
@@ -901,7 +918,9 @@ export type UserUpdate = {
     [key: string]: unknown
   } | null
   /**
-   * Set to true to suspend user, false to restore
+   * Set to true to suspend user, false to restore. A restore can let a session
+   * from before the suspension work again, see PATCH /api/v1/users/{id}.
+   *
    */
   suspended?: boolean | null
 }
@@ -1007,7 +1026,8 @@ export type BulletinJob = {
  * - `user.last_admin` - 409 cannot delete, demote or suspend the last active admin user
  * - `bulletin.no_stories` - 409 no active stories for bulletin generation
  * - `story.audio_exists`, `story.no_text`, `story.no_voice`, `voice.no_elevenlabs_id`,
- * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - 409 story or voice not ready for TTS
+ * `voice.elevenlabs_not_found`, `story.tts_text_too_long` - 409 story or voice not ready for TTS.
+ * `story.no_voice` also applies to an audio upload.
  * - `stationvoice.jingle_locked` - 409 `station_id` or `voice_id` cannot change while the station-voice has a jingle
  * - `stationvoice.pair_changed` - 409 the station-voice moved to another station or voice while its jingle upload ran
  * - `tts.upstream_failed` - 502 ElevenLabs could not be reached, failed, rejected the request or returned silent or undecodable audio
@@ -1352,10 +1372,10 @@ export type UserInputWritable = {
   username: string
   full_name: string
   /**
-   * User password. Must satisfy the configured local password policy:
-   * at least `BABBEL_AUTH_MIN_PASSWORD_LENGTH` characters (`too_short`),
-   * at most 72 bytes in UTF-8 (`too_long`), and the configured
-   * character classes (`invalid_format`).
+   * User password. Must satisfy the local password policy:
+   * at least 8 characters (`too_short`), at most 72 bytes in UTF-8
+   * (`too_long`), and an uppercase letter, a lowercase letter and a
+   * number (`invalid_format`).
    *
    */
   password: string
@@ -1395,9 +1415,10 @@ export type UserUpdateWritable = {
    */
   full_name?: string | null
   /**
-   * New password. Must satisfy the configured local password policy
+   * New password. Must satisfy the local password policy
    * (see `UserInput.password`); at most 72 bytes in UTF-8. Null is
-   * treated as omit.
+   * treated as omit. A new password ends all sessions of this user,
+   * also the caller's own when they change their own password.
    *
    */
   password?: string | null
@@ -1416,7 +1437,9 @@ export type UserUpdateWritable = {
     [key: string]: unknown
   } | null
   /**
-   * Set to true to suspend user, false to restore
+   * Set to true to suspend user, false to restore. A restore can let a session
+   * from before the suspension work again, see PATCH /api/v1/users/{id}.
+   *
    */
   suspended?: boolean | null
 }
@@ -1573,6 +1596,7 @@ export type storyFilter = {
   duration_seconds?: NullableNumberFilter
   weekdays?: BitmaskFilter
   is_breaking?: BooleanFilter
+  external_id?: NullableStringFilter
   created_at?: DateTimeFilter
   updated_at?: DateTimeFilter
   deleted_at?: NullableDateTimeFilter
@@ -1817,6 +1841,10 @@ export type PostSessionsErrors = {
    */
   401: ProblemDetails
   /**
+   * Insufficient permissions
+   */
+  403: ProblemDetails
+  /**
    * Request body too large (above 1 MB for JSON, or an uploaded file above 100 MB)
    */
   413: ProblemDetails
@@ -1826,6 +1854,16 @@ export type PostSessionsErrors = {
    *
    */
   422: ValidationError
+  /**
+   * Too many login attempts from all clients together (`login.rate_limited`).
+   * Babbel accepts about 5 per second, with bursts of up to 10.
+   *
+   */
+  429: ProblemDetails
+  /**
+   * Internal server error
+   */
+  500: ProblemDetails
 }
 
 export type PostSessionsError = PostSessionsErrors[keyof PostSessionsErrors]
@@ -1902,16 +1940,16 @@ export type GetAuthOauthCallbackData = {
 
 export type GetAuthOauthCallbackErrors = {
   /**
+   * The resource in the URL path does not exist
+   */
+  404: ProblemDetails
+  /**
    * The request is well-formed, but the API rejects one or more values.
    * `errors[]` names each rejected body field, query parameter, path `id`
    * or uploaded file, or `query` for a query string that cannot be decoded.
    *
    */
   422: ValidationError
-  /**
-   * Internal server error
-   */
-  500: ProblemDetails
 }
 
 export type GetAuthOauthCallbackError = GetAuthOauthCallbackErrors[keyof GetAuthOauthCallbackErrors]
@@ -2962,6 +3000,7 @@ export type GetStoriesData = {
       duration_seconds?: NullableNumberFilter
       weekdays?: BitmaskFilter
       is_breaking?: BooleanFilter
+      external_id?: NullableStringFilter
       created_at?: DateTimeFilter
       updated_at?: DateTimeFilter
       deleted_at?: NullableDateTimeFilter
@@ -3209,6 +3248,10 @@ export type PostStoriesIdAudioErrors = {
    * Upload did not complete within the time limit
    */
   408: ProblemDetails
+  /**
+   * The story has no voice (`story.no_voice`). Assign one first.
+   */
+  409: ConflictError
   /**
    * Story is soft-deleted. Restore it with PATCH {"deleted_at":""}, optionally with the fields to update.
    */
@@ -5496,6 +5539,10 @@ export type PostStationVoicesIdAudioErrors = {
    * Internal server error
    */
   500: ProblemDetails
+  /**
+   * The operation exceeded the server-side timeout
+   */
+  504: ProblemDetails
 }
 
 export type PostStationVoicesIdAudioError =
