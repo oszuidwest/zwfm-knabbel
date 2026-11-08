@@ -47,6 +47,14 @@ function isUpload(request: Request | undefined): boolean {
   return request?.headers.get('content-type')?.startsWith('multipart/form-data') ?? false
 }
 
+let sessionExpiredHandler: (() => Promise<unknown>) | undefined
+let sessionExpiring: Promise<unknown> | undefined
+
+/** The root layout passes the move to the login page here. */
+export function onSessionExpired(handler: () => Promise<unknown>): void {
+  sessionExpiredHandler = handler
+}
+
 // Registered by the root layout import before any SDK calls.
 client.interceptors.request.use(
   request =>
@@ -73,6 +81,18 @@ client.interceptors.error.use((error, response, request) => {
   }
 
   const apiError = new ApiError(response.status, getErrorMessage(error, response.status), error)
+  // Loads redirect on 401 themselves. On /sessions a 401 is a failed login or logout.
+  if (
+    response.status === 401 &&
+    request?.method !== 'GET' &&
+    !request?.url.includes('/api/v1/sessions')
+  ) {
+    apiError.message = 'Je sessie is verlopen'
+    apiError.notified = true
+    sessionExpiring ??= sessionExpiredHandler?.()
+      .catch((err: unknown) => console.error('[auth] moving to the login page failed', err))
+      .finally(() => (sessionExpiring = undefined))
+  }
   if (response.status === 403 && request?.method !== 'GET') {
     toast.error('Geen rechten voor deze actie')
     apiError.notified = true

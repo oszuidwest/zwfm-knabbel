@@ -3,6 +3,7 @@
   import { page } from '$app/state'
   import { afterNavigate, goto } from '$app/navigation'
   import { untrack } from 'svelte'
+  import { onSessionExpired } from '#lib/api/client.js'
   import { createAuthStore, setAuthContext } from '#lib/stores/auth.svelte.js'
   import Layout from '#lib/components/Layout.svelte'
   import Toast from '#lib/components/Toast.svelte'
@@ -14,6 +15,8 @@
   const auth = createAuthStore(untrack(() => data.user))
 
   setAuthContext(auth)
+  // The expired=1 effect below clears the local session.
+  onSessionExpired(() => goto(resolveInternalHref('/login?expired=1')))
 
   const publicRoutes = ['/login', '/auth/oauth/callback']
   const currentPathname = $derived(page.url.pathname)
