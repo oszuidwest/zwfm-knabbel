@@ -29,7 +29,6 @@
     Pagination,
   } from '#lib/components/ui/index.js'
   import ReadMode from '#lib/components/ReadMode.svelte'
-  import WordPressBadge from '#lib/components/WordPressBadge.svelte'
   import RestoreStoryDialog from './RestoreStoryDialog.svelte'
   import type { Story } from '#lib/types/index.js'
 
@@ -272,7 +271,6 @@
                 <div class="min-w-0 flex-1">
                   {@render cardSummary(story)}
                 </div>
-                <WordPressBadge {story} />
                 {@render restoreButton(story, 'h-5 w-5')}
               {:else}
                 <a
@@ -281,7 +279,6 @@
                 >
                   {@render cardSummary(story)}
                 </a>
-                <WordPressBadge {story} />
                 {@render readModeButton(story, 'h-5 w-5')}
               {/if}
             </div>
@@ -312,7 +309,6 @@
                 <td class="font-medium">
                   <span class="flex items-center gap-1.5">
                     {story.title}
-                    <WordPressBadge {story} />
                     {#if story.is_breaking}
                       <span
                         class="text-primary"
