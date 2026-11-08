@@ -28,9 +28,6 @@
     const file = input.files?.[0] ?? null
     onchange?.(file)
   }
-
-  // Callers use hint for the selected replacement's filename.
-  const showExistingAudio = $derived(existingAudioUrl && !hint)
 </script>
 
 <FormField
@@ -39,7 +36,7 @@
   {error}
   {hint}
 >
-  {#if showExistingAudio}
+  {#if existingAudioUrl}
     <audio
       controls
       src={existingAudioUrl}
