@@ -8,10 +8,6 @@
 
   let { data }: PageProps = $props()
   const auth = getAuthContext()
-
-  async function reloadSettings(): Promise<void> {
-    await refreshAll()
-  }
 </script>
 
 <div class="space-y-6">
@@ -45,15 +41,13 @@
       <button
         type="button"
         class="btn btn-sm"
-        onclick={reloadSettings}
+        onclick={() => refreshAll()}
       >
         <RefreshCw class="h-4 w-4" />
         Opnieuw laden
       </button>
     </div>
-  {/if}
-
-  {#if !data.loadError && data.settings}
+  {:else if data.settings}
     {#key JSON.stringify(data.settings)}
       <TTSSettingsForm
         settings={data.settings}
