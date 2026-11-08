@@ -37,7 +37,7 @@
   } from '#lib/components/ui/index.js'
   import { CassetteTape, Eye, Podcast } from '#lib/components/icons.js'
   import ReadMode from '#lib/components/ReadMode.svelte'
-  import WordPressBadge from '#lib/components/WordPressBadge.svelte'
+  import WordPressLink from '#lib/components/WordPressLink.svelte'
   import { maskToWeekdays, type Bulletin } from '#lib/types/index.js'
   import type { PageData } from './$types'
 
@@ -194,7 +194,7 @@
   <PageHeader title={canWrite ? 'Bericht bewerken' : 'Bericht bekijken'}>
     {#snippet actions()}
       <div class="flex items-center gap-3">
-        <WordPressBadge story={data.story} />
+        <WordPressLink story={data.story} />
         <button
           type="button"
           class="btn btn-outline"
