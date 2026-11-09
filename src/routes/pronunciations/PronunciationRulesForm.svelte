@@ -643,7 +643,7 @@
 {#if canEdit}
   <button
     type="button"
-    class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
+    class="floating-action"
     onclick={handleAddRow}
     aria-label="Nieuwe regel"
   >

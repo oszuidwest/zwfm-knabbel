@@ -48,3 +48,8 @@
   font-size: 1.125rem;
   font-weight: 600;
 }
+
+/* Mobile floating action: a round primary button in the bottom-right corner. */
+@utility floating-action {
+  @apply btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden;
+}

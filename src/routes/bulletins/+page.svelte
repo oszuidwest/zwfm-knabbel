@@ -164,7 +164,7 @@
 {#if canGenerate}
   <a
     href={resolveInternalHref('/bulletins/new')}
-    class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"
+    class="floating-action"
     aria-label="Genereer bulletin"
   >
     <Plus
