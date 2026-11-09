@@ -265,10 +265,16 @@
                 >
                   <span class="truncate">{story.title}</span>
                   {#if story.is_breaking}
-                    <Zap
-                      aria-hidden="true"
-                      class="h-3.5 w-3.5 shrink-0 fill-current text-primary"
-                    />
+                    <span
+                      class="shrink-0 text-primary"
+                      title="Breaking nieuws"
+                    >
+                      <Zap
+                        aria-hidden="true"
+                        class="h-3.5 w-3.5 fill-current"
+                      />
+                      <span class="sr-only">Breaking nieuws</span>
+                    </span>
                   {/if}
                 </a>
                 <div class="text-xs text-base-content/60">
