@@ -19,7 +19,7 @@
     forbidTooltip = 'Geen rechten',
   }: Props = $props()
 
-  const resolvedEditHref = $derived(resolveInternalHref(editHref))
+  const EditIcon = $derived(canEdit ? Pencil : Eye)
 
   function handleDelete(): void {
     if (!canDelete) return
@@ -29,26 +29,18 @@
 
 <div class="flex gap-1">
   <a
-    href={resolvedEditHref}
+    href={resolveInternalHref(editHref)}
     class="btn btn-ghost btn-sm"
     aria-label={canEdit ? 'Bewerken' : 'Bekijken'}
   >
-    {#if canEdit}
-      <Pencil
-        aria-hidden="true"
-        class="h-4 w-4"
-      />
-    {:else}
-      <Eye
-        aria-hidden="true"
-        class="h-4 w-4"
-      />
-    {/if}
+    <EditIcon
+      aria-hidden="true"
+      class="h-4 w-4"
+    />
   </a>
   <MaybeTooltip
     when={!canDelete}
     tip={forbidTooltip}
-    placement="tooltip-left"
   >
     <button
       class={['btn btn-ghost btn-sm', canDelete && 'hover:text-error']}

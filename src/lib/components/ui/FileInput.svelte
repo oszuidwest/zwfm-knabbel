@@ -22,12 +22,6 @@
     existingAudioUrl,
     onchange,
   }: Props = $props()
-
-  function handleChange(e: Event): void {
-    const input = e.target as HTMLInputElement
-    const file = input.files?.[0] ?? null
-    onchange?.(file)
-  }
 </script>
 
 <FormField
@@ -51,7 +45,7 @@
     {...fieldA11y(id, error, hint)}
     type="file"
     {accept}
-    onchange={handleChange}
+    onchange={e => onchange?.(e.currentTarget.files?.[0] ?? null)}
     class={['file-input w-full file-input-primary', error && 'file-input-error']}
     {disabled}
   />

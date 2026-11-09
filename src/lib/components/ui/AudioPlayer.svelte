@@ -23,6 +23,7 @@
 
   const total = $derived((Number.isFinite(mediaDuration) && mediaDuration) || duration || 0)
   const unavailable = $derived(!src || failedSrc === src)
+  const ToggleIcon = $derived(paused ? Play : Pause)
 
   // One clip at a time: starting any other media on the page pauses this one.
   function handlePlay(e: Event): void {
@@ -59,17 +60,10 @@
     aria-label={paused ? `${label} afspelen` : `${label} pauzeren`}
     title={size === 'icon' && unavailable ? 'Audio niet beschikbaar' : undefined}
   >
-    {#if paused}
-      <Play
-        aria-hidden="true"
-        class={['ml-0.5 fill-current', size === 'md' ? 'h-4 w-4' : 'h-3.5 w-3.5']}
-      />
-    {:else}
-      <Pause
-        aria-hidden="true"
-        class={['fill-current', size === 'md' ? 'h-4 w-4' : 'h-3.5 w-3.5']}
-      />
-    {/if}
+    <ToggleIcon
+      aria-hidden="true"
+      class={[paused && 'ml-0.5', 'fill-current', size === 'md' ? 'h-4 w-4' : 'h-3.5 w-3.5']}
+    />
   </button>
 {/snippet}
 

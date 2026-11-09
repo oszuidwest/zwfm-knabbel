@@ -26,18 +26,10 @@ export const userSchema = z
       error: 'Rol is verplicht',
     }),
   })
-  .refine(
-    data => {
-      if (data.password && data.password !== data.confirmPassword) {
-        return false
-      }
-      return true
-    },
-    {
-      message: 'Wachtwoorden komen niet overeen',
-      path: ['confirmPassword'],
-    }
-  )
+  .refine(data => !data.password || data.password === data.confirmPassword, {
+    message: 'Wachtwoorden komen niet overeen',
+    path: ['confirmPassword'],
+  })
 
 export const userCreateSchema = userSchema.refine(data => !!data.password, {
   message: 'Wachtwoord is verplicht',

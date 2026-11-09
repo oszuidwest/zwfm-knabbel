@@ -38,7 +38,7 @@
     title,
     subtitle,
     items,
-    icon,
+    icon: Icon,
     newHref,
     newLabel = 'Nieuw',
     editHref,
@@ -58,16 +58,12 @@
     forbidTooltip = 'Geen rechten',
   }: Props = $props()
 
+  const EditIcon = $derived(canEdit ? Pencil : Eye)
+
   function handleDeleteClick(item: T, e: Event): void {
     e.stopPropagation()
     if (!canDelete) return
     onDelete?.(item, e)
-  }
-
-  function handleCreateClick(e: MouseEvent): void {
-    if (!canCreate) {
-      e.preventDefault()
-    }
   }
 </script>
 
@@ -75,38 +71,16 @@
   <PageHeader
     {title}
     {subtitle}
-  >
-    {#snippet actions()}
-      {#if headerActions}
-        {@render headerActions()}
-      {:else if newHref}
-        <MaybeTooltip
-          when={!canCreate}
-          tip={forbidTooltip}
-          wrapperClass="max-md:hidden"
-        >
-          <a
-            href={canCreate ? resolveInternalHref(newHref) : undefined}
-            class={['btn btn-primary', !canCreate && 'btn-disabled']}
-            role={canCreate ? undefined : 'button'}
-            aria-disabled={!canCreate}
-            tabindex={canCreate ? undefined : -1}
-            onclick={handleCreateClick}
-          >
-            <Plus
-              aria-hidden="true"
-              class="h-4 w-4"
-            />
-            {newLabel}
-          </a>
-        </MaybeTooltip>
-      {/if}
-    {/snippet}
-  </PageHeader>
+    actionHref={newHref}
+    actionLabel={newLabel}
+    canAction={canCreate}
+    {forbidTooltip}
+    actions={headerActions}
+  />
 
   {#if items.length === 0}
     <EmptyState
-      {icon}
+      icon={Icon}
       title={emptyTitle}
       description={emptyDescription}
       action={newHref && canCreate ? { href: newHref, label: newLabel } : undefined}
@@ -114,43 +88,29 @@
   {:else}
     <div class="space-y-2 md:hidden">
       {#each items as item (item.id)}
-        {@const Icon = icon}
-        {@const isClickable = !!editHref}
         <div class="card bg-base-100">
           <div class="card-body p-4">
             <div class="flex items-center justify-between gap-3">
-              {#if isClickable}
-                <a
-                  href={resolveInternalHref(editHref(item))}
-                  class="flex min-w-0 flex-1 items-center gap-3 rounded-field active:bg-base-200"
+              <svelte:element
+                this={editHref ? 'a' : 'div'}
+                href={editHref && resolveInternalHref(editHref(item))}
+                class={[
+                  'flex min-w-0 flex-1 items-center gap-3',
+                  editHref && 'rounded-field active:bg-base-200',
+                ]}
+              >
+                <div
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-(--color-primary-ink)"
                 >
-                  <div
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-(--color-primary-ink)"
-                  >
-                    <Icon
-                      aria-hidden="true"
-                      class="h-5 w-5"
-                    />
-                  </div>
-                  <div class="min-w-0">
-                    {@render cardContent(item)}
-                  </div>
-                </a>
-              {:else}
-                <div class="flex min-w-0 flex-1 items-center gap-3">
-                  <div
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-(--color-primary-ink)"
-                  >
-                    <Icon
-                      aria-hidden="true"
-                      class="h-5 w-5"
-                    />
-                  </div>
-                  <div class="min-w-0">
-                    {@render cardContent(item)}
-                  </div>
+                  <Icon
+                    aria-hidden="true"
+                    class="h-5 w-5"
+                  />
                 </div>
-              {/if}
+                <div class="min-w-0">
+                  {@render cardContent(item)}
+                </div>
+              </svelte:element>
               {#if cardActions}
                 <div class="flex gap-1">
                   {@render cardActions(item)}
@@ -163,23 +123,15 @@
                       class="btn btn-square shrink-0 btn-ghost btn-sm"
                       aria-label={canEdit ? 'Bewerken' : 'Bekijken'}
                     >
-                      {#if canEdit}
-                        <Pencil
-                          aria-hidden="true"
-                          class="h-4 w-4"
-                        />
-                      {:else}
-                        <Eye
-                          aria-hidden="true"
-                          class="h-4 w-4"
-                        />
-                      {/if}
+                      <EditIcon
+                        aria-hidden="true"
+                        class="h-4 w-4"
+                      />
                     </a>
                   {/if}
                   <MaybeTooltip
                     when={!canDelete}
                     tip={forbidTooltip}
-                    placement="tooltip-left"
                   >
                     <button
                       class={[
