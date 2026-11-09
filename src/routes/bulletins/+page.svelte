@@ -3,7 +3,7 @@
   import { page } from '$app/state'
   import { getAuthContext } from '#lib/stores/auth.svelte.js'
   import { formatDateTime, formatDuration } from '#lib/utils/format.js'
-  import { resolveInternalHref } from '#lib/utils/routes.js'
+  import { resolveInternalHref, withSearchParams } from '#lib/utils/routes.js'
   import { Eye, Plus, Podcast } from '#lib/components/icons.js'
   import { getMediaUrl } from '#lib/api/client.js'
   import { AudioPlayer, PageHeader, EmptyState, Pagination } from '#lib/components/ui/index.js'
@@ -15,14 +15,8 @@
   const canGenerate = $derived(auth.can('bulletins', 'generate'))
 
   function updateStationFilter(stationId: string): void {
-    const url = new URL(page.url.href)
     // New filters can make the current page number invalid.
-    url.searchParams.delete('page')
-    if (stationId) {
-      url.searchParams.set('station', stationId)
-    } else {
-      url.searchParams.delete('station')
-    }
+    const url = withSearchParams(page.url.href, { page: '', station: stationId })
     goto(resolveInternalHref(`${url.pathname}${url.search}${url.hash}`))
   }
 </script>

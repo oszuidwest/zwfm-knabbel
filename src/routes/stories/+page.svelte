@@ -6,7 +6,7 @@
   import { deleteWithConfirm } from '#lib/utils/crud.js'
   import { isFromWordPress } from '#lib/utils/story-origin.js'
   import { formatDate, formatDateTime, formatRelativeTime, parseDate } from '#lib/utils/format.js'
-  import { resolveInternalHref } from '#lib/utils/routes.js'
+  import { resolveInternalHref, withSearchParams } from '#lib/utils/routes.js'
   import { statusLabels, statusColors, statusOptions } from '#lib/utils/labels.js'
   import {
     ArchiveRestore,
@@ -54,16 +54,8 @@
   })
 
   function updateFilters(updates: Record<string, string>): void {
-    const url = new URL(page.url.href)
     // New filters can make the current page number invalid.
-    url.searchParams.delete('page')
-    for (const [key, value] of Object.entries(updates)) {
-      if (value) {
-        url.searchParams.set(key, value)
-      } else {
-        url.searchParams.delete(key)
-      }
-    }
+    const url = withSearchParams(page.url.href, { page: '', ...updates })
     goto(resolveInternalHref(`${url.pathname}${url.search}${url.hash}`))
   }
 
