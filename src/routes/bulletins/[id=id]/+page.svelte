@@ -130,6 +130,7 @@
                         aria-hidden="true"
                         class="h-3.5 w-3.5 fill-current"
                       />
+                      <span class="sr-only">Breaking nieuws</span>
                     </span>
                   {/if}
                 </a>

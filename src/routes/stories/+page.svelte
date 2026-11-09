@@ -507,6 +507,7 @@
       aria-hidden="true"
       class="h-4 w-4 fill-current"
     />
+    <span class="sr-only">Breaking nieuws</span>
   </span>
 {/snippet}
 
