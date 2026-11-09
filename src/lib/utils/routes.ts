@@ -10,3 +10,13 @@ export function resolveInternalHref(href: string): string {
   // @ts-expect-error SvelteKit types only accept generated pathnames; this helper also handles dynamic internal paths.
   return resolve(href.slice(1))
 }
+
+/** Returns a copy of the URL; an empty value deletes that search param. */
+export function withSearchParams(url: string | URL, params: Record<string, string>): URL {
+  const next = new URL(url)
+  for (const [key, value] of Object.entries(params)) {
+    if (value) next.searchParams.set(key, value)
+    else next.searchParams.delete(key)
+  }
+  return next
+}

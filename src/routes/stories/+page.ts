@@ -6,7 +6,7 @@ import type { StoryFilters } from '#lib/api/stories.js'
 import { settleLoad, unwrapLoadResult } from '#lib/utils/load-error.js'
 import { toLocalDateString } from '#lib/utils/format.js'
 import { getPaginationParams, getPaginationInfo } from '#lib/utils/pagination.js'
-import { resolveInternalHref } from '#lib/utils/routes.js'
+import { resolveInternalHref, withSearchParams } from '#lib/utils/routes.js'
 import { storySchema } from '#lib/schemas/story.js'
 import { WEEKDAY_BITS_BY_DAY } from '#lib/types/index.js'
 
@@ -80,9 +80,9 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
 
   // Deleting or restoring the last item can remove the current page.
   if (page > pagination.totalPages) {
-    const target = new URL(url)
-    if (pagination.totalPages === 1) target.searchParams.delete('page')
-    else target.searchParams.set('page', String(pagination.totalPages))
+    const target = withSearchParams(url, {
+      page: pagination.totalPages === 1 ? '' : String(pagination.totalPages),
+    })
     redirect(307, resolveInternalHref(`${target.pathname}${target.search}${target.hash}`))
   }
 
