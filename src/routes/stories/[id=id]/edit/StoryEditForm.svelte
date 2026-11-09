@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
+  import { untrack } from 'svelte'
   import {
     ApiError,
     getFieldErrors,
@@ -18,27 +19,15 @@
   import { getAuthContext } from '#lib/stores/auth.svelte.js'
   import { toast } from '#lib/stores/toast.js'
   import { validateForm } from '#lib/utils/validation.js'
-  import { toSelectOptions, toStringOrEmpty } from '#lib/utils/form.js'
-  import { noVoiceUploadHint, statusOptions } from '#lib/utils/labels.js'
+  import { toStringOrEmpty } from '#lib/utils/form.js'
   import { formatDateTime, formatDuration } from '#lib/utils/format.js'
   import { resolveInternalHref } from '#lib/utils/routes.js'
-  import {
-    AIAudioField,
-    BreakingToggle,
-    TextInput,
-    TextareaInput,
-    SelectInput,
-    FileInput,
-    FormActions,
-    FormField,
-    fieldA11y,
-    PageHeader,
-    WeekdayCheckboxGroup,
-  } from '#lib/components/ui/index.js'
+  import { FormActions, PageHeader } from '#lib/components/ui/index.js'
   import { CassetteTape, Eye, Podcast } from '#lib/components/icons.js'
   import ReadMode from '#lib/components/ReadMode.svelte'
   import WordPressLink from '#lib/components/WordPressLink.svelte'
   import { maskToWeekdays, type Bulletin } from '#lib/types/index.js'
+  import StoryFields from '../../StoryFields.svelte'
   import type { PageData } from './$types'
 
   interface Props {
@@ -51,56 +40,38 @@
   let audioFile = $state<File | null>(null)
   let showReadMode = $state(false)
 
-  function initialForm(): StoryFormData {
-    return {
-      title: data.story.title ?? '',
-      text: data.story.text ?? '',
-      voice_id: toStringOrEmpty(data.story.voice_id),
-      status: data.story.status ?? 'draft',
-      start_date: data.story.start_date,
-      end_date: data.story.end_date,
-      weekdays: maskToWeekdays(data.story.weekdays ?? 127),
-      is_breaking: data.story.is_breaking ?? false,
-    }
-  }
-
-  function initialBulletins(): Bulletin[] {
-    return data.bulletins
-  }
-
-  function initialBulletinsTotal(): number {
-    return data.bulletinsTotal
-  }
-
-  function initialAudioUrl(): string | undefined {
-    return data.story.audio_file ? getMediaUrl(data.story.audio_url) : undefined
-  }
-
   function cacheBust(url: string | undefined): string | undefined {
     if (!url) return undefined
     return `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`
   }
 
-  let form = $state<StoryFormData>(initialForm())
+  // The page remounts this form for another story, so the state starts from the first data.
+  const initial = untrack(() => data)
+  const story = initial.story
+
+  let form = $state<StoryFormData>({
+    title: story.title ?? '',
+    text: story.text ?? '',
+    voice_id: toStringOrEmpty(story.voice_id),
+    status: story.status ?? 'draft',
+    start_date: story.start_date,
+    end_date: story.end_date,
+    weekdays: maskToWeekdays(story.weekdays ?? 127),
+    is_breaking: story.is_breaking ?? false,
+  })
   let errors = $state<Record<string, string>>({})
   let submitting = $state(false)
   let generating = $state(false)
-  let currentAudioUrl = $state(initialAudioUrl())
+  let currentAudioUrl = $state(story.audio_file ? getMediaUrl(story.audio_url) : undefined)
 
-  let bulletins = $state.raw<Bulletin[]>(initialBulletins())
-  let bulletinsTotal = $state(initialBulletinsTotal())
+  let bulletins = $state.raw<Bulletin[]>(initial.bulletins)
+  let bulletinsTotal = $state(initial.bulletinsTotal)
   let loadingMore = $state(false)
 
-  const voiceOptions = $derived(toSelectOptions(data.voices))
   const selectedVoice = $derived(data.voices.find(voice => String(voice.id) === form.voice_id))
   const hasMoreBulletins = $derived(bulletins.length < bulletinsTotal)
   const canWrite = $derived(auth.can('stories', 'write'))
   const formDisabled = $derived(!canWrite || submitting || generating)
-
-  function setVoiceId(value: string | null | undefined): void {
-    form.voice_id = value ?? ''
-    if (!form.voice_id || selectedVoice?.elevenlabs_voice_id) audioFile = null
-  }
 
   async function loadMoreBulletins(): Promise<void> {
     if (loadingMore || !data.story.id) return
@@ -217,110 +188,18 @@
         onsubmit={handleSubmit}
         class="space-y-6"
       >
-        <TextInput
-          id="title"
-          label="Titel"
-          bind:value={form.title}
-          error={errors.title}
-          placeholder="Titel van het bericht"
+        <StoryFields
+          bind:form
+          bind:audioFile
+          {errors}
+          voices={data.voices}
+          {selectedVoice}
+          mode="edit"
+          {generating}
           disabled={formDisabled}
+          audioUrl={currentAudioUrl}
+          ongenerate={handleGenerateAudio}
         />
-
-        <TextareaInput
-          id="text"
-          label="Tekst"
-          bind:value={form.text}
-          error={errors.text}
-          placeholder="De tekst die wordt voorgelezen"
-          rows={8}
-          disabled={formDisabled}
-        />
-
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <SelectInput
-            id="voice_id"
-            label="Stem"
-            bind:value={() => form.voice_id, setVoiceId}
-            options={voiceOptions}
-            error={errors.voice_id}
-            emptyOption="Geen stem geselecteerd"
-            disabled={formDisabled}
-          />
-
-          <FormField
-            id="status"
-            label="Status"
-            error={errors.status}
-          >
-            <div class="join w-full">
-              <select
-                id="status"
-                {...fieldA11y('status', errors.status)}
-                class={['select join-item flex-1', errors.status && 'select-error']}
-                bind:value={form.status}
-                disabled={formDisabled}
-              >
-                {#each statusOptions as option (option.value)}
-                  <option value={option.value}>{option.label}</option>
-                {/each}
-              </select>
-              <BreakingToggle
-                bind:checked={form.is_breaking}
-                disabled={formDisabled}
-              />
-            </div>
-          </FormField>
-        </div>
-
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <TextInput
-            id="start_date"
-            label="Startdatum"
-            type="date"
-            bind:value={form.start_date}
-            error={errors.start_date}
-            disabled={formDisabled}
-          />
-
-          <TextInput
-            id="end_date"
-            label="Einddatum"
-            type="date"
-            bind:value={form.end_date}
-            error={errors.end_date}
-            disabled={formDisabled}
-          />
-        </div>
-
-        <WeekdayCheckboxGroup
-          bind:value={form.weekdays}
-          disabled={formDisabled}
-        />
-
-        {#if selectedVoice?.elevenlabs_voice_id}
-          <AIAudioField
-            voiceName={selectedVoice.name}
-            mode="edit"
-            {generating}
-            disabled={formDisabled}
-            audioUrl={currentAudioUrl}
-            ongenerate={handleGenerateAudio}
-          />
-        {:else}
-          <!-- Remounting on a cleared voice also empties the native file input. -->
-          {#key !form.voice_id}
-            <FileInput
-              id="audio"
-              label="Audiobestand"
-              accept="audio/wav,audio/*"
-              existingAudioUrl={audioFile ? undefined : currentAudioUrl}
-              error={errors.audio}
-              hint={form.voice_id ? audioFile?.name : noVoiceUploadHint}
-              onchange={file => (audioFile = file)}
-              disabled={formDisabled || !form.voice_id}
-            />
-          {/key}
-        {/if}
 
         <FormActions
           cancelHref="/stories"

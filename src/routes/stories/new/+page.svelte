@@ -13,23 +13,10 @@
   import { toast } from '#lib/stores/toast.js'
   import { validateForm } from '#lib/utils/validation.js'
   import { toLocalDateString } from '#lib/utils/format.js'
-  import { toSelectOptions } from '#lib/utils/form.js'
-  import { noVoiceUploadHint, statusOptions } from '#lib/utils/labels.js'
   import { resolveInternalHref } from '#lib/utils/routes.js'
-  import {
-    AIAudioField,
-    BreakingToggle,
-    TextInput,
-    TextareaInput,
-    SelectInput,
-    FileInput,
-    FormActions,
-    FormField,
-    fieldA11y,
-    PageHeader,
-    WeekdayCheckboxGroup,
-  } from '#lib/components/ui/index.js'
+  import { FormActions, PageHeader } from '#lib/components/ui/index.js'
   import { allWeekdaysTrue } from '#lib/types/index.js'
+  import StoryFields from '../StoryFields.svelte'
 
   let { data } = $props()
   const auth = getAuthContext()
@@ -49,7 +36,6 @@
     is_breaking: false,
   })
 
-  const voiceOptions = $derived(toSelectOptions(data.voices))
   const selectedVoice = $derived(data.voices.find(voice => String(voice.id) === form.voice_id))
 
   let errors = $state<Record<string, string>>({})
@@ -58,18 +44,9 @@
   const canWrite = $derived(auth.can('stories', 'write'))
   const formDisabled = $derived(!canWrite || submitting || generating)
 
-  function setVoiceId(value: string | null | undefined): void {
-    form.voice_id = value ?? ''
-    if (!form.voice_id || selectedVoice?.elevenlabs_voice_id) audioFile = null
-  }
-
   async function handleSubmit(e: Event): Promise<void> {
     e.preventDefault()
     await createStory(false)
-  }
-
-  async function handleGenerateAudio(): Promise<void> {
-    await createStory(true)
   }
 
   async function createStory(generateAudio: boolean): Promise<void> {
@@ -142,107 +119,17 @@
         onsubmit={handleSubmit}
         class="space-y-6"
       >
-        <TextInput
-          id="title"
-          label="Titel"
-          bind:value={form.title}
-          error={errors.title}
-          placeholder="Titel van het bericht"
+        <StoryFields
+          bind:form
+          bind:audioFile
+          {errors}
+          voices={data.voices}
+          {selectedVoice}
+          mode="create"
+          {generating}
           disabled={formDisabled}
+          ongenerate={() => createStory(true)}
         />
-
-        <TextareaInput
-          id="text"
-          label="Tekst"
-          bind:value={form.text}
-          error={errors.text}
-          placeholder="De tekst die wordt voorgelezen"
-          rows={8}
-          disabled={formDisabled}
-        />
-
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <SelectInput
-            id="voice_id"
-            label="Stem"
-            bind:value={() => form.voice_id, setVoiceId}
-            options={voiceOptions}
-            error={errors.voice_id}
-            emptyOption="Geen stem geselecteerd"
-            disabled={formDisabled}
-          />
-
-          <FormField
-            id="status"
-            label="Status"
-            error={errors.status}
-          >
-            <div class="join w-full">
-              <select
-                id="status"
-                {...fieldA11y('status', errors.status)}
-                class={['select join-item flex-1', errors.status && 'select-error']}
-                bind:value={form.status}
-                disabled={formDisabled}
-              >
-                {#each statusOptions as option (option.value)}
-                  <option value={option.value}>{option.label}</option>
-                {/each}
-              </select>
-              <BreakingToggle
-                bind:checked={form.is_breaking}
-                disabled={formDisabled}
-              />
-            </div>
-          </FormField>
-        </div>
-
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <TextInput
-            id="start_date"
-            label="Startdatum"
-            type="date"
-            bind:value={form.start_date}
-            error={errors.start_date}
-            disabled={formDisabled}
-          />
-
-          <TextInput
-            id="end_date"
-            label="Einddatum"
-            type="date"
-            bind:value={form.end_date}
-            error={errors.end_date}
-            disabled={formDisabled}
-          />
-        </div>
-
-        <WeekdayCheckboxGroup
-          bind:value={form.weekdays}
-          disabled={formDisabled}
-        />
-
-        {#if selectedVoice?.elevenlabs_voice_id}
-          <AIAudioField
-            voiceName={selectedVoice.name}
-            mode="create"
-            {generating}
-            disabled={formDisabled}
-            ongenerate={handleGenerateAudio}
-          />
-        {:else}
-          <!-- Remounting on a cleared voice also empties the native file input. -->
-          {#key !form.voice_id}
-            <FileInput
-              id="audio"
-              label="Audiobestand (optioneel)"
-              accept="audio/wav,audio/*"
-              hint={form.voice_id ? audioFile?.name : noVoiceUploadHint}
-              onchange={file => (audioFile = file)}
-              disabled={formDisabled || !form.voice_id}
-            />
-          {/key}
-        {/if}
 
         <FormActions
           cancelHref="/stories"

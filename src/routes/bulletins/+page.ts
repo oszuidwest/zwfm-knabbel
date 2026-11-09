@@ -16,6 +16,8 @@ export interface BulletinWithVoice extends Bulletin {
   voice_name?: string
 }
 
+const loadErrors = { notFound: 'Bulletins niet gevonden', failed: 'Bulletins laden mislukt' }
+
 export const load: PageLoad = async ({ fetch, url, parent }) => {
   const stationParam = url.searchParams.get('station')
   const stationId = stationParam ? Number(stationParam) : undefined
@@ -34,10 +36,7 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
   const { user } = await parent()
   requirePermission(user, 'bulletins', 'read')
 
-  const [bulletinsRes, stationsRes] = unwrapLoadResult(await responseResult, {
-    notFound: 'Bulletins niet gevonden',
-    failed: 'Bulletins laden mislukt',
-  })
+  const [bulletinsRes, stationsRes] = unwrapLoadResult(await responseResult, loadErrors)
 
   const bulletinsWithVoiceResult = await settleLoad(
     Promise.all(
@@ -63,10 +62,10 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
     )
   )
 
-  const bulletinsWithVoice: BulletinWithVoice[] = unwrapLoadResult(bulletinsWithVoiceResult, {
-    notFound: 'Bulletins niet gevonden',
-    failed: 'Bulletins laden mislukt',
-  })
+  const bulletinsWithVoice: BulletinWithVoice[] = unwrapLoadResult(
+    bulletinsWithVoiceResult,
+    loadErrors
+  )
 
   return {
     bulletins: bulletinsWithVoice,

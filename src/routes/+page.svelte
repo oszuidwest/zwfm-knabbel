@@ -252,15 +252,7 @@
   <div class="grid gap-4 lg:grid-cols-2">
     {#if data.canStories}
       <ul class="list rounded-box bg-base-100">
-        <li class="flex items-center justify-between p-4 pb-2">
-          <h2 class="font-medium">Recente berichten</h2>
-          <a
-            href={resolveInternalHref('/stories')}
-            class="link text-sm text-base-content/60 link-hover"
-          >
-            Alle berichten
-          </a>
-        </li>
+        {@render listHeader('Recente berichten', '/stories', 'Alle berichten')}
         {#if data.recentStories.length === 0}
           <li class="p-4 pt-2 text-sm text-base-content/60">Nog geen berichten</li>
         {:else}
@@ -294,15 +286,7 @@
 
     {#if data.canBulletins}
       <ul class="list rounded-box bg-base-100">
-        <li class="flex items-center justify-between p-4 pb-2">
-          <h2 class="font-medium">Recente bulletins</h2>
-          <a
-            href={resolveInternalHref('/bulletins')}
-            class="link text-sm text-base-content/60 link-hover"
-          >
-            Alle bulletins
-          </a>
-        </li>
+        {@render listHeader('Recente bulletins', '/bulletins', 'Alle bulletins')}
         {#if data.recentBulletins.length === 0}
           <li class="p-4 pt-2 text-sm text-base-content/60">Nog geen bulletins</li>
         {:else}
@@ -329,3 +313,15 @@
     {/if}
   </div>
 </div>
+
+{#snippet listHeader(title: string, href: string, linkLabel: string)}
+  <li class="flex items-center justify-between p-4 pb-2">
+    <h2 class="font-medium">{title}</h2>
+    <a
+      href={resolveInternalHref(href)}
+      class="link text-sm text-base-content/60 link-hover"
+    >
+      {linkLabel}
+    </a>
+  </li>
+{/snippet}

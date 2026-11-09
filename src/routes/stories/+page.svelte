@@ -112,10 +112,6 @@
     if (end) return `Tot ${end}`
     return ''
   }
-
-  function clearHiddenFilters(): void {
-    updateFilters({ status: '', q: '' })
-  }
 </script>
 
 <div class="space-y-4 pb-20 md:pb-0">
@@ -310,15 +306,7 @@
                   <span class="flex items-center gap-1.5">
                     {story.title}
                     {#if story.is_breaking}
-                      <span
-                        class="text-primary"
-                        title="Breaking nieuws"
-                      >
-                        <Zap
-                          aria-hidden="true"
-                          class="h-4 w-4 fill-current"
-                        />
-                      </span>
+                      {@render breakingIcon()}
                     {/if}
                   </span>
                 </td>
@@ -329,15 +317,7 @@
                 </td>
                 <td>
                   {#if story.audio_file}
-                    <span
-                      class="text-base-content/60"
-                      title="Audio aanwezig"
-                    >
-                      <Play
-                        aria-hidden="true"
-                        class="h-4 w-4"
-                      />
-                    </span>
+                    {@render audioIcon()}
                   {:else}
                     <span class="text-base-content/30">-</span>
                   {/if}
@@ -424,7 +404,7 @@
       {#if hiddenFilterCount > 0}
         <button
           class="btn btn-ghost"
-          onclick={clearHiddenFilters}
+          onclick={() => updateFilters({ status: '', q: '' })}
         >
           Filters wissen
         </button>
@@ -443,26 +423,10 @@
   <div class="flex items-center gap-2">
     <h3 class="truncate font-medium">{story.title}</h3>
     {#if story.is_breaking}
-      <span
-        class="text-primary"
-        title="Breaking nieuws"
-      >
-        <Zap
-          aria-hidden="true"
-          class="h-4 w-4 fill-current"
-        />
-      </span>
+      {@render breakingIcon()}
     {/if}
     {#if story.audio_file}
-      <span
-        class="text-base-content/60"
-        title="Audio aanwezig"
-      >
-        <Play
-          aria-hidden="true"
-          class="h-4 w-4"
-        />
-      </span>
+      {@render audioIcon()}
     {/if}
   </div>
   <div class="mt-1 flex flex-wrap items-center gap-2 text-sm text-base-content/60">
@@ -541,3 +505,27 @@
     onclose={() => (readModeStory = null)}
   />
 {/if}
+
+{#snippet breakingIcon()}
+  <span
+    class="text-primary"
+    title="Breaking nieuws"
+  >
+    <Zap
+      aria-hidden="true"
+      class="h-4 w-4 fill-current"
+    />
+  </span>
+{/snippet}
+
+{#snippet audioIcon()}
+  <span
+    class="text-base-content/60"
+    title="Audio aanwezig"
+  >
+    <Play
+      aria-hidden="true"
+      class="h-4 w-4"
+    />
+  </span>
+{/snippet}

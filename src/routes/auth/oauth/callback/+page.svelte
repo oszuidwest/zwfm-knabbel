@@ -31,7 +31,7 @@
       const errorDescription = page.url.searchParams.get('error_description')
 
       if (error) {
-        cleanup = redirectToLogin(errorDescription || error || 'Authenticatie mislukt')
+        cleanup = redirectToLogin(errorDescription || error)
         return
       }
 
@@ -43,15 +43,12 @@
       try {
         await getAuthOauthCallback({ query: { code, state } })
         const authenticated = await auth.checkAuth({ force: true })
+        if (!authenticated) throw new Error('Authenticatie verificatie mislukt')
 
-        if (authenticated) {
-          await invalidate(AUTH_DEPENDENCY)
-          status = 'success'
-          toast.success('Succesvol ingelogd')
-          goto(resolveInternalHref('/stories'))
-        } else {
-          throw new Error('Authenticatie verificatie mislukt')
-        }
+        await invalidate(AUTH_DEPENDENCY)
+        status = 'success'
+        toast.success('Succesvol ingelogd')
+        goto(resolveInternalHref('/stories'))
       } catch (err) {
         cleanup = redirectToLogin(err instanceof Error ? err.message : 'Authenticatie mislukt')
       }
@@ -81,7 +78,7 @@
         />
         <h2 class="card-title">Ingelogd</h2>
         <p class="page-subtitle">Je wordt doorgestuurd…</p>
-      {:else if status === 'error'}
+      {:else}
         <CircleAlert
           aria-hidden="true"
           class="mb-4 h-10 w-10 text-error"
