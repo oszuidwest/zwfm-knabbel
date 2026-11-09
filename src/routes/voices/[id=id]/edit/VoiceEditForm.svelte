@@ -18,7 +18,6 @@
   import { MaybeTooltip, TextInput, PageHeader } from '#lib/components/ui/index.js'
   import StationConfigDashboard from './StationConfigDashboard.svelte'
   import { X, Check } from '#lib/components/icons.js'
-  import type { StationVoice } from '#lib/types/index.js'
   import type { StationConfig } from './station-config'
   import type { PageData } from './$types'
 
@@ -37,28 +36,10 @@
   }
 
   function initialStationConfigs(): StationConfig[] {
-    return buildStationConfigs(data)
-  }
+    const stationVoices = new Map(data.stationVoices.map(sv => [sv.station_id, sv]))
 
-  let form = $state<VoiceFormData>(initialForm())
-  let errors = $state<Record<string, string>>({})
-  let submitting = $state(false)
-  let stationConfigs = $state<StationConfig[]>(initialStationConfigs())
-  const canWrite = $derived(auth.can('voices', 'write'))
-
-  function buildStationConfigs(pageData: PageData): StationConfig[] {
-    const stationVoicesByStationId = pageData.stationVoices.reduce<Record<number, StationVoice>>(
-      (result, stationVoice) => {
-        if (stationVoice.station_id) {
-          result[stationVoice.station_id] = stationVoice
-        }
-        return result
-      },
-      {}
-    )
-
-    return pageData.stations.map(station => {
-      const sv = stationVoicesByStationId[station.id]
+    return data.stations.map(station => {
+      const sv = stationVoices.get(station.id)
       const mixPoint = sv?.mix_point ?? 0
       const hasAudio = !!sv?.audio_file
 
@@ -75,6 +56,12 @@
       }
     })
   }
+
+  let form = $state<VoiceFormData>(initialForm())
+  let errors = $state<Record<string, string>>({})
+  let submitting = $state(false)
+  let stationConfigs = $state<StationConfig[]>(initialStationConfigs())
+  const canWrite = $derived(auth.can('voices', 'write'))
 
   async function handleSubmit(e: Event): Promise<void> {
     e.preventDefault()
@@ -309,8 +296,7 @@
 
       <StationConfigDashboard
         configs={stationConfigs}
-        disabled={submitting}
-        canEdit={canWrite}
+        disabled={submitting || !canWrite}
         onToggle={toggleStation}
         onMixPointChange={handleMixPointChange}
         onMixPointSave={saveMixPoint}

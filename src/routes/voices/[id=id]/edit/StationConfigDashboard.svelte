@@ -7,7 +7,6 @@
   interface Props {
     configs: StationConfig[]
     disabled?: boolean
-    canEdit?: boolean
     onToggle: (index: number, e?: Event) => void
     onMixPointChange: (index: number, value: number) => void
     onMixPointSave: (index: number) => void
@@ -18,7 +17,6 @@
   let {
     configs,
     disabled = false,
-    canEdit = true,
     onToggle,
     onMixPointChange,
     onMixPointSave,
@@ -27,12 +25,11 @@
   }: Props = $props()
 
   let dragOver = $state<number | null>(null)
-  const effectiveDisabled = $derived(disabled || !canEdit)
 
   function handleDragOver(e: DragEvent, index: number) {
     e.preventDefault()
     e.stopPropagation()
-    if (effectiveDisabled) return
+    if (disabled) return
     dragOver = index
   }
 
@@ -45,7 +42,7 @@
     e.preventDefault()
     e.stopPropagation()
     dragOver = null
-    if (effectiveDisabled) return
+    if (disabled) return
 
     const files = e.dataTransfer?.files
     if (files && files.length > 0) {
@@ -57,17 +54,12 @@
   }
 
   function handleFileInput(e: Event, index: number) {
-    if (effectiveDisabled) return
+    if (disabled) return
     const input = e.target as HTMLInputElement
     const file = input.files?.[0]
     if (file) {
       onJingleSelect(index, file)
     }
-  }
-
-  function getMixPointLabel(value: number): string {
-    if (value === 0) return '0.0s'
-    return `${value.toFixed(1)}s`
   }
 </script>
 
@@ -82,12 +74,11 @@
 {:else}
   <div class="space-y-4">
     {#each configs as config, index (config.station.id)}
+      {@const locked = disabled || config.saving}
       <div
         class={[
-          'card border shadow-sm',
-          config.enabled
-            ? 'border-primary/20 bg-base-100'
-            : 'border-base-300 bg-base-100 opacity-60',
+          'card border bg-base-100 shadow-sm',
+          config.enabled ? 'border-primary/20' : 'border-base-300 opacity-60',
           config.saving && 'pointer-events-none',
         ]}
       >
@@ -129,7 +120,7 @@
                 aria-label="{config.station.name} koppelen"
                 checked={config.enabled}
                 onchange={e => onToggle(index, e)}
-                disabled={effectiveDisabled || config.saving}
+                disabled={locked}
               />
             </div>
           </div>
@@ -144,7 +135,7 @@
                   Mixpunt
                 </label>
                 <span class="rounded bg-base-200 px-2 py-0.5 text-sm font-semibold tabular-nums">
-                  {getMixPointLabel(config.mixPoint)}
+                  {config.mixPoint.toFixed(1)}s
                 </span>
               </div>
               <input
@@ -158,7 +149,7 @@
                 oninput={e =>
                   onMixPointChange(index, parseFloat((e.target as HTMLInputElement).value))}
                 onchange={() => onMixPointSave(index)}
-                disabled={effectiveDisabled || config.saving}
+                disabled={locked}
               />
               <p class="text-xs text-base-content/70">Wanneer de stem begint over de jingle</p>
             </div>
@@ -181,13 +172,13 @@
                     type="file"
                     accept="audio/wav,audio/*"
                     onchange={e => handleFileInput(e, index)}
-                    disabled={effectiveDisabled || config.saving}
+                    disabled={locked}
                     class="peer sr-only"
                   />
                   <label
                     for="jingle-replace-{config.station.id}"
                     class="btn btn-ghost btn-sm peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary"
-                    aria-disabled={effectiveDisabled}
+                    aria-disabled={disabled}
                   >
                     Vervang
                   </label>
@@ -209,7 +200,7 @@
                     type="button"
                     class="btn btn-sm btn-warning"
                     onclick={() => onJingleUpload(index)}
-                    disabled={effectiveDisabled || config.saving}
+                    disabled={locked}
                   >
                     {#if config.saving}
                       <span class="loading loading-xs loading-spinner"></span>
@@ -228,14 +219,14 @@
                   type="file"
                   accept="audio/wav,audio/*"
                   onchange={e => handleFileInput(e, index)}
-                  disabled={effectiveDisabled || config.saving}
+                  disabled={locked}
                   class="peer sr-only"
                 />
                 <label
                   for="jingle-input-{config.station.id}"
                   class={[
                     'block rounded-xl border-2 border-dashed p-6 text-center transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary peer-disabled:cursor-not-allowed peer-disabled:opacity-50',
-                    effectiveDisabled ? 'pointer-events-none cursor-not-allowed' : 'cursor-pointer',
+                    disabled ? 'pointer-events-none cursor-not-allowed' : 'cursor-pointer',
                     dragOver === index
                       ? 'border-primary bg-primary/10'
                       : 'border-base-content/20 hover:border-primary hover:bg-primary/5',

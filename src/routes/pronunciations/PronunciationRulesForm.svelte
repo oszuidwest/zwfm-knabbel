@@ -63,18 +63,6 @@
       word_boundaries: r.word_boundaries,
     }))
 
-  function initialDraftState(): {
-    snapshot: DraftRow[]
-    rows: DraftRow[]
-  } {
-    const initialSnapshot = initial.rules.map(makeDraft)
-
-    return {
-      snapshot: initialSnapshot,
-      rows: structuredClone(initialSnapshot),
-    }
-  }
-
   function draftsEqual(a: DraftRow[], b: DraftRow[]): boolean {
     if (a.length !== b.length) return false
 
@@ -90,19 +78,39 @@
     })
   }
 
-  const draftState = initialDraftState()
-  let snapshot = $state.raw<DraftRow[]>(draftState.snapshot)
-  let rows = $state<DraftRow[]>(draftState.rows)
+  // The keyed parent remounts this form when the rules change.
+  function initialDrafts(): DraftRow[] {
+    return initial.rules.map(makeDraft)
+  }
+
+  const drafts = initialDrafts()
+  let snapshot = $state.raw<DraftRow[]>(drafts)
+  let rows = $state<DraftRow[]>(structuredClone(drafts))
   let rowErrors = $state<RowErrors>({})
   let globalError = $state<string | null>(null)
   let submitting = $state(false)
   let search = $state('')
-  const editable = $derived(canEdit)
   const disabledTooltip = 'Geen rechten'
-  const inlineIpaHint =
-    'Vul alleen de IPA-klanken in, zonder schuine strepen. De app zet de /.../ automatisch om de klanken heen.'
+  const textFields = {
+    string_to_replace: {
+      label: 'Woord of tekst',
+      idSuffix: 'word',
+      placeholder: 'Albert Heijn',
+      hint: 'Exacte tekst die in de story voorkomt.',
+    },
+    ipa: {
+      label: 'IPA-uitspraak',
+      idSuffix: 'ipa',
+      placeholder: 'ˈɑlbərt ˈɦɛin',
+      hint: 'Vul alleen de IPA-klanken in, zonder schuine strepen. De app zet de /.../ automatisch om de klanken heen.',
+    },
+  }
+  const checkboxLabels = {
+    case_sensitive: 'Hoofdlettergevoelig',
+    word_boundaries: 'Alleen hele woorden',
+  }
   const isDirty = $derived(!draftsEqual(rows, snapshot))
-  const saveDisabled = $derived(!editable || !isDirty || submitting)
+  const saveDisabled = $derived(!canEdit || !isDirty || submitting)
   const reloadLabel = $derived(isDirty ? 'Wijzigingen verwerpen' : 'Herladen')
 
   const filteredRows = $derived.by(() => {
@@ -128,10 +136,7 @@
 
   function applyRulesList(list: PronunciationRulesList): void {
     snapshot = list.rules.map(makeDraft)
-    rows = structuredClone(snapshot)
-    rowErrors = {}
-    globalError = null
-    search = ''
+    resetToSnapshot()
   }
 
   function resetToSnapshot(): void {
@@ -142,7 +147,7 @@
   }
 
   async function handleAddRow(): Promise<void> {
-    if (!editable) return
+    if (!canEdit) return
     const key = nextKey++
     search = ''
     rows = [
@@ -160,7 +165,7 @@
   }
 
   function handleRemoveRow(key: number): void {
-    if (!editable) return
+    if (!canEdit) return
     rows = rows.filter(r => r._key !== key)
     if (rowErrors[key]) {
       const { [key]: _removed, ...rest } = rowErrors
@@ -181,7 +186,7 @@
   }
 
   async function handleSave(): Promise<void> {
-    if (submitting || !editable) return
+    if (submitting || !canEdit) return
 
     rowErrors = {}
     globalError = null
@@ -335,6 +340,46 @@
 
 <svelte:window onbeforeunload={handleBeforeUnload} />
 
+{#snippet textInput(
+  row: DraftRow,
+  index: number,
+  field: keyof typeof textFields,
+  idPrefix: string,
+  hint?: string
+)}
+  {@const error = rowErrors[row._key]?.[field]}
+  <input
+    id="{idPrefix}-{row._key}-{textFields[field].idSuffix}"
+    type="text"
+    class={['input w-full', error && 'input-error']}
+    bind:value={row[field]}
+    oninput={() => clearRowError(row._key, field)}
+    aria-label="{textFields[field].label} regel {index + 1}"
+    placeholder={textFields[field].placeholder}
+    disabled={!canEdit}
+  />
+  {#if error}
+    <p class="fieldset-label text-sm leading-relaxed text-error">{error}</p>
+  {:else if hint}
+    <p class="fieldset-label text-sm leading-relaxed text-base-content/70">{hint}</p>
+  {/if}
+{/snippet}
+
+{#snippet checkbox(
+  row: DraftRow,
+  index: number,
+  field: keyof typeof checkboxLabels,
+  className: string
+)}
+  <input
+    type="checkbox"
+    class={className}
+    bind:checked={row[field]}
+    aria-label="{checkboxLabels[field]}, regel {index + 1}"
+    disabled={!canEdit}
+  />
+{/snippet}
+
 <div class="space-y-4 pb-20 md:pb-0">
   <PageHeader
     title="Uitspraakregels"
@@ -342,15 +387,15 @@
   >
     {#snippet actions()}
       <MaybeTooltip
-        when={!editable}
+        when={!canEdit}
         tip={disabledTooltip}
         wrapperClass="max-md:hidden"
       >
         <button
           type="button"
-          class={['btn btn-primary', !editable && 'btn-disabled']}
+          class={['btn btn-primary', !canEdit && 'btn-disabled']}
           onclick={handleAddRow}
-          disabled={!editable}
+          disabled={!canEdit}
         >
           <Plus
             aria-hidden="true"
@@ -463,63 +508,22 @@
             </thead>
             <tbody>
               {#each filteredRows as row, index (row._key)}
-                {@const errs = rowErrors[row._key]}
                 <tr>
                   <td class="align-top">
-                    <input
-                      id="row-{row._key}-word"
-                      type="text"
-                      class={['input w-full', errs?.string_to_replace && 'input-error']}
-                      bind:value={row.string_to_replace}
-                      oninput={() => clearRowError(row._key, 'string_to_replace')}
-                      aria-label="Woord of tekst regel {index + 1}"
-                      placeholder="Albert Heijn"
-                      disabled={!editable}
-                    />
-                    {#if errs?.string_to_replace}
-                      <p class="fieldset-label text-sm leading-relaxed text-error">
-                        {errs.string_to_replace}
-                      </p>
-                    {/if}
+                    {@render textInput(row, index, 'string_to_replace', 'row')}
                   </td>
                   <td class="align-top">
-                    <input
-                      id="row-{row._key}-ipa"
-                      type="text"
-                      class={['input w-full', errs?.ipa && 'input-error']}
-                      bind:value={row.ipa}
-                      oninput={() => clearRowError(row._key, 'ipa')}
-                      aria-label="IPA-uitspraak regel {index + 1}"
-                      placeholder="ˈɑlbərt ˈɦɛin"
-                      disabled={!editable}
-                    />
-                    {#if errs?.ipa}
-                      <p class="fieldset-label text-sm leading-relaxed text-error">
-                        {errs.ipa}
-                      </p>
-                    {/if}
+                    {@render textInput(row, index, 'ipa', 'row')}
                   </td>
                   <td class="text-center align-top">
-                    <input
-                      type="checkbox"
-                      class="checkbox"
-                      bind:checked={row.case_sensitive}
-                      aria-label="Hoofdlettergevoelig, regel {index + 1}"
-                      disabled={!editable}
-                    />
+                    {@render checkbox(row, index, 'case_sensitive', 'checkbox')}
                   </td>
                   <td class="text-center align-top">
-                    <input
-                      type="checkbox"
-                      class="checkbox"
-                      bind:checked={row.word_boundaries}
-                      aria-label="Alleen hele woorden, regel {index + 1}"
-                      disabled={!editable}
-                    />
+                    {@render checkbox(row, index, 'word_boundaries', 'checkbox')}
                   </td>
                   <td class="text-right align-top">
                     <MaybeTooltip
-                      when={!editable}
+                      when={!canEdit}
                       tip={disabledTooltip}
                       placement="tooltip-left"
                     >
@@ -527,7 +531,7 @@
                         type="button"
                         class="btn btn-square btn-ghost btn-sm"
                         onclick={() => handleRemoveRow(row._key)}
-                        disabled={!editable}
+                        disabled={!canEdit}
                         aria-label="Regel {index + 1} verwijderen"
                       >
                         <Trash2
@@ -545,90 +549,31 @@
 
         <div class="space-y-3 md:hidden">
           {#each filteredRows as row, index (row._key)}
-            {@const errs = rowErrors[row._key]}
             <div class="rounded-lg border border-primary/20 bg-base-100 p-4 shadow-sm">
-              <fieldset class="fieldset">
-                <label
-                  for="m-row-{row._key}-word"
-                  class="fieldset-legend"
-                >
-                  Woord of tekst
-                </label>
-                <input
-                  id="m-row-{row._key}-word"
-                  type="text"
-                  class={['input w-full', errs?.string_to_replace && 'input-error']}
-                  bind:value={row.string_to_replace}
-                  oninput={() => clearRowError(row._key, 'string_to_replace')}
-                  aria-label="Woord of tekst regel {index + 1}"
-                  placeholder="Albert Heijn"
-                  disabled={!editable}
-                />
-                {#if errs?.string_to_replace}
-                  <p class="fieldset-label text-sm leading-relaxed text-error">
-                    {errs.string_to_replace}
-                  </p>
-                {:else}
-                  <p class="fieldset-label text-sm leading-relaxed text-base-content/70">
-                    Exacte tekst die in de story voorkomt.
-                  </p>
-                {/if}
-              </fieldset>
-
-              <fieldset class="fieldset">
-                <label
-                  for="m-row-{row._key}-ipa"
-                  class="fieldset-legend"
-                >
-                  IPA-uitspraak
-                </label>
-                <input
-                  id="m-row-{row._key}-ipa"
-                  type="text"
-                  class={['input w-full', errs?.ipa && 'input-error']}
-                  bind:value={row.ipa}
-                  oninput={() => clearRowError(row._key, 'ipa')}
-                  aria-label="IPA-uitspraak regel {index + 1}"
-                  placeholder="ˈɑlbərt ˈɦɛin"
-                  disabled={!editable}
-                />
-                {#if errs?.ipa}
-                  <p class="fieldset-label text-sm leading-relaxed text-error">
-                    {errs.ipa}
-                  </p>
-                {:else}
-                  <p class="fieldset-label text-sm leading-relaxed text-base-content/70">
-                    {inlineIpaHint}
-                  </p>
-                {/if}
-              </fieldset>
+              {#each ['string_to_replace', 'ipa'] as const as field (field)}
+                <fieldset class="fieldset">
+                  <label
+                    for="m-row-{row._key}-{textFields[field].idSuffix}"
+                    class="fieldset-legend"
+                  >
+                    {textFields[field].label}
+                  </label>
+                  {@render textInput(row, index, field, 'm-row', textFields[field].hint)}
+                </fieldset>
+              {/each}
 
               <div class="mt-3 flex flex-wrap gap-4">
-                <label class="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-sm"
-                    bind:checked={row.case_sensitive}
-                    aria-label="Hoofdlettergevoelig, regel {index + 1}"
-                    disabled={!editable}
-                  />
-                  <span class="text-sm">Hoofdlettergevoelig</span>
-                </label>
-                <label class="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-sm"
-                    bind:checked={row.word_boundaries}
-                    aria-label="Alleen hele woorden, regel {index + 1}"
-                    disabled={!editable}
-                  />
-                  <span class="text-sm">Alleen hele woorden</span>
-                </label>
+                {#each ['case_sensitive', 'word_boundaries'] as const as field (field)}
+                  <label class="flex cursor-pointer items-center gap-2">
+                    {@render checkbox(row, index, field, 'checkbox checkbox-sm')}
+                    <span class="text-sm">{checkboxLabels[field]}</span>
+                  </label>
+                {/each}
               </div>
 
               <div class="mt-3 flex justify-end">
                 <MaybeTooltip
-                  when={!editable}
+                  when={!canEdit}
                   tip={disabledTooltip}
                   placement="tooltip-left"
                 >
@@ -636,7 +581,7 @@
                     type="button"
                     class="btn btn-ghost btn-sm"
                     onclick={() => handleRemoveRow(row._key)}
-                    disabled={!editable}
+                    disabled={!canEdit}
                     aria-label="Regel {index + 1} verwijderen"
                   >
                     <Trash2
@@ -666,7 +611,7 @@
           {reloadLabel}
         </button>
         <MaybeTooltip
-          when={!editable}
+          when={!canEdit}
           tip={disabledTooltip}
           placement="tooltip-left"
         >
@@ -695,7 +640,7 @@
   </div>
 </div>
 
-{#if editable}
+{#if canEdit}
   <button
     type="button"
     class="btn fixed right-6 bottom-6 z-40 btn-circle shadow-lg btn-lg btn-primary md:hidden"

@@ -2,26 +2,27 @@
   import { goto } from '$app/navigation'
   import { getFieldErrors, notifyMutationError } from '#lib/api/client.js'
   import { stationSchema, type StationFormData } from '#lib/schemas/station.js'
-  import { putStationsId } from '#lib/api/generated/sdk.gen.js'
+  import { postStations, putStationsId } from '#lib/api/generated/sdk.gen.js'
   import { getAuthContext } from '#lib/stores/auth.svelte.js'
   import { toast } from '#lib/stores/toast.js'
   import { validateForm } from '#lib/utils/validation.js'
   import { resolveInternalHref } from '#lib/utils/routes.js'
   import { TextInput, NumberInput, FormActions, PageHeader } from '#lib/components/ui/index.js'
-  import type { PageData } from './$types'
+  import type { Station } from '#lib/types/index.js'
 
   interface Props {
-    data: PageData
+    /** The station to edit; without it the form creates a new one. */
+    station?: Station
   }
 
-  let { data }: Props = $props()
+  let { station }: Props = $props()
   const auth = getAuthContext()
 
   function initialForm(): StationFormData {
     return {
-      name: data.station.name ?? '',
-      max_stories_per_block: data.station.max_stories_per_block ?? 5,
-      pause_seconds: data.station.pause_seconds ?? 2,
+      name: station?.name ?? '',
+      max_stories_per_block: station?.max_stories_per_block ?? 5,
+      pause_seconds: station?.pause_seconds ?? 2,
     }
   }
 
@@ -43,12 +44,17 @@
 
     submitting = true
     try {
-      await putStationsId({ path: { id: data.station.id }, body: form })
-      toast.success('Zender bijgewerkt')
+      if (station) {
+        await putStationsId({ path: { id: station.id }, body: form })
+        toast.success('Zender bijgewerkt')
+      } else {
+        await postStations({ body: form })
+        toast.success('Zender aangemaakt')
+      }
       await goto(resolveInternalHref('/stations'))
     } catch (err) {
       errors = getFieldErrors(err)
-      notifyMutationError(err, 'Bijwerken mislukt')
+      notifyMutationError(err, station ? 'Bijwerken mislukt' : 'Aanmaken mislukt')
     } finally {
       submitting = false
     }
@@ -57,8 +63,8 @@
 
 <div class="space-y-6">
   <PageHeader
-    title={canWrite ? 'Zender bewerken' : 'Zender bekijken'}
-    subtitle={data.station.name ?? ''}
+    title={station ? (canWrite ? 'Zender bewerken' : 'Zender bekijken') : 'Nieuwe zender'}
+    subtitle={station ? (station.name ?? '') : 'Voeg een nieuwe zender toe aan het systeem'}
   />
 
   <div class="card bg-base-100">
@@ -72,7 +78,7 @@
           label="Naam"
           bind:value={form.name}
           error={errors.name}
-          placeholder="Bijv. Radio ZuidWest FM"
+          placeholder={station ? 'Bijv. Radio ZuidWest FM' : 'Bijvoorbeeld: ZuidWest FM'}
           disabled={!canWrite}
         />
 

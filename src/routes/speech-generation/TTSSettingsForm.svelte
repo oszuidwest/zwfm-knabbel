@@ -22,21 +22,13 @@
 
   let { settings, canEdit }: Props = $props()
 
-  const stabilityHint =
-    'Hoger klinkt consistenter en voorspelbaarder, lager geeft meer expressie en variatie.'
-  const textNormalizationHint =
-    'Maakt cijfers, symbolen en afkortingen beter uitspreekbaar. Auto laat ElevenLabs kiezen.'
-  const seedHint =
-    'Leeg is willekeurig. Een vaste seed helpt herhalen, maar garandeert geen gelijke audio.'
-  const stylePrefixHint = 'Vaste audiotags voor elke story, bijvoorbeeld [calm] of [whispers].'
-
   // The keyed parent remounts this form when settings change.
   function initialForm(): TTSSettingsFormData {
     return toTTSSettingsFormData(settings)
   }
 
-  let savedForm = $state<TTSSettingsFormData>(initialForm())
-  let form = $state<TTSSettingsFormData>(initialForm())
+  const savedForm = initialForm()
+  let form = $state<TTSSettingsFormData>({ ...savedForm })
   let errors = $state<Record<string, string>>({})
   let submitting = $state(false)
 
@@ -126,7 +118,7 @@
         bind:value={form.apply_text_normalization}
         options={textNormalizationOptions}
         error={errors.apply_text_normalization}
-        hint={textNormalizationHint}
+        hint="Maakt cijfers, symbolen en afkortingen beter uitspreekbaar. Auto laat ElevenLabs kiezen."
         disabled={formDisabled}
       />
       <TextInput
@@ -134,7 +126,7 @@
         label="Seed"
         bind:value={form.seed}
         error={errors.seed}
-        hint={seedHint}
+        hint="Leeg is willekeurig. Een vaste seed helpt herhalen, maar garandeert geen gelijke audio."
         placeholder="Leeg voor willekeurig"
         disabled={formDisabled}
       />
@@ -175,7 +167,9 @@
       {#if errors.stability}
         <p class="fieldset-label text-sm leading-relaxed text-error">{errors.stability}</p>
       {:else}
-        <p class="fieldset-label text-sm leading-relaxed text-base-content/70">{stabilityHint}</p>
+        <p class="fieldset-label text-sm leading-relaxed text-base-content/70">
+          Hoger klinkt consistenter en voorspelbaarder, lager geeft meer expressie en variatie.
+        </p>
       {/if}
     </div>
 
@@ -184,7 +178,7 @@
       label="Audiotags"
       bind:value={form.tts_style_prefix}
       error={errors.tts_style_prefix}
-      hint={stylePrefixHint}
+      hint="Vaste audiotags voor elke story, bijvoorbeeld [calm] of [whispers]."
       rows={3}
       placeholder="[calm] "
       disabled={formDisabled}
