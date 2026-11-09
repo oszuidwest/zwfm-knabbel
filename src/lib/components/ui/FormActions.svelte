@@ -8,7 +8,6 @@
     cancelHref: string
     submitting: boolean
     submitLabel?: string
-    cancelLabel?: string
     submitIcon?: Component
     canSubmit?: boolean
     forbidTooltip?: string
@@ -18,7 +17,6 @@
     cancelHref,
     submitting,
     submitLabel = 'Opslaan',
-    cancelLabel = 'Annuleren',
     submitIcon: SubmitIcon = Check,
     canSubmit = true,
     forbidTooltip = 'Geen rechten',
@@ -31,7 +29,7 @@
     class="btn btn-ghost"
   >
     <X class="h-5 w-5" />
-    {cancelLabel}
+    Annuleren
   </a>
   <MaybeTooltip
     when={!canSubmit}
