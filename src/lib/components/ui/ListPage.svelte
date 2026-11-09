@@ -20,10 +20,7 @@
     emptyTitle: string
     emptyDescription: string
     pagination?: PaginationInfo
-    headerActions?: Snippet
     cardContent: Snippet<[T]>
-    /** Overrides the default mobile edit/delete buttons. */
-    cardActions?: Snippet<[T]>
     tableHeader: Snippet
     tableRow: Snippet<[T]>
     onDelete?: (item: T, e?: Event) => void
@@ -45,9 +42,7 @@
     emptyTitle,
     emptyDescription,
     pagination,
-    headerActions,
     cardContent,
-    cardActions,
     tableHeader,
     tableRow,
     onDelete,
@@ -75,7 +70,6 @@
     actionLabel={newLabel}
     canAction={canCreate}
     {forbidTooltip}
-    actions={headerActions}
   />
 
   {#if items.length === 0}
@@ -111,11 +105,7 @@
                   {@render cardContent(item)}
                 </div>
               </svelte:element>
-              {#if cardActions}
-                <div class="flex gap-1">
-                  {@render cardActions(item)}
-                </div>
-              {:else if onDelete}
+              {#if onDelete}
                 <div class="flex gap-1">
                   {#if editHref}
                     <a
