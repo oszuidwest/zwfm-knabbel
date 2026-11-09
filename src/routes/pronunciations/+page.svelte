@@ -2,8 +2,7 @@
   import { refreshAll } from '$app/navigation'
   import { getAuthContext } from '#lib/stores/auth.svelte.js'
   import { toast } from '#lib/stores/toast.js'
-  import { RefreshCw, TriangleAlert } from '#lib/components/icons.js'
-  import { PageHeader } from '#lib/components/ui/index.js'
+  import { LoadErrorAlert, PageHeader } from '#lib/components/ui/index.js'
   import PronunciationRulesForm from './PronunciationRulesForm.svelte'
   import type { PageProps } from './$types'
 
@@ -31,39 +30,11 @@
       subtitle="Uitspraak voor ElevenLabs"
     />
 
-    <div
-      class="alert alert-vertical alert-warning sm:alert-horizontal"
-      role="alert"
-    >
-      <TriangleAlert
-        aria-hidden="true"
-        class="h-5 w-5"
-      />
-      <div>
-        <h2 class="font-semibold">Uitspraakregels niet beschikbaar</h2>
-        <p class="text-sm">
-          {#if data.loadError.status}
-            HTTP {data.loadError.status}: {data.loadError.message}
-          {:else}
-            {data.loadError.message}
-          {/if}
-        </p>
-        {#if data.loadError.hint}
-          <p class="text-sm opacity-75">{data.loadError.hint}</p>
-        {/if}
-      </div>
-      <button
-        type="button"
-        class="btn btn-sm"
-        onclick={reloadPronunciations}
-      >
-        <RefreshCw
-          aria-hidden="true"
-          class="h-4 w-4"
-        />
-        Opnieuw laden
-      </button>
-    </div>
+    <LoadErrorAlert
+      title="Uitspraakregels niet beschikbaar"
+      error={data.loadError}
+      onReload={reloadPronunciations}
+    />
   {:else}
     {#key formKey}
       <PronunciationRulesForm
