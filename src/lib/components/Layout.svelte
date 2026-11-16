@@ -84,7 +84,7 @@
       <div class="flex-none">
         <label
           for="drawer-toggle"
-          class="btn btn-square btn-ghost drawer-button"
+          class="drawer-button btn btn-square btn-ghost"
           aria-label="Open menu"
         >
           <Menu

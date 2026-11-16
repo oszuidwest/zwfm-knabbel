@@ -116,7 +116,7 @@
   />
 
   <div class="flex flex-wrap items-center gap-2">
-    <div class="tabs tabs-box tabs-sm md:tabs-md">
+    <div class="tabs-box tabs tabs-sm md:tabs-md">
       <button
         class={['tab', dateFilter === '' && 'tab-active']}
         aria-pressed={dateFilter === ''}

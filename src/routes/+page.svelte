@@ -258,7 +258,7 @@
         {:else}
           {#each data.recentStories as story (story.id)}
             <li class="list-row items-center">
-              <div class="min-w-0 list-col-grow">
+              <div class="list-col-grow min-w-0">
                 <a
                   href={resolveInternalHref(`/stories/${story.id}/edit`)}
                   class="flex items-center gap-1.5 font-medium hover:text-primary hover:underline"
@@ -298,7 +298,7 @@
         {:else}
           {#each data.recentBulletins as bulletin (bulletin.id)}
             <li class="list-row items-center">
-              <div class="min-w-0 list-col-grow">
+              <div class="list-col-grow min-w-0">
                 <a
                   href={resolveInternalHref(`/bulletins/${bulletin.id}`)}
                   class="flex items-center gap-1.5 font-medium hover:text-primary hover:underline"
