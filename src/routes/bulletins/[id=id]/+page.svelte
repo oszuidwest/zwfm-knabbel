@@ -152,8 +152,10 @@
   <div class="flex gap-2">
     <a
       href={resolveInternalHref('/bulletins')}
-      class="btn btn-ghost">Terug naar overzicht</a
+      class="btn btn-ghost"
     >
+      Terug naar overzicht
+    </a>
   </div>
 </div>
 

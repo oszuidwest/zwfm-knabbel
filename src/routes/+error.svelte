@@ -25,8 +25,10 @@
       <div class="mt-6 card-actions">
         <a
           href={resolveInternalHref('/')}
-          class="btn btn-primary">Terug naar home</a
+          class="btn btn-primary"
         >
+          Terug naar home
+        </a>
       </div>
     </div>
   </div>
