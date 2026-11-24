@@ -49,8 +49,10 @@
     {#if placeholder}
       <option
         value=""
-        disabled>{placeholder}</option
+        disabled
       >
+        {placeholder}
+      </option>
     {/if}
     {#if emptyOption}
       <option value="">{emptyOption}</option>

@@ -115,8 +115,9 @@
             {#each data.bulletins as bulletin (bulletin.id)}
               <tr>
                 <td class="font-medium">{bulletin.station_name}</td>
-                <td class="whitespace-nowrap tabular-nums">{formatDateTime(bulletin.created_at)}</td
-                >
+                <td class="whitespace-nowrap tabular-nums">
+                  {formatDateTime(bulletin.created_at)}
+                </td>
                 <td>
                   <div class="flex items-center gap-2">
                     {#if bulletin.audio_url && !bulletin.file_purged_at}

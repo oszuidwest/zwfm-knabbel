@@ -25,8 +25,10 @@
     {#if action}
       <a
         href={resolveInternalHref(action.href)}
-        class="btn mt-4 btn-primary">{action.label}</a
+        class="btn mt-4 btn-primary"
       >
+        {action.label}
+      </a>
     {/if}
   </div>
 </div>

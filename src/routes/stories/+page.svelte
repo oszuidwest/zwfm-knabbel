@@ -138,8 +138,9 @@
         onclick={() => updateFilters({ date: 'tomorrow' })}
       >
         Morgen
-        <span class="ml-1 hidden text-xs opacity-60 sm:inline">({formatDateLabel('tomorrow')})</span
-        >
+        <span class="ml-1 hidden text-xs opacity-60 sm:inline">
+          ({formatDateLabel('tomorrow')})
+        </span>
       </button>
     </div>
 
@@ -438,8 +439,10 @@
   {#if story.deleted_at}
     <time
       datetime={story.deleted_at}
-      title={formatDateTime(story.deleted_at)}>{formatRelativeTime(story.deleted_at)}</time
+      title={formatDateTime(story.deleted_at)}
     >
+      {formatRelativeTime(story.deleted_at)}
+    </time>
   {/if}
 {/snippet}
 
