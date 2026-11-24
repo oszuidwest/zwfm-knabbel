@@ -12,7 +12,8 @@ export default defineConfig({
     tailwindcss(),
     sveltekit({
       preprocess: vitePreprocess(),
-      adapter: adapter({ fallback: 'spa' }),
+      // Cold test runs fail with the adapter's Vite plugin: it re-optimizes dependencies while tests run.
+      adapter: process.env.NODE_TEST_CONTEXT ? undefined : adapter({ fallback: 'spa' }),
     }),
   ],
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
