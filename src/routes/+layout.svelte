@@ -8,7 +8,7 @@
   import Layout from '#lib/components/Layout.svelte'
   import Toast from '#lib/components/Toast.svelte'
   import { toast } from '#lib/stores/toast.js'
-  import { resolveInternalHref, withSearchParams } from '#lib/utils/routes.js'
+  import { resolveInternalHref } from '#lib/utils/routes.js'
   import type { LayoutProps } from './$types'
 
   let { data, children }: LayoutProps = $props()
@@ -58,12 +58,6 @@
     if (to?.url.searchParams.get('denied') === '1') {
       toast.error('Geen rechten voor deze pagina')
       void goto(resolveInternalHref('/stories'), { replace: true })
-      return
-    }
-
-    // Babbel adds ?login=success or ?error=<message> after a login.
-    if (to?.url.searchParams.has('login') || to?.url.searchParams.has('error')) {
-      void goto(withSearchParams(to.url, { login: '', error: '' }), { replace: true })
       return
     }
 

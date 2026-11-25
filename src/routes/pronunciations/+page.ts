@@ -44,7 +44,7 @@ export const load: PageLoad = async ({ fetch, parent }) => {
 
   const err = result.err
   if (err instanceof ApiError && err.status === 401) {
-    redirectToLogin('expired')
+    redirectToLogin(true)
   }
 
   if (err instanceof ApiError) {
