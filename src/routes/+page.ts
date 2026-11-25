@@ -8,6 +8,7 @@ import {
   getStationsIdBulletinsLatest,
   getStories,
 } from '#lib/api/generated/sdk.gen.js'
+import { toast } from '#lib/stores/toast.js'
 import { redirectToLogin, settleLoad, unwrapLoadResult } from '#lib/utils/load-error.js'
 import { toLocalDateString } from '#lib/utils/format.js'
 import type { Bulletin, Station, Story } from '#lib/types/index.js'
@@ -17,9 +18,11 @@ export interface StationBulletin {
   bulletin: Bulletin | null
 }
 
-export const load: PageLoad = async ({ fetch, parent }) => {
+export const load: PageLoad = async ({ fetch, parent, url }) => {
   const { user } = await parent()
   if (!user) {
+    // Babbel reports a rejected login in ?error. Anyone can make such a link, so never show its text.
+    if (url.searchParams.has('error')) toast.error('Inloggen mislukt. Probeer het opnieuw.', 0)
     redirectToLogin()
   }
 
