@@ -213,6 +213,20 @@ test('a 401 on a read or a login attempt, a 403 and a 500 keep the session', asy
   assert.equal(handler.mock.callCount(), 0)
 })
 
+test('a rejected login shows a fixed message, not the text from the link', async t => {
+  const { load } = await server.ssrLoadModule('/src/routes/+page.ts')
+  const { toast } = await server.ssrLoadModule('/src/lib/stores/toast.ts')
+  const shown = t.mock.method(toast, 'error', () => {})
+  for (const search of ['', '?error=Bel+0800-1234']) {
+    const url = new URL(`https://example.test/${search}`)
+    await rejection(load({ url, parent: async () => ({ user: null }) }))
+  }
+  assert.deepEqual(
+    shown.mock.calls.map(call => call.arguments[0]),
+    ['Inloggen mislukt. Probeer het opnieuw.']
+  )
+})
+
 test('route IDs must be positive integers', () => {
   for (const id of ['1', '42', '9007199254740991']) assert.equal(matchId(id), true, id)
   for (const id of ['0', '-1', '1.5', 'abc', '007', '1e3', '9007199254740992']) {

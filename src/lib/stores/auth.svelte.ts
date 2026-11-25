@@ -1,10 +1,6 @@
 import { createContext } from 'svelte'
 import { ApiError } from '#lib/api/client.js'
-import {
-  deleteSessionsCurrent,
-  getSessionsCurrent,
-  postSessions,
-} from '#lib/api/generated/sdk.gen.js'
+import { deleteSessionsCurrent, getSessionsCurrent } from '#lib/api/generated/sdk.gen.js'
 import { can as sessionCan, type Action, type Resource } from '#lib/auth/policy.js'
 import type { Session } from '#lib/types/index.js'
 
@@ -68,11 +64,6 @@ export class AuthStore {
     } finally {
       this.checked = true
     }
-  }
-
-  async login(username: string, password: string): Promise<void> {
-    await postSessions({ body: { username, password } })
-    await this.checkAuth()
   }
 
   async logout(): Promise<void> {
