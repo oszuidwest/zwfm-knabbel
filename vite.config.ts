@@ -13,7 +13,7 @@ export default defineConfig({
     sveltekit({
       preprocess: vitePreprocess(),
       // Cold test runs fail with the adapter's Vite plugin: it re-optimizes dependencies while tests run.
-      adapter: process.env.NODE_TEST_CONTEXT ? undefined : adapter({ fallback: 'spa' }),
+      adapter: process.env.NODE_TEST_CONTEXT ? undefined : adapter(),
     }),
   ],
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
