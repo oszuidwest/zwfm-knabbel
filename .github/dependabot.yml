@@ -9,9 +9,7 @@ updates:
       # Re-enable after svelte-check and typescript-eslint support TypeScript 7.
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
-      # Upgrade together after migrating the app to SvelteKit 3.
-      - dependency-name: '@sveltejs/kit'
-        update-types: ['version-update:semver-major']
+      # Version 9 fails the build while wrangler.jsonc sets main, so upgrade it by hand.
       - dependency-name: '@sveltejs/adapter-cloudflare'
         update-types: ['version-update:semver-major']
     groups:
