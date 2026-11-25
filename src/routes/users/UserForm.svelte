@@ -4,7 +4,6 @@
   import { userCreateSchema, userSchema, type UserFormData } from '#lib/schemas/user.js'
   import { postUsers, putUsersId } from '#lib/api/generated/sdk.gen.js'
   import { getAuthContext } from '#lib/stores/auth.svelte.js'
-  import { AUTH_DEPENDENCY } from '#lib/auth/session.js'
   import { toast } from '#lib/stores/toast.js'
   import { validateForm } from '#lib/utils/validation.js'
   import { roleOptions } from '#lib/utils/labels.js'
@@ -62,15 +61,9 @@
 
     await putUsersId({ path: { id }, body: updateData })
     if (isSelfRoleChange) {
-      const refreshed = await auth.checkAuth({ force: true })
-      if (!refreshed) {
-        toast.warning('Je rol is bijgewerkt, maar je sessie kon niet opnieuw worden geladen.')
-        await goto(resolveInternalHref('/login'))
-        return
-      }
-
       toast.success('Je rol is bijgewerkt')
-      await goto(resolveInternalHref('/stories'), { invalidate: [AUTH_DEPENDENCY] })
+      // invalidate would keep the session of a preloaded stories page.
+      await goto(resolveInternalHref('/stories'), { refreshAll: true })
       return
     }
 

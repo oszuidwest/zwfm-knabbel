@@ -36,19 +36,19 @@
   })
 
   $effect(() => {
-    if (!auth.checked || auth.user || isPublic) return
+    if (auth.user || isPublic) return
 
     void goto(resolveInternalHref('/login'))
   })
 
   $effect(() => {
-    if (!auth.checked || !isSessionExpiredLogin || !auth.user) return
+    if (!isSessionExpiredLogin || !auth.user) return
 
     auth.hydrate(null)
   })
 
   $effect(() => {
-    if (!auth.checked || !isAuthenticatedLoginRedirect) return
+    if (!isAuthenticatedLoginRedirect) return
 
     void goto(resolveInternalHref('/stories'))
   })
@@ -60,13 +60,13 @@
       return
     }
 
-    if (auth.checked && !auth.user && !isPublicRoute(to?.url.pathname ?? page.url.pathname)) {
+    if (!auth.user && !isPublicRoute(to?.url.pathname ?? page.url.pathname)) {
       void goto(resolveInternalHref('/login'))
     }
   })
 </script>
 
-{#if auth.loading || isAuthenticatedLoginRedirect}
+{#if isAuthenticatedLoginRedirect}
   {@render spinner()}
 {:else if auth.user && !isSessionExpiredLogin}
   <Layout>
