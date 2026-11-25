@@ -5,6 +5,7 @@
 
   let ssoLoading = $state(false)
   const sessionExpired = $derived(page.url.searchParams.get('expired') === '1')
+  const loginFailed = $derived(page.url.searchParams.get('failed') === '1')
 
   function handleSsoLogin(): void {
     ssoLoading = true
@@ -30,16 +31,20 @@
         <p class="page-subtitle">Nieuwsbulletinsysteem</p>
       </div>
 
-      {#if sessionExpired}
+      {#if sessionExpired || loginFailed}
         <div
           class="mb-4 alert alert-warning"
-          role="status"
+          role={loginFailed ? 'alert' : 'status'}
         >
           <TriangleAlert
             aria-hidden="true"
             class="h-5 w-5"
           />
-          <span>Je sessie is verlopen. Log opnieuw in.</span>
+          <span>
+            {loginFailed
+              ? 'Inloggen is niet gelukt. Probeer het opnieuw of neem contact op met een beheerder.'
+              : 'Je sessie is verlopen. Log opnieuw in.'}
+          </span>
         </div>
       {/if}
 

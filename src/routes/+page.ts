@@ -17,10 +17,11 @@ export interface StationBulletin {
   bulletin: Bulletin | null
 }
 
-export const load: PageLoad = async ({ fetch, parent }) => {
+export const load: PageLoad = async ({ fetch, parent, url }) => {
   const { user } = await parent()
   if (!user) {
-    redirectToLogin()
+    // Babbel reports a rejected login in ?error. Anyone can make such a link, so never show its text.
+    redirectToLogin(url.searchParams.has('error') ? 'failed' : undefined)
   }
 
   const canStories = can(user, 'stories', 'read')
