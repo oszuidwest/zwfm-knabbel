@@ -62,13 +62,6 @@
 
     await putUsersId({ path: { id }, body: updateData })
     if (isSelfRoleChange) {
-      const refreshed = await auth.checkAuth({ force: true })
-      if (!refreshed) {
-        toast.warning('Je rol is bijgewerkt, maar je sessie kon niet opnieuw worden geladen.')
-        await goto(resolveInternalHref('/login'))
-        return
-      }
-
       toast.success('Je rol is bijgewerkt')
       await goto(resolveInternalHref('/stories'), { invalidate: [AUTH_DEPENDENCY] })
       return
