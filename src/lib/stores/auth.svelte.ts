@@ -55,7 +55,7 @@ export class AuthStore {
     const logouts = this.logouts
     try {
       const user = await getSessionsCurrent()
-      // A response from before a logout would sign the user in again.
+      // A check that a logout overtook says nothing about the session after it.
       if (logouts !== this.logouts) return false
       this.user = user
       return true
@@ -63,7 +63,7 @@ export class AuthStore {
       if (!(err instanceof ApiError) || err.status !== 401) {
         console.error('[auth] checkAuth failed', err)
       }
-      this.user = null
+      if (logouts === this.logouts) this.user = null
       return false
     } finally {
       this.checked = true

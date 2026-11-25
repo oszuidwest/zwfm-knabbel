@@ -68,3 +68,17 @@ test('so is the response to a check that started during the logout', async () =>
   assert.equal(await check, false)
   assert.equal(auth.user, null)
 })
+
+test('a check from before a logout that fails leaves the next session alone', async () => {
+  const auth = createAuthStore(user)
+  const response = Promise.withResolvers()
+  answerCheck(response.promise)
+
+  const check = auth.checkAuth({ force: true })
+  await auth.logout()
+  auth.hydrate(user)
+  response.resolve(Response.json({ title: 'Authentication Required' }, { status: 401 }))
+
+  assert.equal(await check, false)
+  assert.deepEqual(auth.user, user)
+})
