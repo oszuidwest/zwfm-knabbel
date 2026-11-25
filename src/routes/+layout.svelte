@@ -61,9 +61,9 @@
       return
     }
 
-    // Babbel adds ?login=success after a login.
-    if (to?.url.searchParams.has('login')) {
-      void goto(withSearchParams(to.url, { login: '' }), { replace: true })
+    // Babbel adds ?login=success or ?error=<message> after a login.
+    if (to?.url.searchParams.has('login') || to?.url.searchParams.has('error')) {
+      void goto(withSearchParams(to.url, { login: '', error: '' }), { replace: true })
       return
     }
 
