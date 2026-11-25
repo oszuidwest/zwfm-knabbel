@@ -17,6 +17,7 @@ export class AuthStore {
   checked = $state(false)
 
   private checkPromise: Promise<boolean> | null = null
+  private logouts = 0
 
   constructor(initialUser?: Session | null) {
     if (initialUser !== undefined) {
@@ -51,8 +52,11 @@ export class AuthStore {
   }
 
   private async runCheckAuth(): Promise<boolean> {
+    const logouts = this.logouts
     try {
       const user = await getSessionsCurrent()
+      // A response from before a logout would sign the user in again.
+      if (logouts !== this.logouts) return false
       this.user = user
       return true
     } catch (err) {
@@ -77,6 +81,7 @@ export class AuthStore {
     } catch (err) {
       console.warn('[auth] logout failed', err)
     }
+    this.logouts++
     this.hydrate(null)
   }
 }
