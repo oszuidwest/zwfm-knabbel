@@ -14,7 +14,6 @@ interface CheckAuthOptions {
 
 export class AuthStore {
   user = $state<Session | null>(null)
-  loading = $state(true)
   checked = $state(false)
 
   private checkPromise: Promise<boolean> | null = null
@@ -27,7 +26,6 @@ export class AuthStore {
 
   hydrate(user: Session | null): void {
     this.user = user
-    this.loading = false
     this.checked = true
   }
 
@@ -53,8 +51,6 @@ export class AuthStore {
   }
 
   private async runCheckAuth(): Promise<boolean> {
-    this.loading = true
-
     try {
       const user = await getSessionsCurrent()
       this.user = user
@@ -66,7 +62,6 @@ export class AuthStore {
       this.user = null
       return false
     } finally {
-      this.loading = false
       this.checked = true
     }
   }

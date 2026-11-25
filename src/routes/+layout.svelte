@@ -67,7 +67,7 @@
   })
 </script>
 
-{#if auth.loading || isAuthenticatedLoginRedirect}
+{#if isAuthenticatedLoginRedirect}
   {@render spinner()}
 {:else if auth.user && !isSessionExpiredLogin}
   <Layout>
