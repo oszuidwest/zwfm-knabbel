@@ -84,7 +84,7 @@ The `types:check` command verifies that all generated API code is in sync with t
 npm run deploy
 ```
 
-The Cloudflare adapter writes the worker and assets to `.svelte-kit/cloudflare/`. Wrangler deploys them using `wrangler.jsonc`, which configures the SPA fallback. Set `PUBLIC_API_URL` before building; Vite embeds it in the client bundle.
+The Cloudflare adapter writes the worker and assets to `.svelte-kit/cloudflare/`. Wrangler deploys them using `wrangler.jsonc`. The worker serves the app page for every route. Set `PUBLIC_API_URL` before building; Vite embeds it in the client bundle.
 
 ## Tech Stack
 

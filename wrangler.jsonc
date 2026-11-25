@@ -5,9 +5,9 @@
   "compatibility_date": "2026-06-02",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
+    // No not_found_handling: its app page for a missing /_app/immutable/ file would be cached for a year.
     "binding": "ASSETS",
     "directory": ".svelte-kit/cloudflare",
-    "not_found_handling": "single-page-application",
   },
   "observability": {
     "enabled": true,
