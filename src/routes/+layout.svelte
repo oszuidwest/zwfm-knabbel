@@ -18,7 +18,6 @@
   // The expired=1 effect below clears the local session.
   onSessionExpired(() => goto(resolveInternalHref('/login?expired=1')))
 
-  const publicRoutes = ['/login', '/auth/oauth/callback']
   const currentPathname = $derived(page.url.pathname)
   const isPublic = $derived(isPublicRoute(currentPathname))
   const isSessionExpiredLogin = $derived(
@@ -29,7 +28,7 @@
   )
 
   function isPublicRoute(pathname: string): boolean {
-    return publicRoutes.some(r => pathname.startsWith(r))
+    return pathname.startsWith('/login')
   }
 
   $effect(() => {
